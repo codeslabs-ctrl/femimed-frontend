@@ -117,6 +117,12 @@
   border-bottom: none;
 }
 
+.settings-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0.5rem 0;
+}
+
 .settings-section-title {
   padding: 0.5rem 1rem 0.25rem;
   font-size: 0.75rem;
@@ -124,6 +130,38 @@
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-section-title.collapsible {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  border-radius: 0.375rem;
+  margin: 0 0.25rem;
+}
+
+.settings-section-title.collapsible:hover {
+  background-color: #f9fafb;
+}
+
+.collapse-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.collapse-icon.small {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.collapse-icon.expanded {
+  transform: rotate(180deg);
 }
 
 .settings-item {
@@ -173,6 +211,83 @@
 
 .settings-item.danger:hover .settings-item-icon {
   color: #b91c1c;
+}
+
+/* Submenús colapsables */
+.submenu-container {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.submenu-container.expanded {
+  max-height: 1000px;
+  transition: max-height 0.4s ease-in;
+}
+
+.submenu-section {
+  border-top: 1px solid #f3f4f6;
+}
+
+.submenu-section:first-child {
+  border-top: none;
+}
+
+.submenu-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem 0.625rem 1.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  border-radius: 0.375rem;
+  margin: 0.125rem 0.5rem;
+}
+
+.submenu-title:hover {
+  background-color: #f9fafb;
+  color: #1f2937;
+}
+
+.submenu-title.collapsible {
+  justify-content: space-between;
+}
+
+.submenu-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.submenu-title:hover .submenu-icon {
+  color: #374151;
+}
+
+.submenu-items {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.submenu-items.expanded {
+  max-height: 500px;
+  transition: max-height 0.4s ease-in;
+}
+
+.settings-item.submenu-item {
+  padding-left: 2.5rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.settings-item.submenu-item:hover {
+  background-color: #f9fafb;
+  color: #1f2937;
 }
 
 @media (max-width: 768px) {

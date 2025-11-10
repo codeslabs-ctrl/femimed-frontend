@@ -21,138 +21,113 @@
       </div>
       
       <div class="settings-dropdown" *ngIf="showSettingsMenu">
-        <!-- Opciones para Médicos -->
-        <div class="settings-section" *ngIf="currentUser?.rol === 'medico'">
-          <div class="settings-section-title">Médico</div>
-          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+        <!-- Sección: Gestión (común para médico, secretaria y administrador) -->
+        <div class="settings-section" *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador'">
+          <div class="settings-section-title collapsible" (click)="toggleSubmenu('gestion', $event)">
+            <span>Gestión</span>
+            <svg class="collapse-icon" [class.expanded]="isExpanded('gestion')" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
             </svg>
-            <span>Gestión de Pacientes</span>
-          </a>
-          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-            </svg>
-            <span>Gestión de Consultas</span>
-          </a>
-          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
-            </svg>
-            <span>Informes Médicos</span>
-          </a>
+          </div>
+          <div class="submenu-container" [class.expanded]="isExpanded('gestion')">
+            <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+              </svg>
+              <span>Gestión de Pacientes</span>
+            </a>
+            <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+              </svg>
+              <span>Gestión de Consultas</span>
+            </a>
+            <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
+              </svg>
+              <span>Informes Médicos</span>
+            </a>
+          </div>
         </div>
         
-        <!-- Separador para médicos -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'medico'"></div>
+        <!-- Separador -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador'"></div>
         
-        <!-- Opciones para Secretarias -->
-        <div class="settings-section" *ngIf="currentUser?.rol === 'secretaria'">
-          <div class="settings-section-title">Secretaría</div>
-          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
-            </svg>
-            <span>Gestión de Pacientes</span>
-          </a>
-          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-            </svg>
-            <span>Gestión de Consultas</span>
-          </a>
-          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
-            </svg>
-            <span>Informes Médicos</span>
-          </a>
-        </div>
-        
-        <!-- Separador para secretarias -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'secretaria'"></div>
-        
-        <!-- Opciones de Finanzas (solo para finanzas y administradores) -->
+        <!-- Sección: Finanzas (solo para finanzas y administradores) -->
         <div class="settings-section" *ngIf="currentUser?.rol === 'finanzas' || currentUser?.rol === 'administrador'">
-          <div class="settings-section-title">Finanzas</div>
-          <a routerLink="/admin/finanzas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+          <div class="settings-section-title collapsible" (click)="toggleSubmenu('finanzas', $event)">
+            <span>Finanzas</span>
+            <svg class="collapse-icon" [class.expanded]="isExpanded('finanzas')" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
             </svg>
-            <span>Panel de Finanzas</span>
-          </a>
+          </div>
+          <div class="submenu-container" [class.expanded]="isExpanded('finanzas')">
+            <a routerLink="/admin/finanzas" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+              </svg>
+              <span>Panel de Finanzas</span>
+            </a>
+          </div>
         </div>
         
-        <!-- Separador para finanzas -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'finanzas'"></div>
+        <!-- Separador -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'finanzas' || currentUser?.rol === 'administrador'"></div>
         
-        <!-- Opciones de Administración (solo para administradores) -->
+        <!-- Sección: Administración (solo para administradores) -->
         <div class="settings-section" *ngIf="currentUser?.rol === 'administrador'">
-          <div class="settings-section-title">Administración</div>
-          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+          <div class="settings-section-title collapsible" (click)="toggleSubmenu('administracion', $event)">
+            <span>Administración</span>
+            <svg class="collapse-icon" [class.expanded]="isExpanded('administracion')" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
             </svg>
-            <span>Gestión de Pacientes</span>
-          </a>
-          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-            </svg>
-            <span>Gestión de Consultas</span>
-          </a>
-          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
-            </svg>
-            <span>Informes Médicos</span>
-          </a>
-          <a routerLink="/admin/mensajes" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-            </svg>
-            <span>Mensajes de Difusión</span>
-          </a>
-          <a routerLink="/admin/medicos" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
-            </svg>
-            <span>Gestionar Médicos</span>
-          </a>
-          <a routerLink="/admin/especialidades" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            <span>Gestionar Especialidades</span>
-          </a>
-          <a routerLink="/admin/servicios" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-            </svg>
-            <span>Gestionar Servicios</span>
-          </a>
-          <a routerLink="/admin/importacion" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
-            </svg>
-            <span>Importación Masiva</span>
-          </a>
-          <a routerLink="/statistics" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
-            </svg>
-            <span>Ver Estadísticas</span>
-          </a>
+          </div>
+          <div class="submenu-container" [class.expanded]="isExpanded('administracion')">
+            <a routerLink="/admin/mensajes" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+              </svg>
+              <span>Mensajes de Difusión</span>
+            </a>
+            <a routerLink="/admin/medicos" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+              </svg>
+              <span>Gestionar Médicos</span>
+            </a>
+            <a routerLink="/admin/especialidades" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              <span>Gestionar Especialidades</span>
+            </a>
+            <a routerLink="/admin/servicios" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+              </svg>
+              <span>Gestionar Servicios</span>
+            </a>
+            <a routerLink="/admin/importacion" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+              </svg>
+              <span>Importación Masiva</span>
+            </a>
+            <a routerLink="/statistics" class="settings-item" (click)="closeSettingsMenu()">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+              </svg>
+              <span>Ver Estadísticas</span>
+            </a>
+          </div>
         </div>
         
         <!-- Separador -->
         <div class="settings-divider" *ngIf="currentUser?.rol === 'administrador'"></div>
         
-        <!-- Opciones de Usuario -->
+        <!-- Sección: Usuario -->
         <div class="settings-section">
           <div class="settings-section-title">Usuario</div>
           <button class="settings-item danger" (click)="logout()">

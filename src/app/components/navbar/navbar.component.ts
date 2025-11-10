@@ -14,6 +14,13 @@ import { User } from '../../models/user.model';
 export class NavbarComponent implements OnInit {
   currentUser: User | null = null;
   showSettingsMenu = false;
+  
+  // Estados de expansión de secciones
+  expandedSections: { [key: string]: boolean } = {
+    gestion: false,
+    finanzas: false,
+    administracion: false
+  };
 
   constructor(private authService: AuthService) {}
 
@@ -53,5 +60,16 @@ export class NavbarComponent implements OnInit {
 
   closeSettingsMenu() {
     this.showSettingsMenu = false;
+  }
+
+  toggleSubmenu(section: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.expandedSections[section] = !this.expandedSections[section];
+  }
+
+  isExpanded(section: string): boolean {
+    return this.expandedSections[section] || false;
   }
 }
