@@ -20,6 +20,7 @@ export class EspecialidadesComponent implements OnInit {
   isEditing = false;
   saving = false;
   searchName = '';
+  errorMessage = '';
   
   // Modal de confirmación eliminar
   showConfirmModal: boolean = false;
@@ -79,17 +80,20 @@ export class EspecialidadesComponent implements OnInit {
       nombre_especialidad: '',
       descripcion: ''
     };
+    this.errorMessage = '';
     this.showModal = true;
   }
 
   openEditModal(especialidad: Especialidad) {
     this.isEditing = true;
     this.especialidadData = { ...especialidad };
+    this.errorMessage = '';
     this.showModal = true;
   }
 
   closeModal() {
     this.showModal = false;
+    this.errorMessage = '';
     this.especialidadData = {
       nombre_especialidad: '',
       descripcion: ''
@@ -97,6 +101,12 @@ export class EspecialidadesComponent implements OnInit {
   }
 
   onSubmit() {
+    // Limpiar mensaje de error anterior
+    this.errorMessage = '';
+    
+    // La validación se hace automáticamente por Angular Forms
+    // El botón está deshabilitado si el formulario es inválido
+    // Si el formulario es válido, proceder con la acción
     if (this.isEditing) {
       this.updateEspecialidad();
     } else {
@@ -106,16 +116,22 @@ export class EspecialidadesComponent implements OnInit {
 
   createEspecialidad() {
     this.saving = true;
+    this.errorMessage = '';
+    
     this.especialidadService.createEspecialidad(this.especialidadData).subscribe({
       next: (response) => {
         if (response.success) {
           this.loadEspecialidades();
           this.closeModal();
+        } else {
+          this.errorMessage = response.error?.message || 'Error al crear la especialidad';
+          this.saving = false;
         }
-        this.saving = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'crear especialidad');
+        const errorMsg = this.errorHandler.getSafeErrorMessage(error, 'crear especialidad');
+        this.errorMessage = errorMsg;
         this.saving = false;
       }
     });
@@ -123,16 +139,22 @@ export class EspecialidadesComponent implements OnInit {
 
   updateEspecialidad() {
     this.saving = true;
+    this.errorMessage = '';
+    
     this.especialidadService.updateEspecialidad(this.especialidadData.id!, this.especialidadData).subscribe({
       next: (response) => {
         if (response.success) {
           this.loadEspecialidades();
           this.closeModal();
+        } else {
+          this.errorMessage = response.error?.message || 'Error al actualizar la especialidad';
+          this.saving = false;
         }
-        this.saving = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'actualizar especialidad');
+        const errorMsg = this.errorHandler.getSafeErrorMessage(error, 'actualizar especialidad');
+        this.errorMessage = errorMsg;
         this.saving = false;
       }
     });
@@ -148,12 +170,33 @@ export class EspecialidadesComponent implements OnInit {
       this.especialidadService.deleteEspecialidad(this.especialidadToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
+            const mensaje = response.data?.message || 
+              `Especialidad "${this.especialidadToDelete?.nombre_especialidad}" eliminada exitosamente.`;
+            alert(`✅ ${mensaje}`);
             this.loadEspecialidades();
             this.closeConfirmModal();
+          } else {
+            // Si la respuesta no es exitosa pero no es un error HTTP
+            const errorMsg = response.error?.message || 'Error al eliminar la especialidad';
+            alert(`❌ ${errorMsg}`);
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, 'eliminar especialidad');
+          
+          // Intentar extraer el mensaje específico del backend
+          let errorMessage = 'Error al eliminar la especialidad';
+          
+          // El backend devuelve: { error: { success: false, error: { message: "...", code: "..." } } }
+          if (error?.error?.error?.message) {
+            errorMessage = error.error.error.message;
+          } else if (error?.error?.message) {
+            errorMessage = error.error.message;
+          } else {
+            errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar especialidad');
+          }
+          
+          alert(`❌ ${errorMessage}`);
         }
       });
     }

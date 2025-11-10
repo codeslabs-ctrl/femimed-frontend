@@ -18,6 +18,7 @@ export interface Medico {
   fecha_creacion?: string;
   fecha_actualizacion?: string;
   firma_digital?: string;
+  activo?: boolean;
 }
 
 @Injectable({
@@ -44,8 +45,8 @@ export class MedicoService {
     return this.http.put<ApiResponse<Medico>>(`${this.baseUrl}/${id}`, medico);
   }
 
-  deleteMedico(id: number): Observable<ApiResponse<{ message: string }>> {
-    return this.http.delete<ApiResponse<{ message: string }>>(`${this.baseUrl}/${id}`);
+  deleteMedico(id: number): Observable<ApiResponse<{ message: string; accion?: string }>> {
+    return this.http.delete<ApiResponse<{ message: string; accion?: string }>>(`${this.baseUrl}/${id}`);
   }
 
   searchMedicos(query: string): Observable<ApiResponse<Medico[]>> {
@@ -56,5 +57,9 @@ export class MedicoService {
 
   getMedicosByEspecialidad(especialidadId: number): Observable<ApiResponse<Medico[]>> {
     return this.http.get<ApiResponse<Medico[]>>(`${this.baseUrl}/by-especialidad/${especialidadId}`);
+  }
+
+  activarMedico(id: number): Observable<ApiResponse<{ message: string; accion?: string }>> {
+    return this.http.patch<ApiResponse<{ message: string; accion?: string }>>(`${this.baseUrl}/${id}/activar`, {});
   }
 }

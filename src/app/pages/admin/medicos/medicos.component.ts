@@ -17,6 +17,7 @@ export interface Medico {
   telefono: string;
   especialidad_id: number;
   especialidad_nombre?: string;
+  activo?: boolean;
 }
 
 @Component({
@@ -308,18 +309,44 @@ export class MedicosComponent implements OnInit {
       this.medicoService.deleteMedico(this.medicoToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
-            this.showSnackbarMessage(
-              `Médico ${this.medicoToDelete?.nombres} ${this.medicoToDelete?.apellidos} eliminado exitosamente.`,
-              'success'
-            );
+            // Verificar si fue eliminado o desactivado
+            const accion = response.data?.accion || 'eliminado';
+            const mensaje = response.data?.message || 
+              (accion === 'desactivado' 
+                ? `Médico ${this.medicoToDelete?.nombres} ${this.medicoToDelete?.apellidos} marcado como inactivo (tiene consultas o pacientes asociados).`
+                : `Médico ${this.medicoToDelete?.nombres} ${this.medicoToDelete?.apellidos} eliminado exitosamente.`);
+            
+            this.showSnackbarMessage(mensaje, accion === 'desactivado' ? 'warning' : 'success');
             this.loadMedicos();
             this.closeConfirmModal();
+          } else {
+            // Si la respuesta no es exitosa pero no es un error HTTP
+            const errorMsg = response.error?.message || 'Error al eliminar el médico';
+            this.showSnackbarMessage(errorMsg, 'error');
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, 'eliminar médico');
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar médico');
-          this.showSnackbarMessage(errorMessage, 'error');
+          
+          // Extraer mensaje específico del backend
+          let errorMessage = 'Error al eliminar el médico';
+          
+          if (error?.status === 400) {
+            // Error de validación (consultas no finalizadas, etc.)
+            if (error?.error?.error?.message) {
+              errorMessage = error.error.error.message;
+            } else if (error?.error?.message) {
+              errorMessage = error.error.message;
+            } else {
+              errorMessage = 'No se puede eliminar el médico. Verifica que no tenga consultas sin finalizar o datos asociados.';
+            }
+            // Usar alert para errores de validación (consultas no finalizadas)
+            alert(`⚠️ ${errorMessage}`);
+          } else {
+            // Otros errores usar snackbar
+            errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar médico');
+            this.showSnackbarMessage(errorMessage, 'error');
+          }
         }
       });
     }
@@ -332,5 +359,41 @@ export class MedicosComponent implements OnInit {
   closeConfirmModal() {
     this.showConfirmModal = false;
     this.medicoToDelete = null;
+  }
+
+  activarMedico(medico: Medico) {
+    if (!medico.id) return;
+
+    this.medicoService.activarMedico(medico.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          const mensaje = response.data?.message || 
+            `Médico ${medico.nombres} ${medico.apellidos} activado exitosamente.`;
+          this.showSnackbarMessage(mensaje, 'success');
+          this.loadMedicos();
+        } else {
+          const errorMsg = response.error?.message || 'Error al activar el médico';
+          this.showSnackbarMessage(errorMsg, 'error');
+        }
+      },
+      error: (error) => {
+        this.errorHandler.logError(error, 'activar médico');
+        
+        // Extraer mensaje específico del backend
+        let errorMessage = 'Error al activar el médico';
+        
+        if (error?.status === 404) {
+          errorMessage = 'No se pudo encontrar el médico o el servicio de activación no está disponible. Por favor, recarga la página e intenta nuevamente.';
+        } else if (error?.error?.error?.message) {
+          errorMessage = error.error.error.message;
+        } else if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        this.showSnackbarMessage(errorMessage, 'error');
+      }
+    });
   }
 }

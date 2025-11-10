@@ -117,7 +117,7 @@ import { Medico } from '../../../services/medico.service';
                   <div class="empty-state-icon">📅</div>
                   <div class="empty-state-title">No hay consultas</div>
                   <div class="empty-state-description">
-                    No se encontraron consultas con los filtros aplicados.
+                    No se encontraron consultas con los filtros aplicados. Puedes crear una nueva consulta usando el botón "Nueva Consulta".
                   </div>
                 </td>
               </tr>
@@ -196,7 +196,7 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Cancelar</span>
                     </button>
                     <button 
-                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()"
+                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
                       class="action-btn btn-complete" 
                       (click)="finalizarConsulta(consulta)" 
                       title="Finalizar">
@@ -213,6 +213,14 @@ import { Medico } from '../../../services/medico.service';
 
         <!-- Vista de tarjetas para móvil -->
         <div class="table-mobile">
+          <!-- Estado vacío para móvil -->
+          <div *ngIf="!loading && consultas.length === 0" class="empty-state-mobile">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-title">No hay consultas</div>
+            <div class="empty-state-description">
+              No se encontraron consultas con los filtros aplicados. Puedes crear una nueva consulta usando el botón "Nueva Consulta".
+            </div>
+          </div>
           <div class="consulta-card" *ngFor="let consulta of consultas">
             <div class="card-header">
               <div class="consulta-info">
@@ -281,7 +289,7 @@ import { Medico } from '../../../services/medico.service';
                 Cancelar
               </button>
               <button 
-                *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()"
+                *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
                 class="action-btn success-btn" 
                 (click)="finalizarConsulta(consulta)" 
                 title="Finalizar consulta">
@@ -1360,6 +1368,16 @@ import { Medico } from '../../../services/medico.service';
     /* Vista de tarjetas para móvil */
     .table-mobile {
       display: none;
+    }
+
+    /* Estado vacío para vista móvil */
+    .empty-state-mobile {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: #6b7280;
+      background: white;
+      border-radius: 0.75rem;
+      margin: 1rem 0;
     }
 
     /* Estilos para las tarjetas móviles */

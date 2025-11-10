@@ -737,8 +737,16 @@ export class NuevaConsultaComponent implements OnInit {
   }
 
   getTodayDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    // Obtener fecha actual en zona horaria de Venezuela (America/Caracas)
+    const now = new Date();
+    const fechaVenezuela = new Date(now.toLocaleString('en-US', { timeZone: 'America/Caracas' }));
+    
+    // Formatear como YYYY-MM-DD para el input type="date"
+    const year = fechaVenezuela.getFullYear();
+    const month = String(fechaVenezuela.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaVenezuela.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
   }
 
   volver() {

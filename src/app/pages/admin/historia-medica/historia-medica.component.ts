@@ -253,7 +253,8 @@ import { Patient } from '../../../models/patient.model';
               type="button" 
               class="btn btn-info" 
               (click)="abrirModalInterconsultas()"
-              [disabled]="isSubmitting || !consultaData?.paciente_id">
+              [disabled]="isSubmitting || !consultaData?.paciente_id || mode === 'create' || !historiaData"
+              [title]="(mode === 'create' || !historiaData) ? 'Debe crear la historia médica antes de realizar una interconsulta' : 'Abrir modal de interconsultas'">
               <span class="btn-icon">🔄</span>
               <span class="btn-text">Interconsultas</span>
             </button>
@@ -1268,6 +1269,9 @@ export class HistoriaMedicaComponent implements OnInit {
           // Cargar archivos después de crear la historia
           this.cargarArchivos();
           
+          // Actualizar estado de la consulta a "completada"
+          this.actualizarEstadoConsulta('completada');
+          
           alert('✅ Historia médica creada exitosamente\n\nAhora puede agregar archivos anexos si lo desea.');
         } else {
           alert('❌ Error al crear la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido'));
@@ -1296,6 +1300,9 @@ export class HistoriaMedicaComponent implements OnInit {
     this.historicoService.updateHistorico(this.historiaData.id, updateData).subscribe({
       next: (response) => {
         if (response.success) {
+          // Actualizar estado de la consulta a "completada"
+          this.actualizarEstadoConsulta('completada');
+          
           alert('✅ Historia médica actualizada exitosamente');
           this.router.navigate(['/admin/consultas']);
         } else {
@@ -1339,6 +1346,69 @@ export class HistoriaMedicaComponent implements OnInit {
     const temp = document.createElement('div');
     temp.innerHTML = html;
     return temp.textContent || temp.innerText || '';
+  }
+
+  /**
+   * Actualiza el estado de la consulta asociada a "completada"
+   */
+  actualizarEstadoConsulta(estado: 'agendada' | 'por_agendar' | 'cancelada' | 'finalizada' | 'reagendada' | 'no_asistio' | 'completada'): void {
+    if (!this.consultaData) return;
+
+    const currentUser = this.authService.getCurrentUser();
+    const medicoId = currentUser?.medico_id;
+
+    if (!medicoId) {
+      console.warn('⚠️ No se pudo obtener el médico actual para actualizar el estado de la consulta');
+      return;
+    }
+
+    // Buscar la consulta asociada al paciente y médico actual
+    this.consultaService.getConsultasByPaciente(this.consultaData.paciente_id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Buscar la consulta del médico actual que esté en estado "agendada" o "reagendada"
+          // Si no hay ninguna, buscar la más reciente que no esté finalizada
+          let consulta = response.data.find(c => 
+            c.medico_id === medicoId && 
+            (c.estado_consulta === 'agendada' || c.estado_consulta === 'reagendada')
+          );
+
+          // Si no se encuentra una en estado agendada/reagendada, buscar la más reciente que no esté finalizada
+          if (!consulta) {
+            const consultasDelMedico = response.data
+              .filter(c => c.medico_id === medicoId && c.estado_consulta !== 'finalizada' && c.estado_consulta !== 'completada')
+              .sort((a, b) => {
+                // Ordenar por fecha de creación descendente (más reciente primero)
+                const fechaA = a.fecha_creacion ? new Date(a.fecha_creacion).getTime() : 0;
+                const fechaB = b.fecha_creacion ? new Date(b.fecha_creacion).getTime() : 0;
+                return fechaB - fechaA;
+              });
+            consulta = consultasDelMedico[0];
+          }
+
+          if (consulta && consulta.id) {
+            // Actualizar el estado de la consulta
+            this.consultaService.updateConsulta(consulta.id, { estado_consulta: estado }).subscribe({
+              next: (updateResponse) => {
+                if (updateResponse.success) {
+                  console.log(`✅ Estado de consulta ${consulta.id} actualizado a "${estado}"`);
+                } else {
+                  console.warn('⚠️ No se pudo actualizar el estado de la consulta:', updateResponse.error?.message);
+                }
+              },
+              error: (error) => {
+                console.error('❌ Error al actualizar el estado de la consulta:', error);
+              }
+            });
+          } else {
+            console.log('ℹ️ No se encontró consulta pendiente para actualizar');
+          }
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error al buscar consultas del paciente:', error);
+      }
+    });
   }
 
   volver() {

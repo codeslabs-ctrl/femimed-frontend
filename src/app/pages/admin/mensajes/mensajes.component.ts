@@ -59,6 +59,14 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
 
       <!-- Lista de mensajes -->
       <div class="mensajes-list">
+        <!-- Estado vacío -->
+        <div *ngIf="mensajes.length === 0" class="empty-state">
+          <div class="empty-state-icon">📧</div>
+          <div class="empty-state-title">No hay mensajes de difusión</div>
+          <div class="empty-state-description">
+            No se encontraron mensajes con los filtros aplicados. Puedes crear un nuevo mensaje usando el botón "Nuevo Mensaje".
+          </div>
+        </div>
         <div class="mensaje-card" *ngFor="let mensaje of mensajes">
           <div class="mensaje-header">
             <h3>{{ mensaje.titulo }}</h3>
@@ -502,6 +510,33 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
     .mensajes-list {
       display: grid;
       gap: 1.5rem;
+    }
+
+    /* Estado vacío estandarizado */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6b7280;
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state-description {
+      font-size: 0.875rem;
+      color: #6b7280;
     }
 
     .mensaje-card {

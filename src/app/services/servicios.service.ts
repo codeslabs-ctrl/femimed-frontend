@@ -38,7 +38,7 @@ export interface FinalizarConsultaRequest {
     moneda: 'VES' | 'USD' | 'EUR' | 'COP';
     observaciones?: string;
   }[];
-  diagnostico_preliminar: string;
+  diagnostico_preliminar?: string;
   observaciones?: string;
 }
 

@@ -15,7 +15,23 @@ export class ErrorHandlerService {
    * @returns Mensaje seguro para el usuario
    */
   getSafeErrorMessage(error: any, context: string = 'operación'): string {
-    // Siempre mostrar mensajes genéricos y seguros
+    // Intentar extraer el mensaje del error del backend
+    if (error?.error?.error?.message) {
+      // Formato: { error: { error: { message: "..." } } }
+      return this.sanitizeMessage(error.error.error.message);
+    }
+    
+    if (error?.error?.message) {
+      // Formato: { error: { message: "..." } }
+      return this.sanitizeMessage(error.error.message);
+    }
+    
+    if (error?.message) {
+      // Formato: { message: "..." }
+      return this.sanitizeMessage(error.message);
+    }
+    
+    // Si no hay mensaje específico, mostrar mensaje genérico
     return `❌ Error en ${context}. Por favor, verifica los datos e intenta de nuevo.`;
   }
 

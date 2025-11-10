@@ -27,8 +27,6 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
   consultaInfo: any = null;
   serviciosDisponibles: Servicio[] = [];
   serviciosSeleccionados: ServicioSeleccionado[] = [];
-  diagnosticoPreliminar = '';
-  observacionesGenerales = '';
   isSubmitting = false;
   isLoading = true;
   
@@ -263,11 +261,6 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
   }
 
   canFinalizar(): boolean {
-    // Requerir diagnóstico siempre
-    if (this.diagnosticoPreliminar.trim().length === 0) {
-      return false;
-    }
-    
     // Se debe seleccionar al menos un servicio
     if (this.serviciosSeleccionados.length === 0) {
       return false;
@@ -299,9 +292,7 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
               moneda: s.moneda,
               observaciones: s.observaciones
             }))
-          : [], // Array vacío si no hay servicios seleccionados
-        diagnostico_preliminar: this.diagnosticoPreliminar,
-        observaciones: this.observacionesGenerales || undefined
+          : [] // Array vacío si no hay servicios seleccionados
       };
 
       console.log('💾 Finalizando consulta:', request);

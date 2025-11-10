@@ -105,7 +105,7 @@ import { Medico } from '../../../services/medico.service';
                   class="form-control" 
                   [(ngModel)]="consultaForm.fecha_pautada" 
                   name="fecha_pautada"
-                  [min]="getTodayDate()"
+                  [min]="getMinDate()"
                   required>
               </div>
               
@@ -723,8 +723,25 @@ export class EditarConsultaComponent implements OnInit {
       },
       error: (error) => {
         this.errorHandler.logError(error, 'actualizar consulta');
-        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta');
-        alert(errorMessage);
+        
+        // Extraer mensaje específico del backend
+        let errorMessage = 'Error al actualizar la consulta';
+        
+        if (error?.status === 400) {
+          // Error de validación (fecha inválida, etc.)
+          if (error?.error?.error?.message) {
+            errorMessage = error.error.error.message;
+          } else if (error?.error?.message) {
+            errorMessage = error.error.message;
+          } else {
+            errorMessage = 'No se pudo actualizar la consulta. Verifica que la fecha y hora sean válidas.';
+          }
+        } else {
+          // Otros errores usar el método genérico
+          errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta');
+        }
+        
+        alert(`⚠️ ${errorMessage}`);
         this.isSubmitting = false;
       }
     });
@@ -777,8 +794,22 @@ export class EditarConsultaComponent implements OnInit {
   }
 
   getTodayDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    // Obtener fecha actual en zona horaria de Venezuela (America/Caracas)
+    const now = new Date();
+    const fechaVenezuela = new Date(now.toLocaleString('en-US', { timeZone: 'America/Caracas' }));
+    
+    // Formatear como YYYY-MM-DD para el input type="date"
+    const year = fechaVenezuela.getFullYear();
+    const month = String(fechaVenezuela.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaVenezuela.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  }
+
+  getMinDate(): string {
+    // Para editar consulta, permitir seleccionar la fecha actual
+    // La fecha mínima debe ser hoy (no ayer) para que hoy sea seleccionable
+    return this.getTodayDate();
   }
 
   volver() {

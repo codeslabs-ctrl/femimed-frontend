@@ -146,7 +146,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 📝 Historia Paciente
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
-                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()">
+                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()">
                 ✅ Finalizar
               </button>
               <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"

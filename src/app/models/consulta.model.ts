@@ -9,7 +9,7 @@ export interface Consulta {
   hora_pautada: string;
   fecha_culminacion?: string;
   duracion_estimada: number;
-  estado_consulta: 'agendada' | 'por_agendar' | 'cancelada' | 'finalizada' | 'reagendada' | 'no_asistio';
+  estado_consulta: 'agendada' | 'por_agendar' | 'cancelada' | 'finalizada' | 'reagendada' | 'no_asistio' | 'completada';
   prioridad: 'baja' | 'normal' | 'alta' | 'urgente';
   diagnostico_preliminar?: string;
   observaciones?: string;
@@ -62,6 +62,7 @@ export interface ConsultaFormData {
   notas_internas?: string;
   fecha_recordatorio?: string;
   metodo_recordatorio?: 'email' | 'sms' | 'llamada' | 'whatsapp';
+  estado_consulta?: 'agendada' | 'por_agendar' | 'cancelada' | 'finalizada' | 'reagendada' | 'no_asistio' | 'completada';
 }
 
 export interface ConsultaFilters {

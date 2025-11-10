@@ -62,15 +62,17 @@
             </div>
           </td>
         </tr>
+        <tr *ngIf="filteredEspecialidades.length === 0">
+          <td colspan="5" class="empty-state">
+            <div class="empty-state-icon">🎓</div>
+            <div class="empty-state-title">No hay especialidades registradas</div>
+            <div class="empty-state-description">
+              No se encontraron especialidades con los filtros aplicados. Puedes crear una nueva especialidad usando el botón "Nueva Especialidad".
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
-
-    <div *ngIf="filteredEspecialidades.length === 0" class="no-data">
-      <svg class="no-data-icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-      </svg>
-      <p>No se encontraron especialidades</p>
-    </div>
   </div>
 
   <div *ngIf="loading" class="loading">
@@ -93,25 +95,51 @@
     </div>
 
     <div class="modal-body">
+      <!-- Mensaje de error general -->
+      <div *ngIf="errorMessage" class="error-message-general">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
       <form (ngSubmit)="onSubmit()" #especialidadForm="ngForm">
         <div class="form-group">
           <label class="form-label">Nombre *</label>
           <input 
             type="text" 
             class="form-input" 
+            [class.error]="nombreInput.invalid && nombreInput.touched"
             [(ngModel)]="especialidadData.nombre_especialidad" 
             name="nombre"
-            required>
+            #nombreInput="ngModel"
+            required
+            minlength="3"
+            maxlength="100"
+            placeholder="Ej: Ginecología">
+          <div *ngIf="nombreInput.invalid && nombreInput.touched" class="error-message">
+            <span *ngIf="nombreInput.errors?.['required']">El nombre es requerido</span>
+            <span *ngIf="nombreInput.errors?.['minlength']">El nombre debe tener al menos 3 caracteres</span>
+            <span *ngIf="nombreInput.errors?.['maxlength']">El nombre no puede exceder 100 caracteres</span>
+          </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Descripción *</label>
           <textarea 
             class="form-input form-textarea" 
+            [class.error]="descripcionInput.invalid && descripcionInput.touched"
             [(ngModel)]="especialidadData.descripcion" 
             name="descripcion"
+            #descripcionInput="ngModel"
             rows="4"
-            required></textarea>
+            required
+            minlength="10"
+            maxlength="500"
+            placeholder="Describe la especialidad médica..."></textarea>
+          <div *ngIf="descripcionInput.invalid && descripcionInput.touched" class="error-message">
+            <span *ngIf="descripcionInput.errors?.['required']">La descripción es requerida</span>
+            <span *ngIf="descripcionInput.errors?.['minlength']">La descripción debe tener al menos 10 caracteres</span>
+            <span *ngIf="descripcionInput.errors?.['maxlength']">La descripción no puede exceder 500 caracteres</span>
+          </div>
         </div>
       </form>
     </div>
@@ -124,7 +152,7 @@
         type="button" 
         class="btn btn-new" 
         (click)="onSubmit()"
-        [disabled]="saving">
+        [disabled]="saving || especialidadForm.invalid">
         {{ saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}
       </button>
     </div>
@@ -138,7 +166,7 @@
   title="Eliminar Especialidad"
   message="¿Estás seguro de que quieres eliminar esta especialidad?"
   [itemName]="especialidadToDelete ? especialidadToDelete.nombre_especialidad : ''"
-  warningText="Esta acción eliminará permanentemente la especialidad y afectará a todos los médicos que la tengan asignada."
+  warningText="No se puede eliminar una especialidad que tiene médicos, consultas o servicios asociados. Si hay datos asociados, la eliminación será rechazada."
   confirmText="🗑️ Eliminar"
   cancelText="Cancelar"
   type="danger"

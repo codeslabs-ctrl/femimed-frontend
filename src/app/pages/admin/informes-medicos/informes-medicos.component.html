@@ -262,11 +262,15 @@
             </table>
 
             <!-- Sin datos -->
-            <div *ngIf="informes.length === 0" class="text-center py-4">
-              <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">No se encontraron informes médicos</h5>
-              <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
-            </div>
+            <tr *ngIf="informes.length === 0">
+              <td colspan="8" class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-title">No hay informes médicos</div>
+                <div class="empty-state-description">
+                  No se encontraron informes médicos con los filtros aplicados. Puedes crear un nuevo informe usando el botón "Nuevo Informe".
+                </div>
+              </td>
+            </tr>
           </div>
         </div>
       </div>

@@ -53,7 +53,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let medico of filteredMedicos">
+        <tr *ngFor="let medico of filteredMedicos" [class.inactive]="medico.activo === false">
           <td>{{ medico.id }}</td>
           <td class="medico-name">{{ medico.nombres }} {{ medico.apellidos }}</td>
           <td class="medico-email">{{ medico.email }}</td>
@@ -71,26 +71,31 @@
               </button>
               <button 
                 *ngIf="canDeleteMedico()"
-                class="action-btn delete-btn" 
-                (click)="deleteMedico(medico.id!, medico.nombres, medico.apellidos)" 
-                title="Eliminar">
-                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                [class]="medico.activo === false ? 'action-btn activate-btn' : 'action-btn delete-btn'" 
+                [title]="medico.activo === false ? 'Activar médico' : 'Eliminar'"
+                (click)="medico.activo === false ? activarMedico(medico) : deleteMedico(medico.id!, medico.nombres, medico.apellidos)">
+                <svg *ngIf="medico.activo === false" class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <svg *ngIf="medico.activo !== false" class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
-                Eliminar
+                {{ medico.activo === false ? 'Activar' : 'Eliminar' }}
               </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredMedicos.length === 0">
+          <td colspan="6" class="empty-state">
+            <div class="empty-state-icon">👨‍⚕️</div>
+            <div class="empty-state-title">No hay médicos registrados</div>
+            <div class="empty-state-description">
+              No se encontraron médicos con los filtros aplicados. Puedes crear un nuevo médico usando el botón "Nuevo Médico".
             </div>
           </td>
         </tr>
       </tbody>
     </table>
-
-    <div *ngIf="filteredMedicos.length === 0" class="no-data">
-      <svg class="no-data-icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-      </svg>
-      <p>No se encontraron médicos</p>
-    </div>
   </div>
 
   <div *ngIf="loading" class="loading">
@@ -270,7 +275,7 @@
   title="Eliminar Médico"
   message="¿Estás seguro de que quieres eliminar este médico?"
   [itemName]="medicoToDelete ? medicoToDelete.nombres + ' ' + medicoToDelete.apellidos : ''"
-  warningText="Esta acción eliminará permanentemente todos los datos del médico, incluyendo consultas y pacientes asignados."
+  warningText="Si el médico tiene consultas, pacientes o informes asociados, será marcado como inactivo en lugar de eliminado. Si no tiene datos asociados, será eliminado permanentemente."
   confirmText="🗑️ Eliminar"
   cancelText="Cancelar"
   type="danger"
