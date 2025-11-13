@@ -81,6 +81,7 @@ export class EspecialidadesComponent implements OnInit {
       descripcion: ''
     };
     this.errorMessage = '';
+    this.saving = false; // Resetear estado de guardado
     this.showModal = true;
   }
 
@@ -88,12 +89,14 @@ export class EspecialidadesComponent implements OnInit {
     this.isEditing = true;
     this.especialidadData = { ...especialidad };
     this.errorMessage = '';
+    this.saving = false; // Resetear estado de guardado
     this.showModal = true;
   }
 
   closeModal() {
     this.showModal = false;
     this.errorMessage = '';
+    this.saving = false; // Resetear estado de guardado
     this.especialidadData = {
       nombre_especialidad: '',
       descripcion: ''
@@ -121,6 +124,7 @@ export class EspecialidadesComponent implements OnInit {
     this.especialidadService.createEspecialidad(this.especialidadData).subscribe({
       next: (response) => {
         if (response.success) {
+          this.saving = false; // Resetear antes de cerrar
           this.loadEspecialidades();
           this.closeModal();
         } else {
@@ -144,6 +148,7 @@ export class EspecialidadesComponent implements OnInit {
     this.especialidadService.updateEspecialidad(this.especialidadData.id!, this.especialidadData).subscribe({
       next: (response) => {
         if (response.success) {
+          this.saving = false; // Resetear antes de cerrar
           this.loadEspecialidades();
           this.closeModal();
         } else {
