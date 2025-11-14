@@ -19,6 +19,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   showPassword = false;
   isRateLimited = false;
   timeRemaining = 0;
+  currentYear = new Date().getFullYear();
   private countdownInterval: any;
 
   constructor(
