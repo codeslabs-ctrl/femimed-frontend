@@ -19,6 +19,10 @@
   RewriteCond %{REQUEST_URI} ^/assets/ [NC]
   RewriteRule ^ - [L]
   
+  # Excluir rutas de API del rewrite (deben ser proxyadas al backend)
+  RewriteCond %{REQUEST_URI} ^/api/ [NC]
+  RewriteRule ^ - [L]
+  
   # Para todas las demás rutas, redirigir a index.html (Angular SPA)
   RewriteRule ^ index.html [L]
 </IfModule>
