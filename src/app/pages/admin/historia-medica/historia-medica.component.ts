@@ -205,7 +205,8 @@ import { Patient } from '../../../models/patient.model';
                       type="button" 
                       class="btn-delete" 
                       (click)="eliminarArchivo(archivo)" 
-                      title="Eliminar">
+                      title="Eliminar"
+                      *ngIf="esEditable">
                       <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
                       </svg>
@@ -230,11 +231,18 @@ import { Patient } from '../../../models/patient.model';
               </button>
             </div>
 
-            <!-- Componente para subir archivos -->
+            <!-- Componente para subir archivos - Solo visible si es editable -->
             <app-file-upload 
+              *ngIf="esEditable"
               [historiaId]="historiaData?.id || 0"
               (filesUpdated)="onArchivosSubidos($event)">
             </app-file-upload>
+
+            <!-- Mensaje cuando no es editable -->
+            <div *ngIf="!esEditable" class="readonly-archivos-message">
+              <i class="fas fa-info-circle"></i>
+              <p>No puede agregar archivos a esta historia médica. Solo el médico que creó la historia puede agregar archivos anexos.</p>
+            </div>
           </div>
 
           <!-- Botones de acción -->
@@ -611,6 +619,30 @@ import { Patient } from '../../../models/patient.model';
       color: #92400e;
       font-size: 0.875rem;
       margin: 0 0 1rem 0;
+    }
+
+    .readonly-archivos-message {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .readonly-archivos-message i {
+      font-size: 1.25rem;
+      color: #f59e0b;
+      flex-shrink: 0;
+    }
+
+    .readonly-archivos-message p {
+      color: #92400e;
+      font-size: 0.875rem;
+      margin: 0;
+      line-height: 1.5;
     }
 
     .form-section {
@@ -1304,7 +1336,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.actualizarEstadoConsulta('completada');
           
           alert('✅ Historia médica actualizada exitosamente');
-          this.router.navigate(['/admin/consultas']);
+          this.router.navigate(['/patients']);
         } else {
           alert('❌ Error al actualizar la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido'));
         }

@@ -488,8 +488,34 @@ export class FileUploadComponent implements OnInit {
       },
       error: (error) => {
         this.errorHandler.logError(error, 'subir archivos');
-        this.errorMessage = 'Error al subir los archivos';
+        
+        // Extraer mensaje de error específico del backend
+        let errorMessage = 'Error al subir los archivos';
+        if (error?.status === 403) {
+          if (error?.error?.error?.message) {
+            errorMessage = error.error.error.message;
+          } else if (error?.error?.message) {
+            errorMessage = error.error.message;
+          } else {
+            errorMessage = 'No tiene permisos para subir archivos a esta historia médica.';
+          }
+        } else if (error?.status === 400) {
+          if (error?.error?.error?.message) {
+            errorMessage = error.error.error.message;
+          } else if (error?.error?.message) {
+            errorMessage = error.error.message;
+          }
+        } else {
+          errorMessage = this.errorHandler.getSafeErrorMessage(error, 'subir archivos');
+        }
+        
+        this.errorMessage = errorMessage;
         this.isUploading = false;
+        
+        // Mostrar alert para errores de permisos para que el usuario lo vea claramente
+        if (error?.status === 403) {
+          alert(`⚠️ ${errorMessage}`);
+        }
       }
     });
   }
