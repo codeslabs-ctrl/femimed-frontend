@@ -304,10 +304,18 @@ export class InformeMedicoFormComponent implements OnInit {
       // Usar getRawValue() para obtener valores incluso de controles deshabilitados
       const datosFormulario = this.informeForm.getRawValue();
       
-      if (this.esEdicion && this.informeId) {
-        this.actualizarInforme(datosFormulario);
-      } else {
-        this.crearInforme(datosFormulario);
+      try {
+        if (this.esEdicion && this.informeId) {
+          this.actualizarInforme(datosFormulario);
+        } else {
+          this.crearInforme(datosFormulario);
+        }
+      } catch (innerError) {
+        // Si hay un error al intentar crear/actualizar, resetear el flag
+        console.error('❌ Error crítico al intentar guardar:', innerError);
+        this.guardando = false;
+        this.error = 'Error crítico al guardar el informe. Por favor, intenta de nuevo.';
+        alert('❌ Error crítico al guardar el informe. Por favor, intenta de nuevo.');
       }
     }
   }
@@ -356,16 +364,27 @@ export class InformeMedicoFormComponent implements OnInit {
       error: (error) => {
         this.errorHandler.logError(error, 'crear informe médico');
         this.error = 'Error creando el informe médico';
-        this.guardando = false;
         
         // Log temporal para debugging del error
         console.log('❌ Error completo del backend:', error);
         console.log('❌ Error body:', error.error);
         console.log('❌ Error message:', error.message);
+        console.log('❌ Error status:', error.status);
         
-        // Mostrar alert con mensaje seguro
-        const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
-        alert(safeMessage);
+        // Si es un error 429 (rate limit), mostrar mensaje específico
+        if (error.status === 429) {
+          const rateLimitMessage = error.error?.message || 
+            error.error?.error?.message || 
+            'Demasiados intentos. Por favor, espera unos minutos antes de intentar nuevamente.';
+          alert(`⚠️ ${rateLimitMessage}`);
+        } else {
+          // Mostrar alert con mensaje seguro para otros errores
+          const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
+          alert(safeMessage);
+        }
+        
+        // SIEMPRE resetear el flag guardando, incluso en caso de error
+        this.guardando = false;
       }
     });
   }
@@ -383,12 +402,27 @@ export class InformeMedicoFormComponent implements OnInit {
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({
       next: (response) => {
+        this.guardando = false; // Resetear flag antes de navegar
         alert('Informe médico actualizado exitosamente');
         this.router.navigate(['/admin/informes-medicos']);
       },
       error: (error) => {
         console.error('Error actualizando informe:', error);
+        console.error('Error status:', error.status);
         this.error = 'Error actualizando el informe médico';
+        
+        // Si es un error 429 (rate limit), mostrar mensaje específico
+        if (error.status === 429) {
+          const rateLimitMessage = error.error?.message || 
+            error.error?.error?.message || 
+            'Demasiados intentos. Por favor, espera unos minutos antes de intentar nuevamente.';
+          alert(`⚠️ ${rateLimitMessage}`);
+        } else {
+          const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar informe médico');
+          alert(safeMessage);
+        }
+        
+        // SIEMPRE resetear el flag guardando, incluso en caso de error
         this.guardando = false;
       }
     });
