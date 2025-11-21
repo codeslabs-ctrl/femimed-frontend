@@ -8,6 +8,7 @@ import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { DateService } from '../../../services/date.service';
 import { ConsultaFormData } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
@@ -514,7 +515,8 @@ export class NuevaConsultaComponent implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private dateService: DateService
   ) {}
 
   ngOnInit(): void {
@@ -667,18 +669,21 @@ export class NuevaConsultaComponent implements OnInit {
     }
     
     // Validar que la fecha sea futura (manejo de zona horaria)
-    const fechaConsulta = new Date(this.consultaForm.fecha_pautada + 'T00:00:00.000Z'); // Forzar UTC
-    const fechaActual = new Date();
-    fechaActual.setUTCHours(0, 0, 0, 0); // Usar UTC para evitar problemas de zona horaria
+    // Validar que la fecha sea hoy o futura usando zona horaria de Venezuela
+    const fechaConsultaStr = this.consultaForm.fecha_pautada; // Formato: YYYY-MM-DD
     
     // Verificar que la fecha sea válida
-    if (isNaN(fechaConsulta.getTime())) {
+    if (!this.dateService.isValidDate(fechaConsultaStr)) {
       alert('⚠️ Fecha inválida\n\nPor favor, seleccione una fecha válida.');
       return;
     }
     
-    if (fechaConsulta < fechaActual) {
-      alert('⚠️ Fecha inválida\n\nLa fecha de la consulta debe ser futura (posterior a hoy).');
+    // Obtener fecha actual en zona horaria de Venezuela (formato YYYY-MM-DD)
+    const fechaHoyVenezuela = this.dateService.getCurrentDateISO();
+    
+    // Comparar fechas en formato YYYY-MM-DD (comparación de strings funciona correctamente)
+    if (fechaConsultaStr < fechaHoyVenezuela) {
+      alert('⚠️ Fecha inválida\n\nLa fecha de la consulta debe ser hoy o una fecha futura. No se pueden programar consultas en fechas pasadas.');
       return;
     }
     
