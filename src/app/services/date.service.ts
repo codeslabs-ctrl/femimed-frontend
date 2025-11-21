@@ -128,15 +128,24 @@ export class DateService {
 
   /**
    * Obtiene la fecha actual en formato ISO para la zona horaria de Venezuela
-   * @returns Fecha actual en formato ISO
+   * @returns Fecha actual en formato ISO (YYYY-MM-DD)
    */
   getCurrentDateISO(): string {
     const now = new Date();
-    // Ajustar a la zona horaria de Venezuela (UTC-4)
-    const venezuelaOffset = -4 * 60; // -4 horas en minutos
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const venezuelaTime = new Date(utc + (venezuelaOffset * 60000));
-    return venezuelaTime.toISOString().split('T')[0];
+    // Usar toLocaleDateString con timeZone para obtener la fecha correcta en Venezuela
+    // 'en-CA' da formato YYYY-MM-DD que es lo que necesitamos
+    const fechaHoyVenezuela = now.toLocaleDateString('en-CA', { 
+      timeZone: this.timezone || 'America/Caracas' 
+    });
+    
+    console.log('📅 [DateService] getCurrentDateISO:', {
+      fechaHoyVenezuela,
+      fechaActualUTC: now.toISOString(),
+      fechaActualLocal: now.toLocaleString('es-VE', { timeZone: this.timezone || 'America/Caracas' }),
+      timezone: this.timezone || 'America/Caracas'
+    });
+    
+    return fechaHoyVenezuela;
   }
 
   /**
