@@ -229,7 +229,7 @@
                   <span>Ver</span>
                 </button>
                 <button 
-                  *ngIf="!consulta.fecha_pago"
+                  *ngIf="!consulta.fecha_pago && currentUser?.rol !== 'finanzas'"
                   class="action-btn btn-success" 
                   (click)="marcarComoPagada(consulta)" 
                   title="Marcar consulta como pagada">
@@ -536,7 +536,7 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="cerrarModalDetalles()">Cerrar</button>
         <button 
-          *ngIf="!consultaSeleccionada?.fecha_pago"
+          *ngIf="!consultaSeleccionada?.fecha_pago && currentUser?.rol !== 'finanzas'"
           class="btn btn-success" 
           (click)="marcarComoPagada(consultaSeleccionada!); cerrarModalDetalles()">
           <i class="fas fa-check"></i>

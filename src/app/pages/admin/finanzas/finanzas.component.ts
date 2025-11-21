@@ -417,7 +417,7 @@ export class FinanzasComponent implements OnInit {
     return this.dateService.formatTime(timeString);
   }
 
-  formatCurrency(amount: number, currency: string = 'COP'): string {
+  formatCurrency(amount: number, currency: string = 'VES'): string {
     const currencyMap: { [key: string]: string } = {
       'VES': 'VES',
       'USD': 'USD', 
@@ -425,7 +425,7 @@ export class FinanzasComponent implements OnInit {
       'EUR': 'EUR'
     };
     
-    const currencyCode = currencyMap[currency] || 'COP';
+    const currencyCode = currencyMap[currency] || 'VES';
     
     return new Intl.NumberFormat('es-VE', {
       style: 'currency',
