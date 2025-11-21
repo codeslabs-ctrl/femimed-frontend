@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FinanzasService } from '../../../services/finanzas.service';
 import { AuthService } from '../../../services/auth.service';
 import { MedicoService } from '../../../services/medico.service';
@@ -67,7 +67,8 @@ export class FinanzasComponent implements OnInit {
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
     private dateService: DateService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -77,11 +78,22 @@ export class FinanzasComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       console.log('👤 Usuario actual:', user);
-      if (user?.rol !== 'finanzas') {
-        // Redirigir o mostrar error de acceso
-        console.error('Acceso denegado: Se requiere rol de finanzas');
+      
+      // Si el usuario es null (cerró sesión), redirigir al login
+      if (!user) {
+        console.log('🔐 Usuario no autenticado, redirigiendo a login');
+        this.router.navigate(['/login']);
         return;
       }
+      
+      // Si el usuario existe pero no tiene el rol correcto, redirigir al dashboard
+      if (user.rol !== 'finanzas' && user.rol !== 'administrador') {
+        console.error('Acceso denegado: Se requiere rol de finanzas o administrador. Rol actual:', user.rol);
+        this.router.navigate(['/dashboard']);
+        return;
+      }
+      
+      console.log('✅ Usuario autorizado para acceder al panel de finanzas');
     });
 
     // Cargar especialidades para mapeo
