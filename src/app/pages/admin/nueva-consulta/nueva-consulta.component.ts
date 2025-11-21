@@ -672,8 +672,15 @@ export class NuevaConsultaComponent implements OnInit {
     // Validar que la fecha sea hoy o futura usando zona horaria de Venezuela
     const fechaConsultaStr = this.consultaForm.fecha_pautada; // Formato: YYYY-MM-DD
     
+    console.log('📅 [FRONTEND] Validación de fecha - Inicio:', {
+      fechaConsultaStr,
+      tipo: typeof fechaConsultaStr,
+      fechaFormulario: this.consultaForm.fecha_pautada
+    });
+    
     // Verificar que la fecha sea válida
     if (!this.dateService.isValidDate(fechaConsultaStr)) {
+      console.error('❌ [FRONTEND] Fecha inválida detectada:', fechaConsultaStr);
       alert('⚠️ Fecha inválida\n\nPor favor, seleccione una fecha válida.');
       return;
     }
@@ -681,11 +688,27 @@ export class NuevaConsultaComponent implements OnInit {
     // Obtener fecha actual en zona horaria de Venezuela (formato YYYY-MM-DD)
     const fechaHoyVenezuela = this.dateService.getCurrentDateISO();
     
+    console.log('📅 [FRONTEND] Comparación de fechas:', {
+      fechaConsultaStr,
+      fechaHoyVenezuela,
+      fechaActualUTC: new Date().toISOString(),
+      fechaActualLocal: new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas' }),
+      comparacion: fechaConsultaStr < fechaHoyVenezuela ? 'MENOR (INVÁLIDA)' : 'MAYOR O IGUAL (VÁLIDA)',
+      esValida: fechaConsultaStr >= fechaHoyVenezuela
+    });
+    
     // Comparar fechas en formato YYYY-MM-DD (comparación de strings funciona correctamente)
     if (fechaConsultaStr < fechaHoyVenezuela) {
+      console.error('❌ [FRONTEND] Fecha rechazada - Es pasada:', {
+        fechaConsulta: fechaConsultaStr,
+        fechaHoy: fechaHoyVenezuela,
+        diferencia: fechaConsultaStr < fechaHoyVenezuela
+      });
       alert('⚠️ Fecha inválida\n\nLa fecha de la consulta debe ser hoy o una fecha futura. No se pueden programar consultas en fechas pasadas.');
       return;
     }
+    
+    console.log('✅ [FRONTEND] Fecha validada correctamente, enviando al backend...');
     
     if (!this.consultaForm.hora_pautada) {
       alert('⚠️ Hora requerida\n\nPor favor, seleccione una hora para la consulta.');
@@ -693,6 +716,17 @@ export class NuevaConsultaComponent implements OnInit {
     }
 
     this.isSubmitting = true;
+
+    console.log('📤 [FRONTEND] Enviando datos de consulta al backend:', {
+      paciente_id: this.consultaForm.paciente_id,
+      medico_id: this.consultaForm.medico_id,
+      fecha_pautada: this.consultaForm.fecha_pautada,
+      hora_pautada: this.consultaForm.hora_pautada,
+      motivo_consulta: this.consultaForm.motivo_consulta,
+      tipo_consulta: this.consultaForm.tipo_consulta,
+      prioridad: this.consultaForm.prioridad,
+      datosCompletos: this.consultaForm
+    });
 
     this.consultaService.createConsulta(this.consultaForm).subscribe({
       next: (response) => {
