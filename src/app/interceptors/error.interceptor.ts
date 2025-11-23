@@ -14,6 +14,14 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      // Excluir la ruta de médicos por especialidad del interceptor (se maneja en el componente)
+      const isMedicosByEspecialidad = req.url.includes('/medicos/by-especialidad/');
+      
+      if (isMedicosByEspecialidad) {
+        // Para esta ruta, solo propagar el error sin logging ni manejo
+        return throwError(() => error);
+      }
+
       console.log('🔍 ErrorInterceptor: Error detectado', {
         url: req.url,
         status: error.status,
