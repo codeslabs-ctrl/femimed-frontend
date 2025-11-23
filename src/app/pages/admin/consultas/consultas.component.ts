@@ -196,7 +196,7 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Cancelar</span>
                     </button>
                     <button 
-                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
+                      *ngIf="isConsultaCompletada(consulta) && canFinalizarConsulta()"
                       class="action-btn btn-complete" 
                       (click)="finalizarConsulta(consulta)" 
                       title="Finalizar">
@@ -289,7 +289,7 @@ import { Medico } from '../../../services/medico.service';
                 Cancelar
               </button>
               <button 
-                *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
+                *ngIf="isConsultaCompletada(consulta) && canFinalizarConsulta()"
                 class="action-btn success-btn" 
                 (click)="finalizarConsulta(consulta)" 
                 title="Finalizar consulta">
@@ -1596,9 +1596,16 @@ export class ConsultasComponent implements OnInit {
   // Lista de médicos para filtros (ya declarado arriba)
 
   ngOnInit(): void {
-    // Cargar usuario actual
+    // Cargar usuario actual - obtener inmediatamente y también suscribirse
+    this.currentUser = this.authService.getCurrentUser();
+    console.log('🔍 Usuario actual cargado en ngOnInit:', this.currentUser);
+    console.log('🔍 Rol del usuario:', this.currentUser?.rol);
+    
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      console.log('🔍 Usuario actualizado desde observable:', user);
+      console.log('🔍 Rol del usuario actualizado:', user?.rol);
+      this.cdr.detectChanges(); // Forzar detección de cambios
     });
     
     this.loadConsultas();
@@ -1639,8 +1646,17 @@ export class ConsultasComponent implements OnInit {
             // Si especialidad_nombre contiene la descripción, mapear al nombre correcto
             especialidad_nombre: this.getEspecialidadNombre(consulta)
           }));
+          
+          // Debug: verificar consultas con estado 'completada'
+          const consultasCompletadas = this.consultas.filter(c => c.estado_consulta === 'completada');
+          console.log('🔍 Consultas con estado "completada":', consultasCompletadas.length);
+          consultasCompletadas.forEach(c => {
+            console.log('🔍 Consulta completada - ID:', c.id, 'Estado:', c.estado_consulta, 'Usuario rol:', this.currentUser?.rol);
+          });
+          
           this.totalPages = 1; // Simplificado por ahora
           this.loading = false;
+          this.cdr.detectChanges(); // Forzar detección de cambios
         },
         error: (error) => {
           this.errorHandler.logError(error, 'cargar consultas');
@@ -1799,7 +1815,22 @@ export class ConsultasComponent implements OnInit {
   }
 
   canFinalizarConsulta(): boolean {
-    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+    // Obtener usuario actual si no está disponible
+    if (!this.currentUser) {
+      this.currentUser = this.authService.getCurrentUser();
+    }
+    
+    const canFinalizar = this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+    console.log('🔍 canFinalizarConsulta() - Usuario:', this.currentUser?.rol, 'Resultado:', canFinalizar);
+    return canFinalizar;
+  }
+
+  isConsultaCompletada(consulta: ConsultaWithDetails): boolean {
+    // Verificar si la consulta está en estado 'completada' (case-insensitive)
+    const estado = consulta.estado_consulta?.toLowerCase().trim();
+    const isCompletada = estado === 'completada';
+    console.log('🔍 isConsultaCompletada() - Estado:', consulta.estado_consulta, 'Normalizado:', estado, 'Resultado:', isCompletada);
+    return isCompletada;
   }
 
   canReagendarConsulta(): boolean {

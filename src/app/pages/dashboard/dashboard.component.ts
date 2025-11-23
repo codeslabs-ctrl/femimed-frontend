@@ -146,7 +146,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 📝 Historia Paciente
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
-                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()">
+                      *ngIf="isConsultaCompletada(consulta) && canFinalizarConsulta()">
                 ✅ Finalizar
               </button>
               <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"
@@ -1727,7 +1727,8 @@ export class DashboardComponent implements OnInit {
       'cancelada': 'Cancelada',
       'finalizada': 'Finalizada',
       'reagendada': 'Reagendada',
-      'no_asistio': 'No Asistió'
+      'no_asistio': 'No Asistió',
+      'completada': 'Completada'
     };
     return estados[estado] || estado;
   }
@@ -1777,6 +1778,13 @@ export class DashboardComponent implements OnInit {
 
   canFinalizarConsulta(): boolean {
     return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+  }
+
+  isConsultaCompletada(consulta: ConsultaWithDetails): boolean {
+    // Verificar si la consulta está en estado 'completada' (case-insensitive)
+    const estado = consulta.estado_consulta?.toLowerCase().trim();
+    const isCompletada = estado === 'completada';
+    return isCompletada;
   }
 
   canReagendarConsulta(): boolean {

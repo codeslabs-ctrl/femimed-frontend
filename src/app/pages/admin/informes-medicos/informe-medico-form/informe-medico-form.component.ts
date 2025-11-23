@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -7,6 +7,7 @@ import { InformeMedicoService } from '../../../../services/informe-medico.servic
 import { PatientService } from '../../../../services/patient.service';
 import { MedicoService } from '../../../../services/medico.service';
 import { EspecialidadService } from '../../../../services/especialidad.service';
+import { HistoricoService } from '../../../../services/historico.service';
 import { ContextualDataService, DatosContextuales } from '../../../../services/contextual-data.service';
 import { AuthService } from '../../../../services/auth.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
@@ -46,6 +47,9 @@ export class InformeMedicoFormComponent implements OnInit {
   // Filtros
   especialidadSeleccionada: number | null = null;
   medicosFiltrados: any[] = [];
+  medicosPorEspecialidad: any[] = [];
+  medicosConHistoria: any[] = [];
+  mensajeFiltroMedicos: string = '';
 
   // Datos contextuales
   datosContextuales: DatosContextuales | null = null;
@@ -77,9 +81,11 @@ export class InformeMedicoFormComponent implements OnInit {
     private patientService: PatientService,
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
+    private historicoService: HistoricoService,
     public contextualDataService: ContextualDataService,
     private authService: AuthService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private cdr: ChangeDetectorRef
   ) {
     this.informeForm = this.fb.group({
       titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -222,6 +228,11 @@ export class InformeMedicoFormComponent implements OnInit {
     // Inicializar valores de rich text editors
     this.contenidoValue = this.informe.contenido || '';
     this.observacionesValue = this.informe.observaciones || '';
+
+    // Si hay paciente seleccionado, cargar médicos con historia médica
+    if (this.informe.paciente_id) {
+      this.onPacienteSeleccionado();
+    }
   }
 
 
@@ -788,7 +799,63 @@ export class InformeMedicoFormComponent implements OnInit {
    * Maneja el cambio de paciente
    */
   onPacienteSeleccionado(): void {
-    this.cargarDatosContextuales();
+    const pacienteId = this.informeForm.get('paciente_id')?.value;
+    
+    if (pacienteId) {
+      // Cargar médicos que tienen historia médica con este paciente
+      this.historicoService.getMedicosConHistoriaByPaciente(pacienteId).subscribe({
+        next: (response: any) => {
+          this.medicosConHistoria = response.data || [];
+          
+          // Si hay especialidad seleccionada, recargar médicos de esa especialidad para asegurar datos actualizados
+          if (this.especialidadSeleccionada) {
+            this.recargarMedicosPorEspecialidad();
+          } else {
+            this.aplicarFiltrosMedicos();
+          }
+          
+          this.cargarDatosContextuales();
+        },
+        error: (error: any) => {
+          console.error('Error cargando médicos con historia médica:', error);
+          this.medicosConHistoria = [];
+          
+          // Si hay especialidad seleccionada, recargar médicos de esa especialidad
+          if (this.especialidadSeleccionada) {
+            this.recargarMedicosPorEspecialidad();
+          } else {
+            this.aplicarFiltrosMedicos();
+          }
+          
+          this.cargarDatosContextuales();
+        }
+      });
+    } else {
+      this.medicosConHistoria = [];
+      this.aplicarFiltrosMedicos();
+    }
+  }
+
+  /**
+   * Recarga los médicos por especialidad y luego aplica los filtros
+   */
+  private recargarMedicosPorEspecialidad(): void {
+    if (!this.especialidadSeleccionada) {
+      this.aplicarFiltrosMedicos();
+      return;
+    }
+
+    this.medicoService.getMedicosByEspecialidad(this.especialidadSeleccionada).subscribe({
+      next: (response: any) => {
+        this.medicosPorEspecialidad = response.data || [];
+        this.aplicarFiltrosMedicos();
+      },
+      error: (error: any) => {
+        console.error('Error recargando médicos por especialidad:', error);
+        this.medicosPorEspecialidad = [];
+        this.aplicarFiltrosMedicos();
+      }
+    });
   }
 
   /**
@@ -806,7 +873,8 @@ export class InformeMedicoFormComponent implements OnInit {
     if (especialidadId) {
       this.medicoService.getMedicosByEspecialidad(especialidadId).subscribe({
         next: (response: any) => {
-          this.medicosFiltrados = response.data || [];
+          this.medicosPorEspecialidad = response.data || [];
+          this.aplicarFiltrosMedicos();
           // Limpiar selección de médico
           this.informeForm.patchValue({ medico_id: '' });
           // Actualizar estado disabled del control
@@ -814,14 +882,117 @@ export class InformeMedicoFormComponent implements OnInit {
         },
         error: (error: any) => {
           console.error('Error cargando médicos por especialidad:', error);
-          this.medicosFiltrados = [];
+          this.medicosPorEspecialidad = [];
+          this.aplicarFiltrosMedicos();
           this.actualizarEstadoControlMedico();
         }
       });
     } else {
-      this.medicosFiltrados = [];
+      this.medicosPorEspecialidad = [];
+      this.aplicarFiltrosMedicos();
       this.informeForm.patchValue({ medico_id: '' });
       this.actualizarEstadoControlMedico();
+    }
+  }
+
+  /**
+   * Aplica los filtros de especialidad e historia médica para obtener los médicos disponibles
+   */
+  aplicarFiltrosMedicos(): void {
+    const pacienteId = this.informeForm.get('paciente_id')?.value;
+    const especialidadId = this.especialidadSeleccionada;
+    
+    // Si no hay especialidad seleccionada, no hay médicos disponibles
+    if (!especialidadId) {
+      this.medicosFiltrados = [];
+      this.mensajeFiltroMedicos = '';
+      return;
+    }
+
+    // Si hay especialidad pero no hay médicos por especialidad cargados, recargarlos
+    if (especialidadId && this.medicosPorEspecialidad.length === 0) {
+      this.recargarMedicosPorEspecialidad();
+      return;
+    }
+
+    // Continuar con la aplicación de filtros
+    this.continuarAplicarFiltros(pacienteId);
+  }
+
+  /**
+   * Continúa aplicando los filtros después de asegurar que los datos están cargados
+   */
+  private continuarAplicarFiltros(pacienteId: any): void {
+    // Si no hay paciente seleccionado, mostrar solo médicos de la especialidad
+    if (!pacienteId) {
+      this.medicosFiltrados = this.medicosPorEspecialidad;
+      this.mensajeFiltroMedicos = '';
+      return;
+    }
+
+    // Intersectar: médicos que pertenecen a la especialidad Y tienen historia médica con el paciente
+    // Normalizar IDs a números para comparación correcta
+    const medicosIdsConHistoria = new Set(
+      this.medicosConHistoria.map(m => {
+        const id = m.medico_id || m.id || m.medico?.id;
+        return id ? Number(id) : null;
+      }).filter(id => id !== null)
+    );
+
+    console.log('🔍 Depuración de filtros:');
+    console.log('  - Médicos por especialidad:', this.medicosPorEspecialidad.length, this.medicosPorEspecialidad);
+    console.log('  - Médicos con historia:', this.medicosConHistoria.length, this.medicosConHistoria);
+    console.log('  - IDs con historia (Set):', Array.from(medicosIdsConHistoria));
+
+    this.medicosFiltrados = this.medicosPorEspecialidad.filter(medico => {
+      const medicoId = Number(medico.id);
+      const tieneHistoria = medicosIdsConHistoria.has(medicoId);
+      console.log(`  - Médico ID ${medicoId} (${medico.nombres}): ${tieneHistoria ? '✓' : '✗'}`);
+      return tieneHistoria;
+    });
+
+    console.log('  - Médicos filtrados resultantes:', this.medicosFiltrados.length, this.medicosFiltrados);
+
+    // Actualizar estado del control médico (habilitar/deshabilitar según disponibilidad)
+    this.actualizarEstadoControlMedico();
+
+    // Forzar detección de cambios para actualizar el select
+    this.cdr.detectChanges();
+
+    // Generar mensaje informativo
+    this.generarMensajeFiltro();
+  }
+
+  /**
+   * Genera mensaje informativo según las condiciones de filtrado
+   */
+  generarMensajeFiltro(): void {
+    const pacienteId = this.informeForm.get('paciente_id')?.value;
+    const especialidadId = this.especialidadSeleccionada;
+    
+    if (!especialidadId) {
+      this.mensajeFiltroMedicos = '';
+      return;
+    }
+
+    if (!pacienteId) {
+      if (this.medicosPorEspecialidad.length === 0) {
+        this.mensajeFiltroMedicos = '⚠️ No hay médicos disponibles para la especialidad seleccionada.';
+      } else {
+        this.mensajeFiltroMedicos = '';
+      }
+      return;
+    }
+
+    // Ambas condiciones deben cumplirse
+    if (this.medicosPorEspecialidad.length === 0) {
+      this.mensajeFiltroMedicos = '⚠️ No hay médicos disponibles para la especialidad seleccionada.';
+    } else if (this.medicosConHistoria.length === 0) {
+      this.mensajeFiltroMedicos = '⚠️ El paciente seleccionado no tiene historia médica con ningún médico. Debe crear primero una historia médica con un médico de esta especialidad.';
+    } else if (this.medicosFiltrados.length === 0) {
+      this.mensajeFiltroMedicos = '⚠️ No hay médicos disponibles que cumplan ambas condiciones: pertenecer a la especialidad seleccionada y tener historia médica con el paciente seleccionado.';
+    } else {
+      this.mensajeFiltroMedicos = '';
     }
   }
 
