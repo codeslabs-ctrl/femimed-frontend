@@ -125,10 +125,6 @@
                 <i class="fas fa-exclamation-triangle"></i>
                 {{ mensajeFiltroMedicos }}
               </div>
-              <div *ngIf="!esUsuarioMedico && !mensajeFiltroMedicos && especialidadSeleccionada && informeForm.get('paciente_id')?.value && medicosFiltrados.length > 0" class="form-help form-success">
-                <i class="fas fa-check-circle"></i>
-                Se encontraron {{ medicosFiltrados.length }} médico(s) disponible(s) que cumplen las condiciones requeridas.
-              </div>
             </div>
           </div>
 

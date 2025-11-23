@@ -50,6 +50,8 @@ export class InformeMedicoFormComponent implements OnInit {
   medicosPorEspecialidad: any[] = [];
   medicosConHistoria: any[] = [];
   mensajeFiltroMedicos: string = '';
+  especialidadCargada: number | null = null; // Para evitar recargas innecesarias
+  cargandoMedicos: boolean = false; // Para evitar llamadas duplicadas
 
   // Datos contextuales
   datosContextuales: DatosContextuales | null = null;
@@ -845,14 +847,68 @@ export class InformeMedicoFormComponent implements OnInit {
       return;
     }
 
+    // Evitar recargas innecesarias: si ya están cargados para esta especialidad, no recargar
+    if (this.especialidadCargada === this.especialidadSeleccionada && this.medicosPorEspecialidad.length > 0) {
+      console.log('✅ Médicos ya cargados para esta especialidad, usando cache');
+      this.aplicarFiltrosMedicos();
+      return;
+    }
+
+    // Evitar llamadas duplicadas - usar timeout para permitir que se complete la anterior
+    if (this.cargandoMedicos) {
+      console.log('⏳ Ya se están cargando médicos, esperando...');
+      // Esperar un momento y reintentar
+      setTimeout(() => {
+        if (!this.cargandoMedicos) {
+          this.recargarMedicosPorEspecialidad();
+        }
+      }, 500);
+      return;
+    }
+
+    this.cargandoMedicos = true;
     this.medicoService.getMedicosByEspecialidad(this.especialidadSeleccionada).subscribe({
       next: (response: any) => {
         this.medicosPorEspecialidad = response.data || [];
+        this.especialidadCargada = this.especialidadSeleccionada;
+        this.cargandoMedicos = false;
         this.aplicarFiltrosMedicos();
       },
       error: (error: any) => {
-        console.error('Error recargando médicos por especialidad:', error);
+        // Manejar error 429 (Too Many Requests) de forma silenciosa con retry
+        if (error?.status === 429) {
+          // Esperar un poco y reintentar una vez
+          setTimeout(() => {
+            if (this.especialidadSeleccionada && !this.cargandoMedicos) {
+              this.cargandoMedicos = true;
+              this.medicoService.getMedicosByEspecialidad(this.especialidadSeleccionada).subscribe({
+                next: (response: any) => {
+                  this.medicosPorEspecialidad = response.data || [];
+                  this.especialidadCargada = this.especialidadSeleccionada;
+                  this.cargandoMedicos = false;
+                  this.aplicarFiltrosMedicos();
+                },
+                error: (retryError: any) => {
+                  // Si falla el retry, usar cache si existe o dejar vacío
+                  this.medicosPorEspecialidad = this.medicosPorEspecialidad.length > 0 ? this.medicosPorEspecialidad : [];
+                  this.cargandoMedicos = false;
+                  this.aplicarFiltrosMedicos();
+                }
+              });
+            } else {
+              this.cargandoMedicos = false;
+            }
+          }, 1000);
+          return;
+        }
+        
+        // Para otros errores, solo loguear si no es 429
+        if (error?.status !== 429) {
+          console.error('Error recargando médicos por especialidad:', error);
+        }
         this.medicosPorEspecialidad = [];
+        this.especialidadCargada = null;
+        this.cargandoMedicos = false;
         this.aplicarFiltrosMedicos();
       }
     });
@@ -871,9 +927,30 @@ export class InformeMedicoFormComponent implements OnInit {
   onEspecialidadSeleccionada(): void {
     const especialidadId = this.especialidadSeleccionada;
     if (especialidadId) {
+      // Limpiar cache si cambió la especialidad
+      if (this.especialidadCargada !== especialidadId) {
+        this.especialidadCargada = null;
+        this.medicosPorEspecialidad = [];
+      }
+
+      // Evitar llamadas duplicadas - usar timeout para permitir que se complete la anterior
+      if (this.cargandoMedicos) {
+        console.log('⏳ Ya se están cargando médicos, esperando...');
+        // Esperar un momento y reintentar
+        setTimeout(() => {
+          if (!this.cargandoMedicos) {
+            this.onEspecialidadSeleccionada();
+          }
+        }, 500);
+        return;
+      }
+
+      this.cargandoMedicos = true;
       this.medicoService.getMedicosByEspecialidad(especialidadId).subscribe({
         next: (response: any) => {
           this.medicosPorEspecialidad = response.data || [];
+          this.especialidadCargada = especialidadId;
+          this.cargandoMedicos = false;
           this.aplicarFiltrosMedicos();
           // Limpiar selección de médico
           this.informeForm.patchValue({ medico_id: '' });
@@ -881,14 +958,50 @@ export class InformeMedicoFormComponent implements OnInit {
           this.actualizarEstadoControlMedico();
         },
         error: (error: any) => {
-          console.error('Error cargando médicos por especialidad:', error);
+          // Manejar error 429 (Too Many Requests) de forma silenciosa con retry
+          if (error?.status === 429) {
+            // Esperar un poco y reintentar una vez
+            setTimeout(() => {
+              if (especialidadId && !this.cargandoMedicos) {
+                this.cargandoMedicos = true;
+                this.medicoService.getMedicosByEspecialidad(especialidadId).subscribe({
+                  next: (response: any) => {
+                    this.medicosPorEspecialidad = response.data || [];
+                    this.especialidadCargada = especialidadId;
+                    this.cargandoMedicos = false;
+                    this.aplicarFiltrosMedicos();
+                    this.informeForm.patchValue({ medico_id: '' });
+                    this.actualizarEstadoControlMedico();
+                  },
+                  error: (retryError: any) => {
+                    // Si falla el retry, usar cache si existe o dejar vacío
+                    this.medicosPorEspecialidad = this.medicosPorEspecialidad.length > 0 ? this.medicosPorEspecialidad : [];
+                    this.cargandoMedicos = false;
+                    this.aplicarFiltrosMedicos();
+                    this.actualizarEstadoControlMedico();
+                  }
+                });
+              } else {
+                this.cargandoMedicos = false;
+              }
+            }, 1000);
+            return;
+          }
+          
+          // Para otros errores, solo loguear si no es 429
+          if (error?.status !== 429) {
+            console.error('Error cargando médicos por especialidad:', error);
+          }
           this.medicosPorEspecialidad = [];
+          this.especialidadCargada = null;
+          this.cargandoMedicos = false;
           this.aplicarFiltrosMedicos();
           this.actualizarEstadoControlMedico();
         }
       });
     } else {
       this.medicosPorEspecialidad = [];
+      this.especialidadCargada = null;
       this.aplicarFiltrosMedicos();
       this.informeForm.patchValue({ medico_id: '' });
       this.actualizarEstadoControlMedico();
