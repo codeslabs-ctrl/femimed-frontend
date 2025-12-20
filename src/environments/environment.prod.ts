@@ -1,13 +1,15 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.femimed.com/api/v1',
-  appName: 'FemiMed Dashboard',
+  // URL del backend en producción: usa proxy reverso (sin puerto)
+  // El proxy Apache/Nginx maneja HTTPS en puerto 443 y redirige a HTTP localhost:3001
+  apiUrl: 'https://api.demomed.codes-labs.com/api/v1',
+  appName: 'DemoMed Dashboard',
   version: '1.0.0',
   pagination: {
     defaultPageSize: 10,
     maxPageSize: 100
   },
-  dateFormat: 'es-ES',
-  currency: 'USD',
-  timezone: 'America/Mexico_City'
+  dateFormat: 'es-VE',
+  currency: 'VES',
+  timezone: 'America/Caracas'
 };

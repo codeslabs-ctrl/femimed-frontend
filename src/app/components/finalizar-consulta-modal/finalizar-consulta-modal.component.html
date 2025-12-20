@@ -1,0 +1,141 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Finalizar Consulta con Servicios</h3>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="consulta-info" *ngIf="consultaInfo">
+        <h4>{{ consultaInfo.paciente_nombre }}</h4>
+        <p><strong>Fecha:</strong> {{ formatDate(consultaInfo.fecha_pautada) }}</p>
+        <p><strong>Hora:</strong> {{ formatTime(consultaInfo.hora_pautada) }}</p>
+        <p><strong>Especialidad:</strong> {{ consultaInfo.especialidad_nombre }}</p>
+      </div>
+
+      <div class="servicios-section">
+        <h4>Servicios Ofrecidos</h4>
+        <div class="servicios-list" *ngIf="serviciosDisponibles.length > 0">
+          <div class="servicio-item" *ngFor="let servicio of serviciosDisponibles">
+            <div class="servicio-info">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [checked]="isServicioSeleccionado(servicio.id)"
+                  (change)="toggleServicio(servicio)"
+                />
+                <span class="checkmark"></span>
+                <div class="servicio-details">
+                  <div class="servicio-nombre">{{ servicio.nombre_servicio }}</div>
+                  <div class="servicio-precio">Precio base: ${{ servicio.monto_base | number:'1.2-2' }} {{ servicio.moneda }}</div>
+                </div>
+              </label>
+            </div>
+            
+            <div class="servicio-form" *ngIf="isServicioSeleccionado(servicio.id)">
+              <div class="precio-base-info">
+                <small>Precio base: ${{ getServicioSeleccionado(servicio.id).monto_base | number:'1.2-2' }} {{ getServicioSeleccionado(servicio.id).moneda }}</small>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Monto Real Pagado *</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="getServicioSeleccionado(servicio.id).monto_pagado"
+                    (input)="onMontoInput(servicio.id, $event)"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                  <small class="form-text text-muted">Puede ser diferente al precio base</small>
+                </div>
+                <div class="form-group">
+                  <label>Moneda *</label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="getServicioSeleccionado(servicio.id).moneda"
+                    (change)="onMonedaChange(servicio.id, $event)"
+                    required
+                  >
+                    <option value="VES">Bolívares (VES)</option>
+                    <option value="USD">Dólares (USD)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Observaciones</label>
+                <textarea
+                  class="form-control"
+                  [(ngModel)]="getServicioSeleccionado(servicio.id).observaciones"
+                  (input)="onObservacionesInput(servicio.id, $event)"
+                  placeholder="Observaciones adicionales (opcional)..."
+                  rows="2"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="no-servicios" *ngIf="serviciosDisponibles.length === 0">
+          <div class="no-servicios-icon">🏥</div>
+          <div class="no-servicios-title">No hay servicios disponibles</div>
+          <div class="no-servicios-description">
+            No se encontraron servicios para la especialidad de esta consulta.
+          </div>
+        </div>
+      </div>
+
+
+      <div class="resumen-section" *ngIf="serviciosSeleccionados.length > 0">
+        <h4>Resumen de Servicios</h4>
+        <div class="resumen-table">
+          <div class="resumen-header">
+            <div>Servicio</div>
+            <div>Monto</div>
+            <div>Moneda</div>
+            <div>Acciones</div>
+          </div>
+          <div class="resumen-row" *ngFor="let servicio of serviciosSeleccionados">
+            <div class="servicio-nombre">{{ servicio.servicio_nombre }}</div>
+            <div class="monto">${{ servicio.monto_pagado | number:'1.2-2' }}</div>
+            <div class="moneda">{{ servicio.moneda }}</div>
+            <div class="acciones">
+              <button 
+                class="btn-remove" 
+                (click)="removeServicio(servicio.servicio_id)"
+                title="Quitar servicio">
+                ❌
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="totales">
+          <div class="total-ves" *ngIf="totalVES > 0">
+            <strong>Total VES: ${{ totalVES | number:'1.2-2' }}</strong>
+          </div>
+          <div class="total-usd" *ngIf="totalUSD > 0">
+            <strong>Total USD: ${{ totalUSD | number:'1.2-2' }}</strong>
+          </div>
+          <div class="total-general" *ngIf="totalVES > 0 || totalUSD > 0">
+            <strong>Total General: ${{ (totalVES + totalUSD) | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-clear" (click)="closeModal()">Cancelar</button>
+      <button 
+        class="btn btn-success" 
+        (click)="finalizarConsulta()"
+        [disabled]="!canFinalizar() || isSubmitting">
+        <span *ngIf="isSubmitting" class="btn-icon">⏳</span>
+        <span *ngIf="!isSubmitting" class="btn-icon">✅</span>
+        <span class="btn-text">{{ isSubmitting ? 'Finalizando...' : 'Finalizar Consulta' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

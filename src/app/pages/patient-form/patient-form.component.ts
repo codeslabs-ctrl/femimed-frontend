@@ -3,606 +3,72 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
+import { AuthService } from '../../services/auth.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { Patient } from '../../models/patient.model';
+import { User } from '../../models/user.model';
 
 @Component({
   selector: 'app-patient-form',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
-  template: `
-    <div class="patient-form-page">
-      <div class="page-header">
-        <h1>{{ isEdit ? 'Editar Paciente' : 'Nuevo Paciente' }}</h1>
-        <a routerLink="/patients" class="btn btn-secondary">
-          ← Volver a Pacientes
-        </a>
-      </div>
-
-      <form class="patient-form" (ngSubmit)="onSubmit()" #patientForm="ngForm">
-        <div class="form-section">
-          <h3>Información Personal</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Nombres *</label>
-              <input 
-                type="text" 
-                class="form-input" 
-                [(ngModel)]="patient.nombres"
-                name="nombres"
-                required
-                #nombres="ngModel">
-              <div class="error-message" *ngIf="nombres.invalid && nombres.touched">
-                Los nombres son requeridos
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Apellidos *</label>
-              <input 
-                type="text" 
-                class="form-input" 
-                [(ngModel)]="patient.apellidos"
-                name="apellidos"
-                required
-                #apellidos="ngModel">
-              <div class="error-message" *ngIf="apellidos.invalid && apellidos.touched">
-                Los apellidos son requeridos
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Edad *</label>
-              <input 
-                type="number" 
-                class="form-input" 
-                [(ngModel)]="patient.edad"
-                name="edad"
-                required
-                min="0"
-                max="120"
-                #edad="ngModel">
-              <div class="error-message" *ngIf="edad.invalid && edad.touched">
-                La edad es requerida y debe ser válida
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Sexo *</label>
-              <select 
-                class="form-input" 
-                [(ngModel)]="patient.sexo"
-                name="sexo"
-                required
-                #sexo="ngModel">
-                <option value="">Seleccionar sexo</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Masculino">Masculino</option>
-              </select>
-              <div class="error-message" *ngIf="sexo.invalid && sexo.touched">
-                El sexo es requerido
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Información de Contacto</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Email *</label>
-              <input 
-                type="email" 
-                class="form-input" 
-                [(ngModel)]="patient.email"
-                name="email"
-                required
-                email
-                #email="ngModel">
-              <div class="error-message" *ngIf="email.invalid && email.touched">
-                El email es requerido y debe ser válido
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Teléfono *</label>
-              <input 
-                type="tel" 
-                class="form-input" 
-                [(ngModel)]="patient.telefono"
-                name="telefono"
-                required
-                #telefono="ngModel">
-              <div class="error-message" *ngIf="telefono.invalid && telefono.touched">
-                El teléfono es requerido
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Información Médica</h3>
-          <div class="form-group">
-            <label class="form-label">Motivo de Consulta *</label>
-            <div class="rich-text-editor">
-              <div class="editor-toolbar">
-                <button type="button" class="toolbar-btn" (click)="execCommand('bold')" title="Negrita">
-                  <strong>B</strong>
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('italic')" title="Cursiva">
-                  <em>I</em>
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('underline')" title="Subrayado">
-                  <u>U</u>
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('insertUnorderedList')" title="Lista">
-                  • Lista
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('insertOrderedList')" title="Lista numerada">
-                  1. Lista
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('formatBlock', 'h3')" title="Título">
-                  H3
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('formatBlock', 'p')" title="Párrafo">
-                  P
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('justifyLeft')" title="Alinear izquierda">
-                  ⬅
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('justifyCenter')" title="Centrar">
-                  ↔
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('justifyRight')" title="Alinear derecha">
-                  ➡
-                </button>
-              </div>
-              <div 
-                class="editor-content" 
-                contenteditable="true"
-                [innerHTML]="patient.motivo_consulta"
-                (input)="onMotivoChange($event)"
-                (blur)="onMotivoBlur()"
-                #motivoEditor
-                data-field="motivo_consulta"
-                data-placeholder="Describa el motivo de la consulta...">
-              </div>
-            </div>
-            <div class="error-message" *ngIf="motivoError">
-              El motivo de consulta es requerido
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Diagnóstico</label>
-            <div class="rich-text-editor">
-              <div class="editor-toolbar">
-                <button type="button" class="toolbar-btn" (click)="execCommand('bold', undefined, 'diagnostico')" title="Negrita">
-                  <strong>B</strong>
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('italic', undefined, 'diagnostico')" title="Cursiva">
-                  <em>I</em>
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('underline', undefined, 'diagnostico')" title="Subrayado">
-                  <u>U</u>
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('insertUnorderedList', undefined, 'diagnostico')" title="Lista">
-                  • Lista
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('insertOrderedList', undefined, 'diagnostico')" title="Lista numerada">
-                  1. Lista
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('formatBlock', 'h3', 'diagnostico')" title="Título">
-                  H3
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('formatBlock', 'p', 'diagnostico')" title="Párrafo">
-                  P
-                </button>
-              </div>
-              <div 
-                class="editor-content" 
-                contenteditable="true"
-                [innerHTML]="patient.diagnostico"
-                (input)="onDiagnosticoChange($event)"
-                #diagnosticoEditor
-                data-field="diagnostico"
-                data-placeholder="Diagnóstico médico...">
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Conclusiones</label>
-            <div class="rich-text-editor">
-              <div class="editor-toolbar">
-                <button type="button" class="toolbar-btn" (click)="execCommand('bold', undefined, 'conclusiones')" title="Negrita">
-                  <strong>B</strong>
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('italic', undefined, 'conclusiones')" title="Cursiva">
-                  <em>I</em>
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('underline', undefined, 'conclusiones')" title="Subrayado">
-                  <u>U</u>
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('insertUnorderedList', undefined, 'conclusiones')" title="Lista">
-                  • Lista
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('insertOrderedList', undefined, 'conclusiones')" title="Lista numerada">
-                  1. Lista
-                </button>
-                <div class="toolbar-separator"></div>
-                <button type="button" class="toolbar-btn" (click)="execCommand('formatBlock', 'h3', 'conclusiones')" title="Título">
-                  H3
-                </button>
-                <button type="button" class="toolbar-btn" (click)="execCommand('formatBlock', 'p', 'conclusiones')" title="Párrafo">
-                  P
-                </button>
-              </div>
-              <div 
-                class="editor-content" 
-                contenteditable="true"
-                [innerHTML]="patient.conclusiones"
-                (input)="onConclusionesChange($event)"
-                #conclusionesEditor
-                data-field="conclusiones"
-                data-placeholder="Conclusiones y recomendaciones...">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="error-message-container" *ngIf="errorMessage">
-          <div class="error-message">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-            {{ errorMessage }}
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button 
-            type="button" 
-            class="btn btn-secondary" 
-            (click)="onCancel()">
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            class="btn btn-primary"
-            [disabled]="patientForm.invalid || loading">
-            <span *ngIf="loading" class="spinner"></span>
-            {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
-          </button>
-        </div>
-      </form>
-
-      <div class="loading" *ngIf="loading && !isEdit">
-        <div class="spinner"></div>
-        <p>Cargando datos del paciente...</p>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .patient-form-page {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .page-header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 0;
-    }
-
-    .patient-form {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 2rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    }
-
-    .form-section {
-      margin-bottom: 2rem;
-    }
-
-    .form-section h3 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #1e293b;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #e5e7eb;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-    }
-
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: #374151;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      transition: border-color 0.2s ease;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .form-input.ng-invalid.ng-touched {
-      border-color: #ef4444;
-    }
-
-    .error-message {
-      color: #ef4444;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-    }
-
-    /* Rich Text Editor Styles */
-    .rich-text-editor {
-      border: 1px solid #d1d5db;
-      border-radius: 0.5rem;
-      overflow: hidden;
-      background: white;
-    }
-
-    .editor-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.5rem;
-      background: #F5F5F5;
-      border-bottom: 1px solid #E91E63;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-btn {
-      padding: 0.375rem 0.5rem;
-      border: 1px solid #E91E63;
-      background: white;
-      color: #E91E63;
-      border-radius: 0.25rem;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .toolbar-btn:hover {
-      background: #E91E63;
-      color: white;
-      transform: translateY(-1px);
-    }
-
-    .toolbar-btn:active {
-      transform: translateY(0);
-    }
-
-    .toolbar-separator {
-      width: 1px;
-      height: 20px;
-      background: #E91E63;
-      margin: 0 0.25rem;
-    }
-
-    .editor-content {
-      min-height: 120px;
-      padding: 1rem;
-      font-size: 0.875rem;
-      line-height: 1.6;
-      outline: none;
-      border: none;
-      background: white;
-      color: #2C2C2C;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .editor-content:focus {
-      outline: none;
-    }
-
-    .editor-content:empty:before {
-      content: attr(data-placeholder);
-      color: #9ca3af;
-      font-style: italic;
-    }
-
-    .editor-content h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #2C2C2C;
-      margin: 0.5rem 0;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .editor-content p {
-      margin: 0.5rem 0;
-    }
-
-    .editor-content ul, .editor-content ol {
-      margin: 0.5rem 0;
-      padding-left: 1.5rem;
-    }
-
-    .editor-content li {
-      margin: 0.25rem 0;
-    }
-
-    .editor-content strong {
-      font-weight: 600;
-    }
-
-    .editor-content em {
-      font-style: italic;
-    }
-
-    .editor-content u {
-      text-decoration: underline;
-    }
-
-    .error-message-container {
-      margin: 1rem 0;
-    }
-
-    .error-message {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      color: #dc2626;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.875rem;
-      line-height: 1.5;
-    }
-
-    .error-message svg {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: flex-end;
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid #e5e7eb;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 2rem;
-    }
-
-    .loading p {
-      margin-top: 1rem;
-      color: #64748b;
-    }
-
-    @media (max-width: 768px) {
-      .page-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-      }
-
-      .page-header h1 {
-        font-size: 1.5rem;
-      }
-
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .form-actions {
-        flex-direction: column;
-      }
-
-      .editor-toolbar {
-        gap: 0.125rem;
-        padding: 0.375rem;
-      }
-
-      .toolbar-btn {
-        padding: 0.25rem 0.375rem;
-        font-size: 0.75rem;
-      }
-
-      .editor-content {
-        min-height: 100px;
-        padding: 0.75rem;
-        font-size: 0.8rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .editor-toolbar {
-        flex-wrap: wrap;
-        gap: 0.125rem;
-      }
-
-      .toolbar-btn {
-        padding: 0.25rem;
-        font-size: 0.7rem;
-        min-width: 32px;
-        justify-content: center;
-      }
-
-      .editor-content {
-        min-height: 80px;
-        padding: 0.5rem;
-      }
-    }
-  `]
+  templateUrl: './patient-form.component.html',
+  styleUrls: ['./patient-form.component.css']
 })
 export class PatientFormComponent implements OnInit {
   patient: Partial<Patient> = {
     nombres: '',
     apellidos: '',
+    cedula: '',
     edad: 0,
     sexo: 'Femenino',
     email: '',
-    telefono: '',
-    motivo_consulta: '',
-    diagnostico: '',
-    conclusiones: ''
+    telefono: ''
   };
   isEdit = false;
   loading = false;
   patientId: number | null = null;
-  motivoError = false;
-  errorMessage = '';
+  showSuccessActions = false;
+  patientCreated = false;
+  
+  // Variables para validación de email
+  emailExists = false;
+  emailChecked = false;
+  emailValidationTimeout: any;
+  
+  // Variables para validación de cédula
+  cedulaExists = false;
+  cedulaChecked = false;
+  cedulaValidationTimeout: any;
+  
+  // Variables para lógica de médico
+  currentMedicoId: number | null = null;
+  shouldCreateNewHistory = false;
 
   constructor(
     private patientService: PatientService,
+    private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
-    this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.patientId = +params['id'];
-        this.isEdit = true;
-        this.loadPatient();
-      }
-    });
+    // Obtener el médico actual del usuario autenticado
+    const currentUser = this.authService.getCurrentUser();
+    this.currentMedicoId = currentUser?.medico_id || null;
+    console.log('🔍 Médico actual:', this.currentMedicoId);
+
+    // Verificar si es modo edición
+    this.patientId = this.route.snapshot.params['id'];
+    this.isEdit = !!this.patientId;
+    
+    console.log('🔍 Modo edición:', this.isEdit);
+    console.log('🔍 Patient ID:', this.patientId);
+
+    if (this.isEdit && this.patientId) {
+      this.loadPatient();
+    }
   }
 
   loadPatient() {
@@ -612,101 +78,402 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.patient = response.data;
+          } else {
+            const errorMessage = (response as any).error?.message || 'Error cargando paciente';
+            alert(`❌ Error cargando paciente:\n\n${errorMessage}\n\nPor favor, recarga la página e intente nuevamente.`);
           }
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading patient:', error);
+          this.errorHandler.logError(error, 'cargar paciente');
           this.loading = false;
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar paciente');
+          alert(errorMessage);
         }
       });
     }
   }
 
-  onSubmit() {
-    if (this.isEdit && this.patientId) {
-      this.updatePatient();
+  onSubmit(form: any) {
+    // Verificar validaciones adicionales
+    if (this.emailExists && this.emailChecked) {
+      alert('❌ Error: El email ya está registrado en el sistema.');
+      return;
+    }
+    
+    if (this.cedulaExists && this.cedulaChecked) {
+      alert('❌ Error: La cédula ya está registrada en el sistema.');
+      return;
+    }
+    
+    if (form.valid) {
+      if (this.isEdit) {
+        this.updatePatient();
+      } else {
+        this.createPatient();
+      }
     } else {
-      this.createPatient();
+      alert('Por favor, complete todos los campos requeridos correctamente.');
     }
   }
 
   createPatient() {
     this.loading = true;
-    this.errorMessage = '';
     
-    this.patientService.createPatient(this.patient as Omit<Patient, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>)
+    // Solo enviar datos básicos del paciente
+    const patientData = {
+      nombres: this.patient.nombres!,
+      apellidos: this.patient.apellidos!,
+      cedula: this.patient.cedula,
+      edad: this.patient.edad!,
+      sexo: this.patient.sexo!,
+      email: this.patient.email!,
+      telefono: this.patient.telefono!,
+      activo: true // Los pacientes nuevos siempre se crean como activos
+    };
+
+    console.log('🔍 Datos del paciente a enviar:', patientData);
+    
+    this.patientService.createPatient(patientData)
       .subscribe({
         next: (response) => {
+          console.log('✅ Respuesta del servidor:', response);
           if (response.success) {
-            this.router.navigate(['/patients']);
+            this.patientCreated = true;
+            this.showSuccessActions = true;
+            // Obtener el ID del paciente recién creado
+            // La respuesta viene como: { success: true, data: { message: '...', id: 123, ... } }
+            const newPatientId = (response.data as any)?.id;
+            console.log('🔍 ID del paciente obtenido:', newPatientId);
+            // Guardar el ID para usarlo en la navegación
+            if (newPatientId) {
+              this.patientId = newPatientId;
+            }
+            this.askForConsulta(newPatientId);
           } else {
-            this.errorMessage = response.error?.message || 'Error al crear el paciente';
+            const errorMessage = (response as any).error?.message || 'Error creando paciente';
+            alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
           }
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error creating patient:', error);
-          this.errorMessage = error.message || 'Error al crear el paciente';
+          this.errorHandler.logError(error, 'crear paciente');
           this.loading = false;
+          
+          // Manejar errores específicos del backend
+          let errorMessage = 'Error de conexión creando paciente';
+          
+          if (error?.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          // Mostrar mensaje específico para duplicados
+          if (errorMessage.includes('email ya está registrado') || errorMessage.includes('Email ya está registrado')) {
+            this.emailExists = true;
+            this.emailChecked = true;
+            alert('❌ Error: El email ya está registrado en el sistema.');
+          } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
+            this.cedulaExists = true;
+            this.cedulaChecked = true;
+            alert('❌ Error: La cédula ya está registrada en el sistema.');
+          } else {
+            const safeErrorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear paciente');
+            alert(safeErrorMessage);
+          }
         }
       });
   }
 
   updatePatient() {
-    if (this.patientId) {
-      this.loading = true;
-      this.errorMessage = '';
-      
-      this.patientService.updatePatient(this.patientId, this.patient)
-        .subscribe({
-          next: (response) => {
-            if (response.success) {
-              this.router.navigate(['/patients']);
-            } else {
-              this.errorMessage = response.error?.message || 'Error al actualizar el paciente';
-            }
-            this.loading = false;
-          },
-          error: (error) => {
-            console.error('Error updating patient:', error);
-            this.errorMessage = error.message || 'Error al actualizar el paciente';
-            this.loading = false;
-          }
-        });
-    }
-  }
-
-  // Rich Text Editor Methods
-  execCommand(command: string, value?: string, field?: string) {
-    const targetField = field || 'motivo_consulta';
-    const editor = document.querySelector(`[data-field="${targetField}"]`) as HTMLElement;
+    this.loading = true;
     
-    if (editor) {
-      editor.focus();
-      document.execCommand(command, false, value);
+    // Solo actualizar datos básicos del paciente
+    const updateData: Partial<Patient> = {
+      nombres: this.patient.nombres!,
+      apellidos: this.patient.apellidos!,
+      cedula: this.patient.cedula,
+      edad: this.patient.edad!,
+      sexo: this.patient.sexo!,
+      email: this.patient.email!,
+      telefono: this.patient.telefono!
+    };
+
+    console.log('🔍 Datos a actualizar:', updateData);
+    
+    this.patientService.updatePatient(this.patientId!, updateData)
+      .subscribe({
+        next: (response) => {
+          this.loading = false;
+          
+          if (response.success) {
+            alert('✅ Paciente actualizado exitosamente');
+            this.router.navigate(['/patients']);
+          } else {
+            // Error en la respuesta pero no es excepción HTTP
+            const errorMessage = (response as any).error?.message || 'Error actualizando paciente';
+            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, verifica los datos e intenta nuevamente.`);
+            // NO redirigir, mantener al usuario en la página para que corrija
+          }
+        },
+        error: (error) => {
+          this.loading = false;
+          this.errorHandler.logError(error, 'actualizar paciente');
+          
+          // Verificar si es un error de autenticación real (solo si el interceptor no lo manejó)
+          const status = error?.status || error?.error?.status;
+          
+          if (status === 401 || status === 403) {
+            // Verificar si es realmente un error de autenticación o de validación
+            const errorMessage = error?.error?.message || error?.message || '';
+            const isValidationError = this.isValidationErrorMessage(errorMessage);
+            
+            if (isValidationError) {
+              // Es un error de validación que devolvió 401/403 incorrectamente
+              console.log('⚠️ Error parece ser de validación, no de autenticación');
+              const validationMessage = this.extractValidationMessage(errorMessage);
+              alert(`❌ Error de validación:\n\n${validationMessage}\n\nPor favor, corrige los datos e intenta nuevamente.`);
+              // NO redirigir, mantener al usuario en la página
+            } else {
+              // Es un error de autenticación real, el interceptor ya debería haberlo manejado
+              // Pero si llegamos aquí, mostrar mensaje y dejar que el interceptor maneje el logout
+              console.log('🔐 Error de autenticación detectado en componente');
+              alert('❌ Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+              // El interceptor se encargará de redirigir al login
+            }
+          } else if (status === 400 || status === 422) {
+            // Error de validación explícito
+            const validationMessage = this.extractValidationMessage(error?.error?.message || error?.message || '');
+            alert(`❌ Error de validación:\n\n${validationMessage}\n\nPor favor, corrige los datos e intenta nuevamente.`);
+            // NO redirigir, mantener al usuario en la página
+          } else if (status >= 500) {
+            // Error del servidor
+            alert('❌ Error del servidor. Por favor, intenta nuevamente en unos momentos.\n\nSi el problema persiste, contacta al administrador del sistema.');
+            // NO redirigir, mantener al usuario en la página
+          } else if (status === 0) {
+            // Error de red
+            alert('❌ Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+            // NO redirigir, mantener al usuario en la página
+          } else {
+            // Otro tipo de error
+            const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar paciente');
+            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, intenta nuevamente.`);
+            // NO redirigir, mantener al usuario en la página
+          }
+        }
+      });
+  }
+
+  /**
+   * Verifica si un mensaje de error indica un problema de validación
+   */
+  private isValidationErrorMessage(message: string): boolean {
+    if (!message) return false;
+    
+    const validationKeywords = [
+      'email',
+      'cedula',
+      'duplicate',
+      'ya existe',
+      'validation',
+      'validación',
+      'requerido',
+      'required',
+      'inválido',
+      'invalid',
+      'formato',
+      'format',
+      'vacío',
+      'empty',
+      'longitud',
+      'length'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return validationKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  /**
+   * Extrae un mensaje de validación más claro del error
+   */
+  private extractValidationMessage(errorMessage: string): string {
+    if (!errorMessage) {
+      return 'Los datos proporcionados no son válidos.';
     }
+    
+    // Mensajes comunes y sus traducciones más claras
+    const messageMap: Record<string, string> = {
+      'email': 'El email ya está registrado en el sistema.',
+      'cedula': 'La cédula ya está registrada en el sistema.',
+      'duplicate': 'Ya existe un registro con estos datos.',
+      'ya existe': 'Ya existe un registro con estos datos.',
+      'requerido': 'Por favor, completa todos los campos requeridos.',
+      'required': 'Por favor, completa todos los campos requeridos.',
+      'inválido': 'Los datos proporcionados no son válidos.',
+      'invalid': 'Los datos proporcionados no son válidos.'
+    };
+    
+    // Buscar coincidencias en el mensaje
+    for (const [key, value] of Object.entries(messageMap)) {
+      if (errorMessage.toLowerCase().includes(key)) {
+        return value;
+      }
+    }
+    
+    // Si no hay coincidencia, devolver el mensaje original (sanitizado)
+    return errorMessage.length > 200 
+      ? errorMessage.substring(0, 200) + '...' 
+      : errorMessage;
   }
 
-  onMotivoChange(event: any) {
-    this.patient.motivo_consulta = event.target.innerHTML;
-    this.motivoError = false;
-  }
-
-  onMotivoBlur() {
-    const text = this.patient.motivo_consulta?.replace(/<[^>]*>/g, '').trim();
-    this.motivoError = !text;
-  }
-
-  onDiagnosticoChange(event: any) {
-    this.patient.diagnostico = event.target.innerHTML;
-  }
-
-  onConclusionesChange(event: any) {
-    this.patient.conclusiones = event.target.innerHTML;
+  askForConsulta(patientId?: number | null) {
+    const patientName = `${this.patient.nombres} ${this.patient.apellidos}`.trim();
+    const message = `✅ Paciente registrado exitosamente.\n\n` +
+                   `Paciente: ${patientName || 'Nuevo paciente'}\n\n` +
+                   `¿Desea agendar una consulta médica ahora?\n\n` +
+                   `• Aceptar: Será redirigido al formulario de nueva consulta\n` +
+                   `• Cancelar: Volverá a la lista de pacientes`;
+    
+    console.log('🔍 Llamando a askForConsulta con patientId:', patientId);
+    console.log('🔍 this.patientId:', this.patientId);
+    
+    const userWantsConsulta = confirm(message);
+    console.log('🔍 Usuario quiere consulta:', userWantsConsulta);
+    
+    if (userWantsConsulta) {
+      // Redirigir a nueva consulta con el paciente pre-seleccionado
+      const idToUse = patientId || this.patientId;
+      console.log('🔍 ID a usar para nueva consulta:', idToUse);
+      
+      if (idToUse) {
+        console.log('📍 Redirigiendo a /admin/consultas/nueva con paciente_id:', idToUse);
+        this.router.navigate(['/admin/consultas/nueva'], { 
+          queryParams: { paciente_id: idToUse } 
+        }).then(() => {
+          console.log('✅ Navegación completada a nueva consulta');
+        }).catch((error) => {
+          console.error('❌ Error en navegación:', error);
+        });
+      } else {
+        console.log('⚠️ No hay ID, redirigiendo a nueva consulta sin pre-seleccionar');
+        this.router.navigate(['/admin/consultas/nueva']).then(() => {
+          console.log('✅ Navegación completada a nueva consulta (sin ID)');
+        }).catch((error) => {
+          console.error('❌ Error en navegación:', error);
+        });
+      }
+    } else {
+      // Redirigir a la lista de pacientes
+      console.log('📍 Redirigiendo a /patients (lista de pacientes)');
+      this.router.navigate(['/patients']).then(() => {
+        console.log('✅ Navegación completada a lista de pacientes');
+      }).catch((error) => {
+        console.error('❌ Error en navegación:', error);
+      });
+    }
   }
 
   onCancel() {
     this.router.navigate(['/patients']);
+  }
+
+  // Validación de email
+  validateEmail() {
+    if (this.patient.email && this.patient.email.length > 0) {
+      clearTimeout(this.emailValidationTimeout);
+      this.emailValidationTimeout = setTimeout(() => {
+        this.patientService.checkEmailAvailability(this.patient.email!).subscribe({
+          next: (response) => {
+            // response.exists = true significa que el email ya está registrado
+            // En modo edición, debemos verificar que no sea el paciente actual
+            if (this.isEdit && this.patientId && response.exists) {
+              // Si estamos editando, necesitamos verificar si el email pertenece al paciente actual
+              // Para esto, obtenemos el paciente por email para comparar IDs
+              this.patientService.getPatientByEmail(this.patient.email!).subscribe({
+                next: (patientResponse) => {
+                  if (patientResponse.success && patientResponse.data) {
+                    this.emailExists = patientResponse.data.id !== this.patientId;
+                  } else {
+                    this.emailExists = false;
+                  }
+                  this.emailChecked = true;
+                },
+                error: () => {
+                  // Si hay error, asumimos que el email está disponible
+                  this.emailExists = false;
+                  this.emailChecked = true;
+                }
+              });
+            } else {
+              // En modo creación, si exists es true, el email está duplicado
+              this.emailExists = response.exists;
+              this.emailChecked = true;
+            }
+          },
+          error: (error) => {
+            // Solo loguear errores reales (500, problemas de red, etc.)
+            this.errorHandler.logError(error, 'validar email');
+            // En caso de error, asumimos que el email está disponible
+            this.emailExists = false;
+            this.emailChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.emailExists = false;
+      this.emailChecked = false;
+    }
+  }
+
+  // Validación de cédula
+  validateCedula() {
+    if (this.patient.cedula && this.patient.cedula.length > 0) {
+      // Validar formato de cédula venezolana
+      const cedulaPattern = /^[VEJPG][0-9]{7,8}$/;
+      if (!cedulaPattern.test(this.patient.cedula)) {
+        // Marcar como inválida si no cumple el formato
+        console.log('Formato de cédula inválido');
+        this.cedulaExists = false;
+        this.cedulaChecked = false;
+        return;
+      }
+      
+      // Si el formato es válido, verificar duplicados
+      clearTimeout(this.cedulaValidationTimeout);
+      this.cedulaValidationTimeout = setTimeout(() => {
+        this.patientService.searchPatientsByCedula(this.patient.cedula!).subscribe({
+          next: (response) => {
+            // Si es modo edición, excluir el paciente actual
+            if (this.isEdit && this.patientId) {
+              const otherPatients = response.data.filter(p => p.id !== this.patientId);
+              this.cedulaExists = otherPatients.length > 0;
+            } else {
+              this.cedulaExists = response.data.length > 0;
+            }
+            this.cedulaChecked = true;
+          },
+          error: (error) => {
+            // Solo loguear errores reales (no 404, que es esperado cuando no hay resultados)
+            if (error.status !== 404 && error.status !== 0) {
+              this.errorHandler.logError(error, 'validar cédula');
+            }
+            // Si hay error o no hay resultados, la cédula está disponible
+            this.cedulaExists = false;
+            this.cedulaChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.cedulaExists = false;
+      this.cedulaChecked = false;
+    }
+  }
+
+  // Método para formatear fechas
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-VE');
   }
 }

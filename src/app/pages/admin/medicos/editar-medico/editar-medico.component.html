@@ -1,0 +1,235 @@
+<div class="medico-form-page">
+  <div class="page-header">
+    <h1>Editar Médico</h1>
+    <button type="button" class="btn btn-secondary" (click)="volver()" [disabled]="saving">
+      ← Volver a Médicos
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando datos del médico...</p>
+  </div>
+
+  <!-- Formulario -->
+  <form *ngIf="!loading" class="medico-form" (ngSubmit)="onSubmit()" #medicoForm="ngForm">
+    <div class="form-section">
+      <h3>Información Personal</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombres *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.nombres"
+            name="nombres"
+            required
+            [disabled]="saving"
+            placeholder="Ingrese los nombres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellidos *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.apellidos"
+            name="apellidos"
+            required
+            [disabled]="saving"
+            placeholder="Ingrese los apellidos">
+        </div>
+        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
+          <label class="form-label">Cédula</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [class.duplicate-error]="cedulaExists && cedulaChecked"
+            [(ngModel)]="medicoData.cedula"
+            name="cedula"
+            pattern="^[VEJPG][0-9]{7,8}$"
+            [disabled]="saving"
+            placeholder="Ej: V12345678, E1234567"
+            (blur)="validateCedula()">
+          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
+            <span>Esta cédula ya está registrada</span>
+          </div>
+        </div>
+        <div class="form-group" [class.has-duplicate-error]="emailExists && emailChecked">
+          <label class="form-label">Email *</label>
+          <input 
+            type="email" 
+            class="form-input" 
+            [class.duplicate-error]="emailExists && emailChecked"
+            [(ngModel)]="medicoData.email"
+            name="email"
+            required
+            [disabled]="saving"
+            placeholder="ejemplo@correo.com"
+            (blur)="validateEmail()">
+          <div class="error-message" *ngIf="emailExists && emailChecked">
+            <span>Este email ya está registrado</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono *</label>
+          <input 
+            type="tel" 
+            class="form-input" 
+            [(ngModel)]="medicoData.telefono"
+            name="telefono"
+            required
+            [disabled]="saving"
+            placeholder="Ingrese el teléfono">
+        </div>
+        <div class="form-group">
+          <label class="form-label">MPPS</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.mpps"
+            name="mpps"
+            [disabled]="saving"
+            placeholder="Número MPPS">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CM</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.cm"
+            name="cm"
+            [disabled]="saving"
+            placeholder="Número CM (Colegio de Médicos)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Especialidad *</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="medicoData.especialidad_id"
+            name="especialidad"
+            required
+            [disabled]="saving">
+            <option value="0">Seleccione una especialidad</option>
+            <option 
+              *ngFor="let especialidad of especialidades" 
+              [value]="especialidad.id">
+              {{ especialidad.nombre_especialidad }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+            <!-- Sección de Firma Digital -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="card border-primary">
+                  <div class="card-header bg-primary text-white">
+                    <h6 class="card-title mb-0">
+                      <i class="fas fa-signature me-2"></i>
+                      Firma Digital
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <!-- Firma actual -->
+                      <div class="col-md-6 mb-3" *ngIf="medicoData.firma_digital">
+                        <label class="form-label">Firma Actual:</label>
+                        <div class="firma-actual">
+                          <img 
+                            [src]="medicoData.firma_digital!" 
+                            alt="Firma actual" 
+                            class="firma-preview">
+                        </div>
+                      </div>
+
+                      <!-- Subir nueva firma -->
+                      <div class="col-md-6 mb-3">
+                        <label for="firmaFile" class="form-label">
+                          <i class="fas fa-upload me-1"></i>
+                          {{ medicoData.firma_digital ? 'Cambiar Firma' : 'Subir Firma' }}
+                        </label>
+                        <input
+                          type="file"
+                          class="form-control"
+                          id="firmaFile"
+                          accept="image/*"
+                          (change)="onFirmaSelected($event)"
+                          [disabled]="saving || uploadingFirma">
+                        <small class="form-text text-muted">
+                          Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 2MB)
+                        </small>
+                      </div>
+                    </div>
+
+                    <!-- Preview de nueva firma -->
+                    <div class="row" *ngIf="firmaPreview">
+                      <div class="col-12">
+                        <label class="form-label">Vista Previa:</label>
+                        <div class="firma-preview-container">
+                          <img [src]="firmaPreview" alt="Vista previa" class="firma-preview">
+                          <div class="firma-actions">
+                            <button 
+                              type="button" 
+                              class="btn btn-success btn-sm"
+                              (click)="uploadFirma()"
+                              [disabled]="uploadingFirma">
+                              <i class="fas fa-upload me-1" *ngIf="!uploadingFirma"></i>
+                              <i class="fas fa-spinner fa-spin me-1" *ngIf="uploadingFirma"></i>
+                              {{ uploadingFirma ? 'Subiendo...' : 'Subir Firma' }}
+                            </button>
+                            <button 
+                              type="button" 
+                              class="btn btn-outline-danger btn-sm"
+                              (click)="removeFirma()"
+                              [disabled]="uploadingFirma">
+                              <i class="fas fa-times me-1"></i>
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+    <div class="form-actions">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="volver()"
+        [disabled]="saving">
+        Cancelar
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="saving || !medicoForm.form.valid || emailExists || cedulaExists">
+        <span *ngIf="saving" class="spinner"></span>
+        {{ saving ? 'Actualizando...' : 'Actualizar Médico' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Snackbar para mensajes -->
+<div 
+  class="snackbar" 
+  [class.show]="showSnackbar" 
+  [class.success]="snackbarType === 'success'"
+  [class.error]="snackbarType === 'error'">
+  <div class="snackbar-content">
+    <i class="fas fa-check-circle me-2" *ngIf="snackbarType === 'success'"></i>
+    <i class="fas fa-exclamation-circle me-2" *ngIf="snackbarType === 'error'"></i>
+    {{ snackbarMessage }}
+  </div>
+  <button 
+    type="button" 
+    class="btn-close" 
+    (click)="hideSnackbar()">
+    <i class="fas fa-times"></i>
+  </button>
+</div>

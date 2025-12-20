@@ -1,0 +1,310 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-0">
+            <i class="fas fa-search text-primary"></i>
+            Búsqueda Avanzada
+          </h2>
+          <p class="text-muted mb-0">Encuentra informes médicos con filtros específicos</p>
+        </div>
+        <div>
+          <button class="btn btn-outline-secondary" (click)="limpiarFiltros()">
+            <i class="fas fa-times"></i> Limpiar Filtros
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de Búsqueda -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-filter text-warning"></i>
+            Filtros de Búsqueda
+          </h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="busquedaForm" (ngSubmit)="buscar()">
+            <div class="row">
+              <!-- Término de búsqueda -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Término de Búsqueda</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                  </span>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    formControlName="termino_busqueda"
+                    placeholder="Buscar por título, contenido, paciente, médico..."
+                  >
+                </div>
+              </div>
+              
+              <!-- Estado -->
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Estado</label>
+                <select class="form-select" formControlName="estado">
+                  <option *ngFor="let estado of estados" [value]="estado.valor">
+                    {{ estado.texto }}
+                  </option>
+                </select>
+              </div>
+              
+              <!-- Tipo de Informe -->
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Tipo de Informe</label>
+                <select class="form-select" formControlName="tipo_informe">
+                  <option *ngFor="let tipo of tiposInforme" [value]="tipo.valor">
+                    {{ tipo.texto }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="row">
+              <!-- Médico -->
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Médico</label>
+                <select class="form-select" formControlName="medico_id">
+                  <option value="">Todos los médicos</option>
+                  <option *ngFor="let medico of medicos" [value]="medico.id">
+                    {{ medico.nombres }} {{ medico.apellidos }}
+                  </option>
+                </select>
+              </div>
+              
+              <!-- Paciente -->
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Paciente</label>
+                <select class="form-select" formControlName="paciente_id">
+                  <option value="">Todos los pacientes</option>
+                  <option *ngFor="let paciente of pacientes" [value]="paciente.id">
+                    {{ paciente.nombres }} {{ paciente.apellidos }}
+                  </option>
+                </select>
+              </div>
+              
+              <!-- Fecha Desde -->
+              <div class="col-md-2 mb-3">
+                <label class="form-label">Fecha Desde</label>
+                <input type="date" class="form-control" formControlName="fecha_desde">
+              </div>
+              
+              <!-- Fecha Hasta -->
+              <div class="col-md-2 mb-3">
+                <label class="form-label">Fecha Hasta</label>
+                <input type="date" class="form-control" formControlName="fecha_hasta">
+              </div>
+            </div>
+            
+            <div class="row">
+              <!-- Filtros Especiales -->
+              <div class="col-md-6 mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="solo_firmados" id="soloFirmados">
+                  <label class="form-check-label" for="soloFirmados">
+                    Solo informes firmados
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="solo_sin_firma" id="soloSinFirma">
+                  <label class="form-check-label" for="soloSinFirma">
+                    Solo informes sin firma
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Ordenamiento -->
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Ordenar por</label>
+                <select class="form-select" formControlName="ordenar_por">
+                  <option value="fecha_creacion">Fecha de Creación</option>
+                  <option value="fecha_actualizacion">Fecha de Actualización</option>
+                  <option value="titulo">Título</option>
+                  <option value="estado">Estado</option>
+                  <option value="medico">Médico</option>
+                  <option value="paciente">Paciente</option>
+                </select>
+              </div>
+              
+              <!-- Orden -->
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Orden</label>
+                <select class="form-select" formControlName="orden">
+                  <option value="desc">Descendente</option>
+                  <option value="asc">Ascendente</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary" [disabled]="cargando">
+                <i class="fas fa-search" *ngIf="!cargando"></i>
+                <span class="spinner-border spinner-border-sm" *ngIf="cargando"></span>
+                {{ cargando ? 'Buscando...' : 'Buscar' }}
+              </button>
+              
+              <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()">
+                <i class="fas fa-undo"></i> Limpiar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros Activos -->
+  <div class="row mb-3" *ngIf="filtrosActivos.length > 0">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="text-primary mb-2">
+            <i class="fas fa-tags"></i> Filtros Activos
+          </h6>
+          <div class="d-flex flex-wrap gap-2">
+            <span *ngFor="let filtro of filtrosActivos" class="badge bg-primary d-flex align-items-center gap-1">
+              {{ filtro }}
+              <button 
+                type="button" 
+                class="btn-close btn-close-white" 
+                (click)="eliminarFiltro(filtro)"
+                title="Eliminar filtro"
+              ></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-list text-info"></i>
+            Resultados de la Búsqueda
+            <span class="badge bg-primary ms-2" *ngIf="totalResultados > 0">
+              {{ totalResultados }} resultado{{ totalResultados !== 1 ? 's' : '' }}
+            </span>
+          </h5>
+          <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0">Mostrar:</label>
+            <select class="form-select form-select-sm" style="width: auto;" (change)="cambiarElementosPorPagina($event.target.value)">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Loading -->
+          <div *ngIf="cargando" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Buscando...</span>
+            </div>
+            <p class="mt-2">Buscando informes...</p>
+          </div>
+
+          <!-- Error -->
+          <div *ngIf="error" class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> {{ error }}
+          </div>
+
+          <!-- Sin resultados -->
+          <div *ngIf="!cargando && !error && resultados.length === 0" class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No se encontraron resultados</h5>
+            <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+            <button class="btn btn-outline-primary" (click)="limpiarFiltros()">
+              <i class="fas fa-undo"></i> Limpiar Filtros
+            </button>
+          </div>
+
+          <!-- Lista de resultados -->
+          <div *ngIf="!cargando && !error && resultados.length > 0" class="list-group list-group-flush">
+            <div *ngFor="let informe of resultados" class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                <div class="me-3">
+                  <i class="fas fa-file-medical text-primary fa-lg"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">{{ informe.titulo }}</h6>
+                  <p class="mb-1 text-muted">
+                    <strong>Paciente:</strong> {{ informe.pacientes?.nombres }} {{ informe.pacientes?.apellidos }} |
+                    <strong>Médico:</strong> {{ informe.medicos?.nombres }} {{ informe.medicos?.apellidos }}
+                  </p>
+                  <small class="text-muted">
+                    {{ formatearFecha(informe.fecha_creacion) }} | 
+                    {{ obtenerTipoInformeTexto(informe.tipo_informe) }}
+                  </small>
+                </div>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="badge me-2" [ngClass]="obtenerClaseEstado(informe.estado)">
+                  {{ obtenerEstadoTexto(informe.estado) }}
+                </span>
+                <div class="btn-group" role="group">
+                  <button class="btn btn-sm btn-outline-primary" (click)="verInforme(informe)" title="Ver informe">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary" (click)="editarInforme(informe)" 
+                          *ngIf="puedeEditar(informe)" title="Editar informe">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="row mt-4" *ngIf="!cargando && !error && resultados.length > 0">
+    <div class="col-12">
+      <nav aria-label="Paginación de resultados">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="paginaActual === 1">
+            <button class="page-link" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+          </li>
+          
+          <li class="page-item" *ngFor="let pagina of obtenerRangoPaginas()" [class.active]="pagina === paginaActual">
+            <button class="page-link" (click)="cambiarPagina(pagina)">
+              {{ pagina }}
+            </button>
+          </li>
+          
+          <li class="page-item" [class.disabled]="paginaActual === obtenerTotalPaginas()">
+            <button class="page-link" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === obtenerTotalPaginas()">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="text-center text-muted">
+        Mostrando {{ (paginaActual - 1) * elementosPorPagina + 1 }} - 
+        {{ Math.min(paginaActual * elementosPorPagina, totalResultados) }} 
+        de {{ totalResultados }} resultados
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

@@ -1,0 +1,338 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">
+      <i class="fas fa-stethoscope"></i>
+      Gestión de Servicios Médicos
+    </h1>
+    <button 
+      class="btn btn-new" 
+      (click)="openCreateModal()"
+      *ngIf="isAdmin()">
+      ➕ Nuevo Servicio
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="form-group">
+        <label class="form-label">Buscar por nombre</label>
+        <input
+          type="text"
+          class="form-input"
+          [(ngModel)]="filtroNombre"
+          (input)="applyFilters()"
+          placeholder="Nombre del servicio..."
+        />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Filtrar por especialidad</label>
+        <select
+          class="form-input"
+          [(ngModel)]="filtroEspecialidad"
+          (change)="applyFilters()"
+        >
+          <option value="">Todas las especialidades</option>
+          <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
+            {{ especialidad.nombre_especialidad }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Filtrar por estado</label>
+        <select
+          class="form-input"
+          [(ngModel)]="filtroActivo"
+          (change)="applyFilters()"
+        >
+          <option value="">Todos</option>
+          <option value="activo">Activos</option>
+          <option value="inactivo">Inactivos</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <button class="btn btn-clear" (click)="clearFilters()">
+          🗑️ Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de servicios -->
+  <div class="table-container" *ngIf="!loading">
+    <!-- Vista de escritorio -->
+    <div class="table-desktop">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Especialidad</th>
+            <th>Monto Base</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let servicio of filteredServicios">
+            <td>
+              <div class="servicio-name">{{ servicio.nombre_servicio }}</div>
+            </td>
+            <td>
+              <span class="especialidad-badge">
+                {{ getEspecialidadNombre(servicio.especialidad_id) }}
+              </span>
+            </td>
+            <td>
+              <span class="monto-valor">{{ servicio.monto_base | number:'1.2-2' }} {{ getCurrencySymbol(servicio.moneda) }}</span>
+            </td>
+            <td>
+              <span 
+                class="status-badge" 
+                [class.active]="servicio.activo"
+                [class.inactive]="!servicio.activo">
+                {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  class="action-btn edit-btn" 
+                  (click)="openEditModal(servicio)"
+                  *ngIf="isAdmin()"
+                  title="Editar servicio">
+                  <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+                  Editar
+                </button>
+                <button 
+                  class="action-btn edit-btn" 
+                  (click)="toggleActivo(servicio)"
+                  [title]="servicio.activo ? 'Desactivar' : 'Activar'">
+                  <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path *ngIf="servicio.activo" d="M6 19h12v2H6zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    <path *ngIf="!servicio.activo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
+                  </svg>
+                  {{ servicio.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button 
+                  class="action-btn delete-btn" 
+                  (click)="confirmDeleteServicio(servicio)"
+                  *ngIf="isAdmin()"
+                  title="Eliminar servicio">
+                  <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vista móvil -->
+    <div class="table-mobile">
+      <div class="servicio-card" *ngFor="let servicio of filteredServicios">
+        <div class="card-header">
+          <div class="servicio-info">
+            <div class="servicio-name">{{ servicio.nombre_servicio }}</div>
+            <div class="servicio-meta">
+              <span class="servicio-id">ID: {{ servicio.id }}</span>
+            </div>
+          </div>
+          <div class="servicio-status">
+            <span 
+              class="status-badge" 
+              [class.active]="servicio.activo"
+              [class.inactive]="!servicio.activo">
+              {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">Especialidad:</span>
+            <span class="value">
+              <span class="especialidad-badge">
+                {{ getEspecialidadNombre(servicio.especialidad_id) }}
+              </span>
+            </span>
+          </div>
+          
+          <div class="info-row">
+            <span class="label">Monto Base:</span>
+            <span class="value monto-valor">
+              {{ servicio.monto_base | number:'1.2-2' }} {{ getCurrencySymbol(servicio.moneda) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="card-actions">
+          <button 
+            class="action-btn edit-btn" 
+            (click)="openEditModal(servicio)"
+            *ngIf="isAdmin()"
+            title="Editar servicio">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            Editar
+          </button>
+          <button 
+            class="action-btn toggle-btn" 
+            (click)="toggleActivo(servicio)"
+            [title]="servicio.activo ? 'Desactivar' : 'Activar'">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path *ngIf="servicio.activo" d="M6 19h12v2H6zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <path *ngIf="!servicio.activo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
+            </svg>
+            {{ servicio.activo ? 'Desactivar' : 'Activar' }}
+          </button>
+          <button 
+            class="action-btn delete-btn" 
+            (click)="confirmDeleteServicio(servicio)"
+            *ngIf="isAdmin()"
+            title="Eliminar servicio">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="no-data" *ngIf="filteredServicios.length === 0">
+      <div class="no-data-icon">📋</div>
+      <div>No hay servicios</div>
+      <div>No se encontraron servicios que coincidan con los filtros aplicados.</div>
+    </div>
+  </div>
+  
+  <div class="loading" *ngIf="loading">
+    <div>⏳ Cargando servicios...</div>
+  </div>
+</div>
+
+<!-- Modal Crear/Editar Servicio -->
+<div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ showEditModal ? 'Editar Servicio' : 'Nuevo Servicio' }}</h3>
+      <button class="modal-close" (click)="closeModals()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="nombre" class="form-label">Nombre del Servicio *</label>
+        <input
+          id="nombre"
+          type="text"
+          class="form-input"
+          [(ngModel)]="servicioForm.nombre_servicio"
+          placeholder="Ej: Consulta médica general"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="especialidad" class="form-label">Especialidad *</label>
+        <select
+          id="especialidad"
+          class="form-input"
+          [(ngModel)]="servicioForm.especialidad_id"
+          required
+        >
+          <option value="">Seleccione una especialidad</option>
+          <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
+            {{ especialidad.nombre_especialidad }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="moneda" class="form-label">Moneda *</label>
+        <select
+          id="moneda"
+          class="form-input"
+          [(ngModel)]="servicioForm.moneda"
+          required
+        >
+          <option *ngFor="let moneda of monedas" [value]="moneda.code">
+            {{ moneda.name }} ({{ moneda.symbol }})
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="monto" class="form-label">Monto Base ({{ getCurrencySymbol(servicioForm.moneda) }}) *</label>
+        <input
+          id="monto"
+          type="number"
+          class="form-input"
+          [(ngModel)]="servicioForm.monto_base"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="servicioForm.activo"
+          />
+          Servicio activo
+        </label>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-primary" (click)="saveServicio()">
+        {{ showEditModal ? 'Actualizar' : 'Crear' }} Servicio
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmar Eliminación -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Confirmar Eliminación</h3>
+      <button class="modal-close" (click)="closeModals()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+        <div style="font-size: 1.125rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem;">
+          <strong>¿Está seguro de que desea eliminar este servicio?</strong>
+        </div>
+        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; text-align: left;" *ngIf="selectedServicio">
+          <p style="margin: 0.5rem 0; color: #374151;"><strong>Servicio:</strong> {{ selectedServicio.nombre_servicio }}</p>
+          <p style="margin: 0.5rem 0; color: #374151;"><strong>Especialidad:</strong> {{ getEspecialidadNombre(selectedServicio.especialidad_id) }}</p>
+        </div>
+        <div style="color: #dc2626; font-size: 0.875rem; font-weight: 500;">
+          Esta acción no se puede deshacer.
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-danger" (click)="deleteServicio()">
+        Eliminar Servicio
+      </button>
+    </div>
+  </div>
+</div>

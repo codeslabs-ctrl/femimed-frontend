@@ -1,0 +1,310 @@
+/* =====================================================
+   RICH TEXT EDITOR - ESTILOS
+   ===================================================== */
+
+.rich-text-editor {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.rich-text-editor:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Toolbar */
+.editor-toolbar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.editor-toolbar .ql-toolbar {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.editor-toolbar .ql-formats {
+  margin-right: 0.5rem;
+}
+
+.editor-toolbar .ql-picker {
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.editor-toolbar .ql-picker-label {
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  color: #374151;
+  font-size: 0.75rem;
+}
+
+.editor-toolbar .ql-picker-label:hover {
+  border-color: var(--color-primary);
+}
+
+.editor-toolbar .ql-picker-options {
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.editor-toolbar .ql-picker-item {
+  color: #374151;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.editor-toolbar .ql-picker-item:hover {
+  background: #f3f4f6;
+  color: var(--color-primary);
+}
+
+.editor-toolbar .ql-picker-item.ql-selected {
+  background: var(--color-primary);
+  color: white;
+}
+
+/* Botones de la toolbar */
+.editor-toolbar button {
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  color: #374151;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 0.125rem;
+}
+
+.editor-toolbar button:hover {
+  background: #f3f4f6;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.editor-toolbar button.ql-active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.editor-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Editor Container */
+.editor-container {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.editor-container .ql-editor {
+  padding: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #374151;
+  border: none;
+  outline: none;
+}
+
+.editor-container .ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+/* Estilos del contenido */
+.editor-container .ql-editor h1,
+.editor-container .ql-editor h2,
+.editor-container .ql-editor h3,
+.editor-container .ql-editor h4,
+.editor-container .ql-editor h5,
+.editor-container .ql-editor h6 {
+  font-weight: 600;
+  color: #1e293b;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.editor-container .ql-editor h1 { font-size: 1.5rem; }
+.editor-container .ql-editor h2 { font-size: 1.25rem; }
+.editor-container .ql-editor h3 { font-size: 1.125rem; }
+.editor-container .ql-editor h4 { font-size: 1rem; }
+.editor-container .ql-editor h5 { font-size: 0.875rem; }
+.editor-container .ql-editor h6 { font-size: 0.75rem; }
+
+.editor-container .ql-editor p {
+  margin: 0.5rem 0;
+}
+
+.editor-container .ql-editor ul,
+.editor-container .ql-editor ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.editor-container .ql-editor li {
+  margin: 0.25rem 0;
+}
+
+.editor-container .ql-editor blockquote {
+  border-left: 4px solid var(--color-primary);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.editor-container .ql-editor a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.editor-container .ql-editor a:hover {
+  color: #1d4ed8;
+}
+
+.editor-container .ql-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Footer */
+.editor-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.character-count {
+  font-weight: 500;
+}
+
+.character-count.warning {
+  color: #f59e0b;
+}
+
+.character-count.error {
+  color: #dc2626;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.editor-actions .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.editor-actions .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Estados */
+.rich-text-editor.error {
+  border-color: #dc2626;
+}
+
+.rich-text-editor.error:focus-within {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.rich-text-editor.disabled {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.rich-text-editor.disabled .editor-toolbar,
+.rich-text-editor.disabled .editor-container .ql-editor {
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .editor-toolbar {
+    padding: 0.25rem;
+    gap: 0.125rem;
+  }
+  
+  .editor-toolbar button {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.625rem;
+    margin: 0 0.0625rem;
+  }
+  
+  .editor-container {
+    min-height: 150px;
+    max-height: 300px;
+  }
+  
+  .editor-container .ql-editor {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .editor-footer {
+    padding: 0.5rem 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  
+  .editor-actions {
+    justify-content: center;
+  }
+}
+
+/* Scrollbar personalizado */
+.editor-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.editor-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.editor-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.editor-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+

@@ -1,0 +1,187 @@
+<div class="medico-form-page">
+  <div class="page-header">
+    <h1>Crear Nuevo Médico</h1>
+    <button type="button" class="btn btn-secondary" (click)="volver()" [disabled]="saving">
+      ← Volver a Médicos
+    </button>
+  </div>
+
+  <form class="medico-form" (ngSubmit)="onSubmit()" #medicoForm="ngForm">
+    <div class="form-section">
+      <h3>Información Personal</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombres *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.nombres"
+            name="nombres"
+            required
+            [disabled]="saving"
+            placeholder="Ingrese los nombres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellidos *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.apellidos"
+            name="apellidos"
+            required
+            [disabled]="saving"
+            placeholder="Ingrese los apellidos">
+        </div>
+        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
+          <label class="form-label">Cédula</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [class.duplicate-error]="cedulaExists && cedulaChecked"
+            [(ngModel)]="medicoData.cedula"
+            name="cedula"
+            pattern="^[VEJPG][0-9]{7,8}$"
+            [disabled]="saving"
+            placeholder="Ej: V12345678, E1234567"
+            (blur)="validateCedula()">
+          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
+            <span>Esta cédula ya está registrada</span>
+          </div>
+        </div>
+        <div class="form-group" [class.has-duplicate-error]="emailExists && emailChecked">
+          <label class="form-label">Email *</label>
+          <input 
+            type="email" 
+            class="form-input" 
+            [class.duplicate-error]="emailExists && emailChecked"
+            [(ngModel)]="medicoData.email"
+            name="email"
+            required
+            [disabled]="saving"
+            placeholder="ejemplo@correo.com"
+            (blur)="validateEmail()">
+          <div class="error-message" *ngIf="emailExists && emailChecked">
+            <span>Este email ya está registrado</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono *</label>
+          <input 
+            type="tel" 
+            class="form-input" 
+            [(ngModel)]="medicoData.telefono"
+            name="telefono"
+            required
+            [disabled]="saving"
+            placeholder="Ingrese el teléfono">
+        </div>
+        <div class="form-group">
+          <label class="form-label">MPPS</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.mpps"
+            name="mpps"
+            [disabled]="saving"
+            placeholder="Número MPPS">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CM</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.cm"
+            name="cm"
+            [disabled]="saving"
+            placeholder="Número CM (Colegio de Médicos)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Especialidad *</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="medicoData.especialidad_id"
+            name="especialidad"
+            required
+            [disabled]="saving">
+            <option value="0">Seleccione una especialidad</option>
+            <option 
+              *ngFor="let especialidad of especialidades" 
+              [value]="especialidad.id">
+              {{ especialidad.nombre_especialidad }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Firma Digital (Opcional)</h3>
+      <div class="form-group">
+        <label class="form-label">Subir Firma Digital</label>
+        <input
+          type="file"
+          class="form-input"
+          accept="image/*"
+          (change)="onFirmaSelected($event)"
+          [disabled]="saving || uploadingFirma">
+        <small class="form-text text-muted">
+          Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 2MB)
+        </small>
+      </div>
+
+      <!-- Preview de firma -->
+      <div *ngIf="firmaPreview" class="form-group">
+        <label class="form-label">Vista Previa:</label>
+        <div class="firma-preview-container">
+          <img [src]="firmaPreview" alt="Vista previa" class="firma-preview">
+          <div class="firma-actions">
+            <button 
+              type="button" 
+              class="btn btn-outline-danger btn-sm"
+              (click)="removeFirma()"
+              [disabled]="saving || uploadingFirma">
+              <i class="fas fa-times me-1"></i>
+              Quitar Firma
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="volver()"
+        [disabled]="saving">
+        Cancelar
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="saving || !medicoForm.form.valid || emailExists || cedulaExists">
+        <span *ngIf="saving" class="spinner"></span>
+        {{ saving ? 'Creando...' : 'Crear Médico' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Snackbar para mensajes -->
+<div 
+  class="snackbar" 
+  [class.show]="showSnackbar" 
+  [class.success]="snackbarType === 'success'"
+  [class.error]="snackbarType === 'error'">
+  <div class="snackbar-content">
+    <i class="fas fa-check-circle me-2" *ngIf="snackbarType === 'success'"></i>
+    <i class="fas fa-exclamation-circle me-2" *ngIf="snackbarType === 'error'"></i>
+    {{ snackbarMessage }}
+  </div>
+  <button 
+    type="button" 
+    class="btn-close" 
+    (click)="hideSnackbar()">
+    <i class="fas fa-times"></i>
+  </button>
+</div>

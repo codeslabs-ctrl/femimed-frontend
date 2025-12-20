@@ -1,10 +1,11 @@
 {
-  "name": "femimed-dashboard",
+  "name": "demomed-dashboard",
   "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -20,6 +21,7 @@
     "@angular/router": "^18.0.0",
     "@types/dompurify": "^3.2.0",
     "dompurify": "^3.2.7",
+    "quill": "^2.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.0"

@@ -1,0 +1,164 @@
+<div class="patient-form-page">
+  <div class="page-header">
+    <h1>{{ isEdit ? 'Editar Paciente' : 'Nuevo Paciente' }}</h1>
+    <div class="mode-indicator" [class.edit-mode]="isEdit" [class.create-mode]="!isEdit">
+      {{ isEdit ? '✏️ Modo Edición' : '➕ Modo Creación' }}
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+      ← Volver a Pacientes
+    </button>
+  </div>
+
+  <form class="patient-form" (ngSubmit)="onSubmit(patientForm)" #patientForm="ngForm">
+    
+    <div class="form-section">
+      <h3>Información Personal</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombres *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.nombres"
+            name="nombres"
+            required
+            placeholder="Ingrese los nombres"
+            #nombres="ngModel">
+          <div class="error-message" *ngIf="nombres.invalid && nombres.touched">
+            <span *ngIf="nombres.errors?.['required']">Los nombres son requeridos</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellidos *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.apellidos"
+            name="apellidos"
+            required
+            placeholder="Ingrese los apellidos"
+            #apellidos="ngModel">
+          <div class="error-message" *ngIf="apellidos.invalid && apellidos.touched">
+            <span *ngIf="apellidos.errors?.['required']">Los apellidos son requeridos</span>
+          </div>
+        </div>
+        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
+          <label class="form-label">Cédula</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [class.duplicate-error]="cedulaExists && cedulaChecked"
+            [(ngModel)]="patient.cedula"
+            name="cedula"
+            pattern="^[VEJPG][0-9]{7,8}$"
+            placeholder="Ej: V12345678, E1234567"
+            (blur)="validateCedula()"
+            #cedula="ngModel">
+          <div class="error-message" *ngIf="cedula.invalid && cedula.touched">
+            <span *ngIf="cedula.errors?.['pattern']">Formato inválido. Usa: V12345678, E1234567, J12345678, P12345678, G12345678</span>
+            <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
+          </div>
+          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
+            <span>Esta cédula ya está registrada</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Edad *</label>
+          <input 
+            type="number" 
+            class="form-input" 
+            [(ngModel)]="patient.edad"
+            name="edad"
+            required
+            min="0"
+            max="120"
+            #edad="ngModel">
+          <div class="error-message" *ngIf="edad.invalid && edad.touched">
+            <span *ngIf="edad.errors?.['required']">La edad es requerida</span>
+            <span *ngIf="edad.errors?.['min']">La edad debe ser mayor a 0</span>
+            <span *ngIf="edad.errors?.['max']">La edad debe ser menor a 120</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sexo *</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="patient.sexo"
+            name="sexo"
+            required
+            #sexo="ngModel">
+            <option value="">Seleccionar sexo</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+          </select>
+          <div class="error-message" *ngIf="sexo.invalid && sexo.touched">
+            El sexo es requerido
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Información de Contacto</h3>
+      <div class="form-grid">
+        <div class="form-group" [class.has-duplicate-error]="emailExists && emailChecked">
+          <label class="form-label">Email *</label>
+          <input 
+            type="email" 
+            class="form-input" 
+            [class.duplicate-error]="emailExists && emailChecked"
+            [(ngModel)]="patient.email"
+            name="email"
+            required
+            email
+            placeholder="ejemplo@correo.com"
+            (blur)="validateEmail()"
+            #email="ngModel">
+          <div class="error-message" *ngIf="email.invalid && email.touched">
+            <span *ngIf="email.errors?.['required']">El email es requerido</span>
+            <span *ngIf="email.errors?.['email']">Formato de email inválido</span>
+            <span *ngIf="emailExists && emailChecked">Este email ya está registrado</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono *</label>
+          <input 
+            type="tel" 
+            class="form-input" 
+            [(ngModel)]="patient.telefono"
+            name="telefono"
+            required
+            placeholder="Ej: 0412-1234567"
+            #telefono="ngModel">
+          <div class="error-message" *ngIf="telefono.invalid && telefono.touched">
+            El teléfono es requerido
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="onCancel()">
+        Cancelar
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="loading || emailExists || cedulaExists">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
+      </button>
+    </div>
+  </form>
+
+  <div class="loading" *ngIf="loading && !isEdit">
+    <div class="spinner"></div>
+    <p>Cargando datos del paciente...</p>
+  </div>
+
+  <!-- Nota: Los archivos anexos y datos médicos se manejan en la sección "Historia Médica" -->
+  <!-- Este formulario solo maneja datos básicos del paciente -->
+</div>

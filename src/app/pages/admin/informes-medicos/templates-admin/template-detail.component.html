@@ -1,0 +1,170 @@
+<div class="template-detail-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>
+        <i class="fas fa-file-medical"></i>
+        {{ template?.nombre || 'Cargando...' }}
+      </h1>
+      <p class="page-description">
+        Detalles de la plantilla de informe médico
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="volver()">
+        ← Volver a Plantillas
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando detalles de la plantilla...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ error }}
+  </div>
+
+  <!-- Contenido -->
+  <div *ngIf="template && !loading && !error" class="template-content">
+    <!-- Información General -->
+    <div class="info-section">
+      <div class="section-header">
+        <h3>
+          <i class="fas fa-info-circle"></i>
+          Información General
+        </h3>
+      </div>
+      <div class="section-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Nombre:</label>
+            <span class="info-value">{{ template.nombre }}</span>
+          </div>
+          
+          <div class="info-item">
+            <label>Tipo de Informe:</label>
+            <span class="tipo-badge" [ngClass]="'tipo-' + template.tipo_informe">
+              {{ obtenerTipoInformeTexto(template.tipo_informe) }}
+            </span>
+          </div>
+          
+          <div class="info-item" *ngIf="template.especialidad_id">
+            <label>Especialidad:</label>
+            <span class="info-value">{{ obtenerEspecialidadNombre(template.especialidad_id) }}</span>
+          </div>
+          
+          <div class="info-item">
+            <label>Estado:</label>
+            <span class="status-badge" [ngClass]="template.activo ? 'active' : 'inactive'">
+              <i class="fas" [class]="template.activo ? 'fa-check-circle' : 'fa-times-circle'"></i>
+              {{ template.activo ? 'Activa' : 'Inactiva' }}
+            </span>
+          </div>
+          
+          <div class="info-item">
+            <label>Fecha de Creación:</label>
+            <span class="info-value">{{ formatearFecha(template.fecha_creacion) }}</span>
+          </div>
+        </div>
+        
+        <div class="info-item full-width" *ngIf="template.descripcion">
+          <label>Descripción:</label>
+          <div class="info-description">{{ template.descripcion }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido de la Plantilla -->
+    <div class="content-section">
+      <div class="section-header">
+        <h3>
+          <i class="fas fa-file-text"></i>
+          Contenido de la Plantilla
+        </h3>
+        <div class="section-actions">
+          <button class="btn btn-clear" (click)="editarTemplate()">
+            <i class="fas fa-edit"></i> Editar Plantilla
+          </button>
+        </div>
+      </div>
+      <div class="section-content">
+        <div class="template-preview">
+          <div class="preview-header">
+            <h4>Vista Previa del Contenido</h4>
+            <div class="preview-info">
+              <span class="info-badge">
+                <i class="fas fa-code"></i> HTML
+              </span>
+              <span class="info-badge">
+                <i class="fas fa-file-medical"></i> Plantilla
+              </span>
+            </div>
+          </div>
+          <div class="preview-content" [innerHTML]="template.contenido_template"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variables Disponibles -->
+    <div class="variables-section">
+      <div class="section-header">
+        <h3>
+          <i class="fas fa-code"></i>
+          Variables Disponibles
+        </h3>
+      </div>
+      <div class="section-content">
+        <div class="variables-grid">
+          <div class="variable-item">
+            <code>{{ '{' }}nombre_paciente{{ '}' }}</code>
+            <span>Nombre completo del paciente</span>
+          </div>
+          <div class="variable-item">
+            <code>{{ '{' }}fecha_consulta{{ '}' }}</code>
+            <span>Fecha de la consulta</span>
+          </div>
+          <div class="variable-item">
+            <code>{{ '{' }}motivo_consulta{{ '}' }}</code>
+            <span>Motivo de la consulta</span>
+          </div>
+          <div class="variable-item">
+            <code>{{ '{' }}examen_fisico{{ '}' }}</code>
+            <span>Resultados del examen físico</span>
+          </div>
+          <div class="variable-item">
+            <code>{{ '{' }}diagnostico{{ '}' }}</code>
+            <span>Diagnóstico médico</span>
+          </div>
+          <div class="variable-item">
+            <code>{{ '{' }}tratamiento{{ '}' }}</code>
+            <span>Plan de tratamiento</span>
+          </div>
+          <div class="variable-item">
+            <code>{{ '{' }}recomendaciones{{ '}' }}</code>
+            <span>Recomendaciones médicas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="actions-section">
+      <div class="action-buttons">
+        <button class="btn btn-clear" (click)="volver()">
+          <i class="fas fa-arrow-left"></i> Volver a Lista
+        </button>
+        <button class="btn btn-primary" (click)="editarTemplate()">
+          <i class="fas fa-edit"></i> Editar Plantilla
+        </button>
+        <button class="btn btn-danger" (click)="eliminarTemplate()">
+          <i class="fas fa-trash"></i> Eliminar Plantilla
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

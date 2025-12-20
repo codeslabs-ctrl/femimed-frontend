@@ -1,0 +1,162 @@
+<!-- =====================================================
+     RESUMEN DE INFORME MÉDICO
+     ===================================================== -->
+
+<div class="informe-resumen-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>
+        <i class="fas fa-file-medical-alt"></i>
+        Resumen del Informe Médico
+      </h1>
+      <p class="page-description">
+        Revisa los detalles del informe y envíalo al paciente
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="volver()">
+        ← Volver a Informes
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="cargando" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando datos del informe...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !cargando" class="error-container">
+    <div class="error-message">
+      <i class="fas fa-exclamation-triangle"></i>
+      {{ error }}
+    </div>
+    <button class="btn btn-primary" (click)="cargarInforme()">
+      <i class="fas fa-refresh"></i> Reintentar
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!cargando && !error && informe" class="resumen-content">
+    
+    <!-- Información del Informe -->
+    <div class="info-card">
+      <div class="card-header">
+        <h2><i class="fas fa-info-circle"></i> Información del Informe</h2>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Número de Informe:</label>
+            <span class="info-value">{{ informe.numero_informe }}</span>
+          </div>
+          <div class="info-item">
+            <label>Título:</label>
+            <span class="info-value">{{ informe.titulo }}</span>
+          </div>
+          <div class="info-item">
+            <label>Tipo:</label>
+            <span class="info-value">{{ informe.tipo_informe }}</span>
+          </div>
+          <div class="info-item">
+            <label>Estado:</label>
+            <span class="status-badge" [ngClass]="informe.estado">
+              <i class="fas" [class]="getEstadoIcon(informe.estado)"></i>
+              {{ getEstadoTexto(informe.estado) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Fecha de Emisión:</label>
+            <span class="info-value">{{ formatearFecha(informe.fecha_emision) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información del Paciente -->
+    <div class="info-card" *ngIf="paciente">
+      <div class="card-header">
+        <h2><i class="fas fa-user"></i> Datos del Paciente</h2>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Nombre:</label>
+            <span class="info-value">{{ paciente.nombres }} {{ paciente.apellidos }}</span>
+          </div>
+          <div class="info-item">
+            <label>Cédula:</label>
+            <span class="info-value">{{ paciente.cedula }}</span>
+          </div>
+          <div class="info-item">
+            <label>Teléfono:</label>
+            <span class="info-value">{{ paciente.telefono }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span class="info-value">{{ paciente.email }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información del Médico -->
+    <div class="info-card" *ngIf="medico">
+      <div class="card-header">
+        <h2><i class="fas fa-user-md"></i> Datos del Médico</h2>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Nombre:</label>
+            <span class="info-value">Dr. {{ medico.nombres }} {{ medico.apellidos }}</span>
+          </div>
+          <div class="info-item">
+            <label>Especialidad:</label>
+            <span class="info-value">{{ medico.especialidad }}</span>
+          </div>
+          <div class="info-item">
+            <label>Cédula Profesional:</label>
+            <span class="info-value">{{ medico.cedula_profesional }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido del Informe -->
+    <div class="info-card">
+      <div class="card-header">
+        <h2><i class="fas fa-file-alt"></i> Contenido del Informe</h2>
+      </div>
+      <div class="card-content">
+        <div class="contenido-informe" [innerHTML]="informe.contenido"></div>
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="acciones-card">
+      <div class="card-header">
+        <h2><i class="fas fa-cogs"></i> Acciones</h2>
+      </div>
+      <div class="card-content">
+        <div class="action-buttons">
+          <button class="btn btn-success" (click)="enviarPorEmail()" [disabled]="enviando">
+            <i class="fas fa-envelope" *ngIf="!enviando"></i>
+            <span class="spinner" *ngIf="enviando"></span>
+            {{ enviando ? 'Enviando...' : 'Enviar por Email' }}
+          </button>
+          
+          <button class="btn btn-info" (click)="descargarPDF()" [disabled]="descargandoPDF">
+            <i class="fas" [class]="descargandoPDF ? 'fa-spinner fa-spin' : 'fa-download'"></i>
+            {{ descargandoPDF ? 'Generando PDF...' : 'Descargar PDF' }}
+          </button>
+          
+          
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

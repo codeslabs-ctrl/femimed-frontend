@@ -93,7 +93,7 @@ export interface ChartConfig {
               <polyline 
                 [attr.points]="linePoints"
                 fill="none"
-                stroke="#E91E63"
+                stroke="#7A9CC6"
                 stroke-width="3"
                 class="line">
               </polyline>
@@ -102,7 +102,7 @@ export interface ChartConfig {
                 [attr.cx]="point.x"
                 [attr.cy]="point.y"
                 r="4"
-                fill="#E91E63"
+                fill="#7A9CC6"
                 class="line-point"
                 [attr.data-value]="point.value"
                 [attr.data-label]="point.label">
@@ -338,7 +338,7 @@ export class SimpleChartComponent implements OnInit, OnChanges {
 
   getDefaultColor(index: number): string {
     const colors = [
-      '#E91E63', '#2F90B0', '#EA7EC3', '#4CAF50', '#FF9800',
+      '#7A9CC6', '#2F90B0', '#EA7EC3', '#4CAF50', '#FF9800',
       '#9C27B0', '#00BCD4', '#8BC34A', '#FF5722', '#607D8B'
     ];
     return colors[index % colors.length];

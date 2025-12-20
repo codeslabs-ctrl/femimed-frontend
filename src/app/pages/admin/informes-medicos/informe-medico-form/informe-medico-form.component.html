@@ -1,0 +1,361 @@
+<div class="informe-form-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>
+        <i class="fas fa-file-medical"></i>
+        {{ esEdicion ? 'Editar Informe Médico' : 'Nuevo Informe Médico' }}
+      </h1>
+      <p class="page-description">
+        {{ esEdicion ? 'Modificar informe médico existente' : 'Crear un nuevo informe médico' }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="cancelar()">
+        ← Volver a Informes Médicos
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando datos del formulario...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Formulario -->
+  <div *ngIf="!cargando && informeForm" class="form-container">
+    <form [formGroup]="informeForm" (ngSubmit)="guardarInforme()">
+      <div class="form-section">
+        <div class="section-header">
+          <h3>
+            <i class="fas fa-edit"></i>
+            Información del Informe
+          </h3>
+        </div>
+        <div class="section-content">
+          <div class="form-grid">
+            <!-- Título -->
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-heading"></i> Título del Informe *
+              </label>
+              <input type="text" class="form-input" formControlName="titulo" 
+                     placeholder="Ingrese el título del informe médico">
+              <div *ngIf="titulo && titulo.invalid && titulo.touched" class="error-message">
+                {{ obtenerErrorCampo('titulo') }}
+              </div>
+            </div>
+
+            <!-- Tipo de Informe -->
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-tags"></i> Tipo de Informe *
+              </label>
+              <select class="form-input" formControlName="tipo_informe">
+                <option value="">Seleccionar tipo</option>
+                <option *ngFor="let tipo of tiposInforme" [value]="tipo.valor">
+                  {{ tipo.texto }}
+                </option>
+              </select>
+              <div *ngIf="tipo_informe && tipo_informe.invalid && tipo_informe.touched" class="error-message">
+                {{ obtenerErrorCampo('tipo_informe') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <!-- Paciente -->
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-user"></i> Paciente *
+              </label>
+              <select class="form-input" formControlName="paciente_id" (change)="onPacienteSeleccionado()">
+                <option value="">Seleccionar paciente</option>
+                <option *ngFor="let paciente of pacientes" [value]="paciente.id">
+                  {{ paciente.nombres }} {{ paciente.apellidos }} - {{ paciente.cedula }}
+                </option>
+              </select>
+              <div *ngIf="paciente_id && paciente_id.invalid && paciente_id.touched" class="error-message">
+                {{ obtenerErrorCampo('paciente_id') }}
+              </div>
+            </div>
+
+            <!-- Especialidad (solo para admin/secretaria) -->
+            <div *ngIf="!esUsuarioMedico" class="form-group">
+              <label class="form-label">
+                <i class="fas fa-stethoscope"></i> Especialidad *
+              </label>
+              <select class="form-input" [(ngModel)]="especialidadSeleccionada" 
+                      (change)="onEspecialidadSeleccionada()" 
+                      [ngModelOptions]="{standalone: true}"
+                      name="especialidad"
+                      [disabled]="!paciente_id?.value">
+                <option value="">Seleccionar especialidad</option>
+                <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
+                  {{ especialidad.nombre_especialidad }}
+                </option>
+              </select>
+              <div *ngIf="!paciente_id?.value" class="form-help">
+                <i class="fas fa-info-circle"></i>
+                Debe seleccionar primero un paciente para poder elegir la especialidad.
+              </div>
+              <div *ngIf="validandoHistoria" class="form-help">
+                <i class="fas fa-spinner fa-spin"></i>
+                Verificando historia médica...
+              </div>
+              <div *ngIf="mensajeHistoriaMedica" class="alert alert-warning" style="margin-top: 10px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ mensajeHistoriaMedica }}
+              </div>
+            </div>
+
+            <!-- Médico -->
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-user-md"></i> Médico *
+                <span *ngIf="esUsuarioMedico" class="label-info">(Pre-seleccionado)</span>
+              </label>
+              <select class="form-input" formControlName="medico_id" (change)="onMedicoSeleccionado()">
+                <option value="">Seleccionar médico</option>
+                <option *ngFor="let medico of medicosFiltrados" [value]="medico.id">
+                  {{ medico.nombres }} {{ medico.apellidos }}
+                </option>
+              </select>
+              <div *ngIf="medico_id && medico_id.invalid && medico_id.touched" class="error-message">
+                {{ obtenerErrorCampo('medico_id') }}
+              </div>
+              <div *ngIf="esUsuarioMedico" class="form-help">
+                <i class="fas fa-info-circle"></i>
+                Como médico, usted será automáticamente asignado a este informe.
+              </div>
+              <div *ngIf="!esUsuarioMedico && especialidadSeleccionada && medicosFiltrados.length === 0 && !validandoHistoria && tieneHistoriaMedica" class="form-help">
+                <i class="fas fa-info-circle"></i>
+                No hay médicos disponibles para la especialidad seleccionada.
+              </div>
+              <div *ngIf="!esUsuarioMedico && especialidadSeleccionada && !tieneHistoriaMedica && !validandoHistoria" class="form-help">
+                <i class="fas fa-lock"></i>
+                Debe verificar que el paciente tenga historia médica para esta especialidad antes de seleccionar un médico.
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+
+            <!-- Fecha de Emisión -->
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-calendar"></i> Fecha de Emisión *
+              </label>
+              <input type="date" class="form-input" formControlName="fecha_emision">
+              <div *ngIf="fecha_emision && fecha_emision.invalid && fecha_emision.touched" class="error-message">
+                {{ obtenerErrorCampo('fecha_emision') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenido del Informe -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3>
+            <i class="fas fa-file-text"></i>
+            Contenido del Informe
+          </h3>
+        </div>
+        <div class="section-content">
+            <div class="form-group full-width">
+              <label class="form-label">
+                <i class="fas fa-edit"></i> Contenido del Informe *
+              </label>
+              <app-rich-text-editor
+                [placeholder]="'Escriba el contenido del informe médico aquí...'"
+                [height]="300"
+                [value]="contenidoValue"
+                (valueChange)="onContenidoChange($event)">
+              </app-rich-text-editor>
+              <div class="form-group-footer">
+                <div *ngIf="contenido && contenido.invalid && contenido.touched" class="error-message">
+                  {{ obtenerErrorCampo('contenido') }}
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3>
+            <i class="fas fa-sticky-note"></i>
+            Observaciones Adicionales
+          </h3>
+        </div>
+        <div class="section-content">
+            <div class="form-group full-width">
+              <label class="form-label">
+                <i class="fas fa-comment"></i> Observaciones (Opcional)
+              </label>
+              <app-rich-text-editor
+                [placeholder]="'Agregue observaciones adicionales si es necesario...'"
+                [height]="150"
+                [value]="observacionesValue"
+                (valueChange)="onObservacionesChange($event)">
+              </app-rich-text-editor>
+              <div class="form-group-footer">
+                <div *ngIf="observaciones && observaciones.invalid && observaciones.touched" class="error-message">
+                  {{ obtenerErrorCampo('observaciones') }}
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Panel de Datos Contextuales (Oculto - ahora se aplican automáticamente) -->
+      <div *ngIf="false" class="contextual-panel">
+        <div class="panel-header">
+          <h3>
+            <i class="fas fa-info-circle"></i>
+            Datos del Paciente y Médico
+          </h3>
+        </div>
+        <div class="panel-content">
+          <div class="contextual-info">
+            <div class="patient-info">
+              <h4>
+                <i class="fas fa-user"></i>
+                Paciente: {{ formatearDatosPaciente() }}
+              </h4>
+              <p><strong>Edad:</strong> {{ datosContextuales?.paciente?.edad }} años | 
+                 <strong>Cédula:</strong> {{ datosContextuales?.paciente?.cedula }}</p>
+              <p><strong>Teléfono:</strong> {{ datosContextuales?.paciente?.telefono }} | 
+                 <strong>Email:</strong> {{ datosContextuales?.paciente?.email }}</p>
+            </div>
+            
+            <div class="doctor-info">
+              <h4>
+                <i class="fas fa-user-md"></i>
+                Médico: {{ formatearDatosMedico() }}
+              </h4>
+              <p><strong>Especialidad:</strong> {{ datosContextuales?.medico?.especialidad }}</p>
+              <p><strong>Cédula Profesional:</strong> {{ datosContextuales?.medico?.cedula_profesional }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de Sugerencias del Último Informe (Oculto - ahora se aplican automáticamente) -->
+      <div *ngIf="false" class="suggestions-panel">
+        <div class="panel-header">
+          <h3>
+            <i class="fas fa-lightbulb"></i>
+            Sugerencias del Último Informe
+            <span class="date-info">
+              ({{ formatearFechaUltimoInforme() }} - {{ calcularDiasUltimoInforme() }} días atrás)
+            </span>
+          </h3>
+        </div>
+        <div class="panel-content">
+          <div class="suggestions-grid">
+            <div *ngIf="datosContextuales?.ultimoInforme?.motivo_consulta" class="suggestion-item">
+              <div class="suggestion-header">
+                <label>Motivo de Consulta:</label>
+                <button class="btn-suggestion" (click)="aplicarSugerenciaEspecifica('motivo_consulta')">
+                  <i class="fas fa-plus"></i> Usar esta sugerencia
+                </button>
+              </div>
+              <div class="suggestion-content">
+                <p class="suggestion-text">{{ datosContextuales?.ultimoInforme?.motivo_consulta }}</p>
+              </div>
+            </div>
+            
+            <div *ngIf="datosContextuales?.ultimoInforme?.diagnostico" class="suggestion-item">
+              <div class="suggestion-header">
+                <label>Diagnóstico:</label>
+                <button class="btn-suggestion" (click)="aplicarSugerenciaEspecifica('diagnostico')">
+                  <i class="fas fa-plus"></i> Usar esta sugerencia
+                </button>
+              </div>
+              <div class="suggestion-content">
+                <p class="suggestion-text">{{ datosContextuales?.ultimoInforme?.diagnostico }}</p>
+              </div>
+            </div>
+            
+            <div *ngIf="datosContextuales?.ultimoInforme?.tratamiento" class="suggestion-item">
+              <div class="suggestion-header">
+                <label>Tratamiento:</label>
+                <button class="btn-suggestion" (click)="aplicarSugerenciaEspecifica('tratamiento')">
+                  <i class="fas fa-plus"></i> Usar esta sugerencia
+                </button>
+              </div>
+              <div class="suggestion-content">
+                <p class="suggestion-text">{{ datosContextuales?.ultimoInforme?.tratamiento }}</p>
+              </div>
+            </div>
+            
+            <div *ngIf="datosContextuales?.ultimoInforme?.conclusiones" class="suggestion-item">
+              <div class="suggestion-header">
+                <label>Conclusiones:</label>
+                <button class="btn-suggestion" (click)="aplicarSugerenciaEspecifica('conclusiones')">
+                  <i class="fas fa-plus"></i> Usar esta sugerencia
+                </button>
+              </div>
+              <div class="suggestion-content">
+                <p class="suggestion-text">{{ datosContextuales?.ultimoInforme?.conclusiones }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="suggestion-actions">
+            <button type="button" class="btn btn-secondary" (click)="aplicarSugerencias()">
+              <i class="fas fa-magic"></i> Aplicar Todas las Sugerencias
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de Historial de Consultas (Oculto - ahora se aplican automáticamente) -->
+      <div *ngIf="false" class="history-panel">
+        <div class="panel-header">
+          <h3>
+            <i class="fas fa-history"></i>
+            Historial de Consultas
+          </h3>
+        </div>
+        <div class="panel-content">
+          <div class="history-list">
+            <div *ngFor="let consulta of datosContextuales?.historialConsultas; let i = index" 
+                 class="history-item" [class.recent]="i === 0">
+              <div class="history-header">
+                <span class="history-date">{{ contextualDataService.formatearFecha(consulta.fecha_consulta) }}</span>
+                <span class="history-type">{{ consulta.motivo_consulta || 'Consulta médica' }}</span>
+              </div>
+              <div class="history-content">
+                <p *ngIf="consulta.diagnostico"><strong>Diagnóstico:</strong> {{ consulta.diagnostico }}</p>
+                <p *ngIf="consulta.tratamiento"><strong>Tratamiento:</strong> {{ consulta.tratamiento }}</p>
+                <p *ngIf="consulta.conclusiones"><strong>Conclusiones:</strong> {{ consulta.conclusiones }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="form-actions">
+        <div class="action-buttons">
+          <button type="submit" class="btn btn-primary" [disabled]="guardando || informeForm.invalid">
+            <i class="fas fa-save" *ngIf="!guardando"></i>
+            <span class="spinner" *ngIf="guardando"></span>
+            {{ guardando ? 'Guardando...' : (esEdicion ? 'Actualizar Informe' : 'Crear Informe') }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

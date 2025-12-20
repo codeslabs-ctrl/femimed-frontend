@@ -1,0 +1,379 @@
+.medicos-container {
+  padding: 2rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  color: #2C2C2C;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.subtitle {
+  color: #666666;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(44, 44, 44, 0.1);
+  border: 1px solid #F5F5F5;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.filter-group label {
+  color: #2C2C2C;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.form-select, .form-input {
+  padding: 0.75rem;
+  border: 1px solid #7A9CC6;
+  border-radius: 8px;
+  background: white;
+  color: #2C2C2C;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+}
+
+.form-select:focus, .form-input:focus {
+  outline: none;
+  border-color: #C2185B;
+  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #666666;
+}
+
+.spinner {
+  border: 3px solid #F5F5F5;
+  border-top: 3px solid #7A9CC6;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  text-align: center;
+  color: #EF4444;
+}
+
+.error-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+}
+
+.error-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: #EF4444;
+}
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(44, 44, 44, 0.1);
+  border: 1px solid #F5F5F5;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(44, 44, 44, 0.15);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #EA7EC3, #2F90B0);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: white;
+}
+
+.stat-content h3 {
+  color: #2C2C2C;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.stat-content p {
+  color: #666666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.medicos-list h2 {
+  color: #2C2C2C;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 2rem 0;
+  border-bottom: 2px solid #7A9CC6;
+  padding-bottom: 0.5rem;
+}
+
+.medicos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.medico-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(44, 44, 44, 0.1);
+  border: 1px solid #F5F5F5;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.medico-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(44, 44, 44, 0.15);
+}
+
+.medico-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.medico-info h3 {
+  color: #2C2C2C;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.especialidad {
+  background: linear-gradient(135deg, #EA7EC3, #2F90B0);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #10B981;
+  color: white;
+}
+
+.status-badge.inactive {
+  background: #EF4444;
+  color: white;
+}
+
+.medico-details {
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: #666666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #2C2C2C;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.medico-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: 'Montserrat', sans-serif;
+  border: none;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: #7A9CC6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #C2185B;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #F5F5F5;
+  color: #2C2C2C;
+  border: 1px solid #7A9CC6;
+}
+
+.btn-secondary:hover {
+  background: #7A9CC6;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666666;
+}
+
+.no-results-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  opacity: 0.5;
+}
+
+.no-results-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: #666666;
+}
+
+.no-results h3 {
+  color: #2C2C2C;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.no-results p {
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .medicos-container {
+    padding: 1rem;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .medicos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .medico-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .medico-actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+

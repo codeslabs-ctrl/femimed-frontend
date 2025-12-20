@@ -1,0 +1,95 @@
+/* Estilos para el componente de detalle de informe médico */
+
+.informe-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+}
+
+.informe-content {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.anexos-section {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.anexo-item {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.anexo-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.estado-badge {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+}
+
+.estado-borrador {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.estado-enviado {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.estado-finalizado {
+  background-color: #28a745;
+  color: white;
+}
+
+.estado-firmado {
+  background-color: #6f42c1;
+  color: white;
+}
+
+.acciones-section {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.btn-accion {
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .informe-header {
+    padding: 1rem;
+  }
+  
+  .informe-content {
+    padding: 1rem;
+  }
+  
+  .btn-accion {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+
+

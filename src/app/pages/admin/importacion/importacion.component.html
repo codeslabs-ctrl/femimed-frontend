@@ -1,0 +1,169 @@
+<div class="importacion-page">
+  <div class="page-header">
+    <h1>📥 Importación Masiva de Pacientes</h1>
+    <p class="page-description">
+      Carga múltiples documentos Word (.docx) para importar pacientes y sus historias médicas automáticamente.
+    </p>
+  </div>
+
+  <div class="importacion-container">
+    <!-- Selección de Médico (solo para admin y secretaria) -->
+    <div class="form-section" *ngIf="currentUser?.rol === 'administrador' || currentUser?.rol === 'secretaria'">
+      <h3>Médico Asociado</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Especialidad *</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="especialidadId"
+            (change)="onEspecialidadChange()"
+            [disabled]="importing">
+            <option [value]="null">Seleccione una especialidad</option>
+            <option 
+              *ngFor="let especialidad of especialidades" 
+              [value]="especialidad.id">
+              {{ especialidad.nombre_especialidad }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Médico *</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="medicoId"
+            [disabled]="importing || !especialidadId">
+            <option [value]="null">Seleccione un médico</option>
+            <option 
+              *ngFor="let medico of medicosFiltrados" 
+              [value]="medico.id">
+              {{ medico.nombres }} {{ medico.apellidos }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información para médicos -->
+    <div class="info-box" *ngIf="currentUser?.rol === 'medico'">
+      <p><strong>Médico asignado:</strong> {{ currentUser?.nombres }} {{ currentUser?.apellidos }}</p>
+      <p class="text-muted">Las historias médicas se asociarán automáticamente a tu cuenta.</p>
+    </div>
+
+    <!-- Selección de Archivos -->
+    <div class="form-section">
+      <h3>Archivos a Importar</h3>
+      <div class="file-upload-area">
+        <input 
+          type="file" 
+          id="fileInput" 
+          multiple 
+          accept=".docx,.doc"
+          (change)="onFilesSelected($event)"
+          [disabled]="importing"
+          style="display: none;">
+        <label 
+          for="fileInput" 
+          class="file-upload-label"
+          [class.disabled]="importing">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Seleccionar archivos Word (.docx, .doc)</span>
+          <small>Puedes seleccionar múltiples archivos (máx. 100)</small>
+        </label>
+      </div>
+
+      <!-- Lista de archivos seleccionados -->
+      <div class="files-list" *ngIf="selectedFiles.length > 0">
+        <h4>Archivos seleccionados ({{ selectedFiles.length }})</h4>
+        <div class="file-item" *ngFor="let file of selectedFiles; let i = index">
+          <div class="file-info">
+            <i class="fas fa-file-word"></i>
+            <span class="file-name">{{ file.name }}</span>
+            <span class="file-size">({{ formatFileSize(file.size) }})</span>
+          </div>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-danger"
+            (click)="removeFile(i)"
+            [disabled]="importing">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <button 
+          type="button" 
+          class="btn btn-secondary btn-sm mt-2"
+          (click)="clearFiles()"
+          [disabled]="importing">
+          Limpiar lista
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="progress-section" *ngIf="importing">
+      <div class="progress-bar-container">
+        <div class="progress-bar" [style.width.%]="progress"></div>
+      </div>
+      <p class="progress-text">Procesando archivos... {{ progress }}%</p>
+    </div>
+
+    <!-- Resultados -->
+    <div class="results-section" *ngIf="result">
+      <h3>Resultados de la Importación</h3>
+      <div class="results-grid">
+        <div class="result-card total">
+          <div class="result-number">{{ result.total }}</div>
+          <div class="result-label">Total procesados</div>
+        </div>
+        <div class="result-card success">
+          <div class="result-number">{{ result.exitosos }}</div>
+          <div class="result-label">Exitosos</div>
+        </div>
+        <div class="result-card error">
+          <div class="result-number">{{ result.fallidos }}</div>
+          <div class="result-label">Fallidos</div>
+        </div>
+        <div class="result-card created">
+          <div class="result-number">{{ result.pacientes_creados }}</div>
+          <div class="result-label">Pacientes creados</div>
+        </div>
+        <div class="result-card updated">
+          <div class="result-number">{{ result.pacientes_actualizados }}</div>
+          <div class="result-label">Pacientes actualizados</div>
+        </div>
+        <div class="result-card histories">
+          <div class="result-number">{{ result.historias_creadas }}</div>
+          <div class="result-label">Historias creadas</div>
+        </div>
+      </div>
+
+      <!-- Errores -->
+      <div class="errors-list" *ngIf="result.errores.length > 0">
+        <h4>Errores encontrados:</h4>
+        <div class="error-item" *ngFor="let error of result.errores">
+          <strong>{{ error.archivo }}</strong>: {{ error.error }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="form-actions">
+      <button 
+        type="button" 
+        class="btn btn-primary"
+        (click)="importarArchivos()"
+        [disabled]="importing || selectedFiles.length === 0 || !medicoId">
+        <span *ngIf="importing" class="spinner"></span>
+        <i class="fas fa-upload" *ngIf="!importing"></i>
+        {{ importing ? 'Importando...' : 'Importar Archivos' }}
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-secondary"
+        (click)="clearFiles()"
+        [disabled]="importing">
+        Limpiar
+      </button>
+    </div>
+  </div>
+</div>
+

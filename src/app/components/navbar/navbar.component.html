@@ -1,0 +1,137 @@
+<nav class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/dashboard" class="brand-link">
+      <img src="assets/logos/clinica/logo.webp" alt="DemoMed Logo" class="brand-logo">
+      <span class="brand-text">CODES-LABS</span>
+    </a>
+  </div>
+  
+  
+  <div class="navbar-user" *ngIf="currentUser">
+    <div class="user-info">
+      <span class="user-name">{{ getDoctorFullName() }}</span>
+      <span class="user-role">{{ currentUser.rol }}</span>
+    </div>
+    
+    <!-- Menú de Configuración (Settings) -->
+    <div class="settings-menu">
+      <div class="settings-trigger" [class.active]="showSettingsMenu" (click)="toggleSettingsMenu()">
+        <svg class="settings-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+      </div>
+      
+      <div class="settings-dropdown" *ngIf="showSettingsMenu">
+        <!-- Opciones para Médicos -->
+        <div class="settings-section" *ngIf="currentUser?.rol === 'medico'">
+          <div class="settings-section-title">Médico</div>
+          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+            </svg>
+            <span>Gestión de Pacientes</span>
+          </a>
+          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <span>Gestión de Consultas</span>
+          </a>
+          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
+            </svg>
+            <span>Informes Médicos</span>
+          </a>
+        </div>
+        
+        <!-- Separador para médicos -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'medico'"></div>
+        
+        <!-- Opciones para Secretarias -->
+        <div class="settings-section" *ngIf="currentUser?.rol === 'secretaria'">
+          <div class="settings-section-title">Secretaría</div>
+          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+            </svg>
+            <span>Gestión de Pacientes</span>
+          </a>
+          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <span>Gestión de Consultas</span>
+          </a>
+          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
+            </svg>
+            <span>Informes Médicos</span>
+          </a>
+        </div>
+        
+        <!-- Separador para secretarias -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'secretaria'"></div>
+        
+        <!-- Opciones de Finanzas (solo para rol finanzas, no para administradores) -->
+        <div class="settings-section" *ngIf="currentUser?.rol === 'finanzas'">
+          <div class="settings-section-title">Finanzas</div>
+          <a routerLink="/admin/finanzas" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+            </svg>
+            <span>Panel de Finanzas</span>
+          </a>
+        </div>
+        
+        <!-- Separador para finanzas -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'finanzas'"></div>
+        
+        <!-- Opciones de Administración con grupos expandibles (solo para administradores) -->
+        <div *ngIf="currentUser?.rol === 'administrador'">
+          <div class="menu-group" *ngFor="let group of adminMenuGroups">
+            <div class="menu-group-header" (click)="toggleGroup(group.title)">
+              <div class="menu-group-title">
+                <svg class="menu-group-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path [attr.d]="group.icon"/>
+                </svg>
+                <span>{{ group.title }}</span>
+              </div>
+              <svg class="menu-group-arrow" [class.expanded]="isGroupExpanded(group.title)" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+              </svg>
+            </div>
+            <div class="menu-group-items" [class.expanded]="isGroupExpanded(group.title)">
+              <a *ngFor="let item of group.items" 
+                 [routerLink]="item.route" 
+                 class="settings-item" 
+                 (click)="closeSettingsMenu()">
+                <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path [attr.d]="item.icon"/>
+                </svg>
+                <span>{{ item.label }}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Separador -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'administrador'"></div>
+        
+        <!-- Opciones de Usuario -->
+        <div class="settings-section">
+          <div class="settings-section-title">Usuario</div>
+          <button class="settings-item danger" (click)="logout()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+            </svg>
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

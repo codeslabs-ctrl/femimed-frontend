@@ -1,0 +1,548 @@
+<div class="finanzas-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>
+        <i class="fas fa-chart-line"></i>
+        Panel de Finanzas
+      </h1>
+      <p class="page-description">
+        Gestión de ingresos y reportes financieros
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="exportarReporte('pdf')">
+        <i class="fas fa-file-pdf"></i>
+        Exportar PDF
+      </button>
+      <button class="btn btn-success" (click)="exportarReporte('excel')">
+        <i class="fas fa-file-excel"></i>
+        Exportar Excel
+      </button>
+      <button class="btn btn-secondary" (click)="mostrarOpcionesExportacionModal()">
+        <i class="fas fa-cog"></i>
+        Opciones Avanzadas
+      </button>
+    </div>
+  </div>
+
+  <!-- Pestañas de Moneda -->
+  <div class="currency-tabs">
+    <div class="tabs-container">
+      <button 
+        class="tab-button" 
+        [class.active]="monedaSeleccionada === 'TODAS'"
+        (click)="cambiarMoneda('TODAS')">
+        <i class="fas fa-globe"></i>
+        Todas las Monedas
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="monedaSeleccionada === 'VES'"
+        (click)="cambiarMoneda('VES')">
+        <i class="fas fa-coins"></i>
+        Bolívares (VES)
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="monedaSeleccionada === 'USD'"
+        (click)="cambiarMoneda('USD')">
+        <i class="fas fa-dollar-sign"></i>
+        Dólares (USD)
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="form-group">
+        <label for="fecha_desde">Fecha Desde</label>
+        <input
+          type="date"
+          id="fecha_desde"
+          class="form-control"
+          [(ngModel)]="filtros.fecha_desde"
+        />
+      </div>
+      <div class="form-group">
+        <label for="fecha_hasta">Fecha Hasta</label>
+        <input
+          type="date"
+          id="fecha_hasta"
+          class="form-control"
+          [(ngModel)]="filtros.fecha_hasta"
+        />
+      </div>
+      <div class="form-group">
+        <label for="medico_id">Médico</label>
+        <select id="medico_id" class="form-control" [(ngModel)]="filtros.medico_id">
+          <option value="">Todos los médicos</option>
+          <option *ngFor="let medico of medicos" [value]="medico.id">
+            {{ medico.nombres }} {{ medico.apellidos }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="estado_pago">Estado de Pago</label>
+        <select id="estado_pago" class="form-control" [(ngModel)]="filtros.estado_pago">
+          <option value="todos">Todos</option>
+          <option value="pagado">Pagado</option>
+          <option value="pendiente">Pendiente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="paciente_cedula">Cédula Paciente</label>
+        <input
+          type="text"
+          id="paciente_cedula"
+          class="form-control"
+          [(ngModel)]="filtros.paciente_cedula"
+          placeholder="Buscar por cédula..."
+        />
+      </div>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" (click)="aplicarFiltros()">
+        <i class="fas fa-search"></i>
+        Filtrar
+      </button>
+      <button class="btn btn-secondary" (click)="limpiarFiltros()">
+        <i class="fas fa-times"></i>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Resumen Financiero -->
+  <div class="resumen-section" *ngIf="resumen">
+    <h3>Resumen Financiero</h3>
+    <div class="resumen-grid">
+      <div class="resumen-card">
+        <div class="resumen-icon total-consultas">
+          <i class="fas fa-chart-bar"></i>
+        </div>
+        <div class="resumen-content">
+          <div class="resumen-value">{{ resumen.total_consultas }}</div>
+          <div class="resumen-label">Total Consultas</div>
+        </div>
+      </div>
+      <div class="resumen-card">
+        <div class="resumen-icon consultas-pagadas">
+          <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="resumen-content">
+          <div class="resumen-value">{{ resumen.consultas_pagadas }}</div>
+          <div class="resumen-label">Consultas Pagadas</div>
+        </div>
+      </div>
+      <div class="resumen-card">
+        <div class="resumen-icon consultas-pendientes">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="resumen-content">
+          <div class="resumen-value">{{ resumen.consultas_pendientes }}</div>
+          <div class="resumen-label">Consultas Pendientes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Consultas -->
+  <div class="consultas-container">
+    <div class="table-container">
+      <table class="consultas-table">
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th>Médico</th>
+            <th>Especialidad</th>
+            <th>Fecha</th>
+            <th>Servicios</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="8" class="loading">
+              <div class="spinner"></div>
+              <span>Cargando consultas...</span>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && consultas.length === 0">
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <div class="empty-state-title">No hay consultas</div>
+              <div class="empty-state-description">
+                No se encontraron consultas con los filtros aplicados.
+              </div>
+            </td>
+          </tr>
+          <tr *ngFor="let consulta of consultas">
+            <td>
+              <div class="paciente-info">
+                <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
+                <div class="paciente-cedula">Cédula: {{ consulta.paciente_cedula }}</div>
+              </div>
+            </td>
+            <td>
+              <div class="medico-info">
+                <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
+              </div>
+            </td>
+            <td>
+              <span class="especialidad-badge">{{ consulta.especialidad_nombre }}</span>
+            </td>
+            <td>
+              <div class="fecha-info">
+                <div class="fecha">{{ formatDate(consulta.fecha_consulta) }}</div>
+                <div class="hora">{{ formatTime(consulta.hora_consulta) }}</div>
+              </div>
+            </td>
+            <td>
+              <div class="servicios-list">
+                <div *ngFor="let servicio of consulta.servicios" class="servicio-item-vertical">
+                  <div class="servicio-nombre">{{ servicio.nombre_servicio }}</div>
+                  <div class="servicio-precio">{{ formatCurrency(servicio.total_servicio, servicio.moneda_pago) }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="total-consulta">
+                <span class="total-amount">{{ formatCurrency(consulta.total_consulta, consulta.moneda_principal) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="estado-badge" [class]="getEstadoClass(consulta.estado_consulta)">
+                {{ getEstadoText(consulta.estado_consulta) }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  class="action-btn view-btn" 
+                  (click)="verDetalleConsulta(consulta)" 
+                  title="Ver detalles de la consulta">
+                  <i class="fas fa-eye action-icon"></i>
+                  <span>Ver</span>
+                </button>
+                <button 
+                  *ngIf="!consulta.fecha_pago"
+                  class="action-btn btn-success" 
+                  (click)="marcarComoPagada(consulta)" 
+                  title="Marcar consulta como pagada">
+                  <i class="fas fa-check action-icon"></i>
+                  <span>Pagar</span>
+                </button>
+                <button 
+                  *ngIf="consulta.fecha_pago"
+                  class="action-btn btn-success" 
+                  disabled
+                  title="Consulta ya pagada">
+                  <i class="fas fa-check-circle action-icon"></i>
+                  <span>Pagado</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Controles de Paginación -->
+  <div class="pagination-controls" *ngIf="paginacion">
+    <div class="pagination-info">
+      <span>Mostrando {{ (paginacion.pagina_actual - 1) * paginacion.limite + 1 }} - {{ getMaxRegistrosPagina() }} de {{ paginacion.total_registros }} registros</span>
+    </div>
+    
+    <div class="pagination-buttons" style="display: flex; gap: 10px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #dee2e6;">
+      <div style="color: #6c757d; font-weight: bold; margin-right: 10px;">Navegación:</div>
+      
+      <button 
+        class="btn btn-sm btn-outline" 
+        [disabled]="!paginacion.tiene_anterior"
+        (click)="irAPrimeraPagina()"
+        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        <i class="fas fa-angle-double-left"></i> Primera
+      </button>
+      <button 
+        class="btn btn-sm btn-outline" 
+        [disabled]="!paginacion.tiene_anterior"
+        (click)="irAPaginaAnterior()"
+        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        <i class="fas fa-angle-left"></i> Anterior
+      </button>
+      
+      <span class="page-numbers" style="display: flex; gap: 5px; margin: 0 10px;">
+        <button 
+          *ngFor="let pagina of getPaginasVisibles()" 
+          class="btn btn-sm" 
+          [class.btn-primary]="pagina === paginacion.pagina_actual"
+          [class.btn-outline]="pagina !== paginacion.pagina_actual"
+          (click)="cambiarPagina(pagina)"
+          style="background: {{ pagina === paginacion.pagina_actual ? '#28a745' : '#6c757d' }}; color: white; border: 1px solid {{ pagina === paginacion.pagina_actual ? '#28a745' : '#6c757d' }}; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+          {{ pagina }}
+        </button>
+      </span>
+      
+      <button 
+        class="btn btn-sm btn-outline" 
+        [disabled]="!paginacion.tiene_siguiente"
+        (click)="irAPaginaSiguiente()"
+        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        Siguiente <i class="fas fa-angle-right"></i>
+      </button>
+      <button 
+        class="btn btn-sm btn-outline" 
+        [disabled]="!paginacion.tiene_siguiente"
+        (click)="irAUltimaPagina()"
+        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        Última <i class="fas fa-angle-double-right"></i>
+      </button>
+    </div>
+    
+    <div class="pagination-size">
+      <label>Elementos por página:</label>
+      <select 
+        class="form-control" 
+        [value]="limitePorPagina"
+        (change)="onLimiteChange($event)">
+        <option *ngFor="let limite of opcionesLimite" [value]="limite">
+          {{ limite }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Pie de Página con Totales -->
+  <div class="table-footer" *ngIf="resumen">
+    <div class="footer-summary">
+      <div class="summary-card">
+        <div class="summary-label">Total Consultas</div>
+        <div class="summary-value">{{ resumen.total_consultas }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Consultas Pagadas</div>
+        <div class="summary-value">{{ resumen.consultas_pagadas }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Consultas Pendientes</div>
+        <div class="summary-value">{{ resumen.consultas_pendientes }}</div>
+      </div>
+    </div>
+    
+    <!-- Totales por Moneda -->
+    <div class="currency-summary" *ngIf="resumen.estadisticas_por_moneda">
+      <h4>Totales por Moneda</h4>
+      <div class="currency-cards">
+        <div 
+          *ngFor="let moneda of getMonedasDisponibles()" 
+          class="currency-card">
+          <div class="currency-header">
+            <i class="fas" [class.fa-coins]="moneda === 'VES'" [class.fa-dollar-sign]="moneda === 'USD'"></i>
+            <span>{{ moneda }}</span>
+          </div>
+          <div class="currency-stats">
+            <div class="stat">
+              <span class="stat-label">Consultas:</span>
+              <span class="stat-value">{{ resumen.estadisticas_por_moneda[moneda].total_consultas || 0 }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Ingresos:</span>
+              <span class="stat-value">{{ formatCurrency(resumen.estadisticas_por_moneda[moneda].total_ingresos || 0, moneda) }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Promedio:</span>
+              <span class="stat-value">{{ formatCurrency(resumen.estadisticas_por_moneda[moneda].promedio_por_consulta || 0, moneda) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Opciones de Exportación -->
+  <div class="export-modal" *ngIf="mostrarOpcionesExportacion">
+    <div class="modal-overlay" (click)="cerrarOpcionesExportacion()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📊 Opciones de Exportación</h3>
+        <button class="close-btn" (click)="cerrarOpcionesExportacion()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Moneda:</label>
+          <select [(ngModel)]="opcionesExportacion.moneda">
+            <option value="TODAS">Todas las Monedas</option>
+            <option value="VES">Bolívares (VES)</option>
+            <option value="USD">Dólares (USD)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Formato:</label>
+          <select [(ngModel)]="opcionesExportacion.formato">
+            <option value="pdf">PDF</option>
+            <option value="excel">Excel</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Rango:</label>
+          <select [(ngModel)]="opcionesExportacion.rango">
+            <option value="todas">Todas las páginas</option>
+            <option value="pagina_actual">Página actual</option>
+            <option value="rango_personalizado">Rango personalizado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" [(ngModel)]="opcionesExportacion.incluir_totales">
+            Incluir totales
+          </label>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" [(ngModel)]="opcionesExportacion.incluir_graficos">
+            Incluir gráficos
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Orden:</label>
+          <select [(ngModel)]="opcionesExportacion.orden">
+            <option value="fecha_desc">Fecha (más reciente)</option>
+            <option value="fecha_asc">Fecha (más antiguo)</option>
+            <option value="monto_desc">Monto (mayor)</option>
+            <option value="monto_asc">Monto (menor)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cerrarOpcionesExportacion()">Cancelar</button>
+        <button class="btn btn-primary" (click)="exportarReporteAvanzado()">
+          <i class="fas fa-download"></i>
+          Generar Reporte
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Detalles de Consulta -->
+  <div class="export-modal" *ngIf="mostrarModalDetalles">
+    <div class="modal-overlay" (click)="cerrarModalDetalles()"></div>
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3>👁️ Detalles de la Consulta</h3>
+        <button class="close-btn" (click)="cerrarModalDetalles()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="consultaSeleccionada">
+        <!-- Información del Paciente -->
+        <div class="detail-section">
+          <h4>👤 Información del Paciente</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Nombre:</label>
+              <span>{{ consultaSeleccionada.paciente_nombre }} {{ consultaSeleccionada.paciente_apellidos }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Cédula:</label>
+              <span>{{ consultaSeleccionada.paciente_cedula }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información del Médico -->
+        <div class="detail-section">
+          <h4>👨‍⚕️ Información del Médico</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Médico:</label>
+              <span>{{ consultaSeleccionada.medico_nombre }} {{ consultaSeleccionada.medico_apellidos }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Especialidad:</label>
+              <span>{{ getEspecialidadNombre(consultaSeleccionada) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información de la Consulta -->
+        <div class="detail-section">
+          <h4>📅 Información de la Consulta</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Fecha:</label>
+              <span>{{ formatDate(consultaSeleccionada.fecha_consulta) }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Hora:</label>
+              <span>{{ formatTime(consultaSeleccionada.hora_consulta) }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Estado:</label>
+              <span class="estado-badge" [class]="getEstadoClass(consultaSeleccionada.estado_consulta)">
+                {{ getEstadoText(consultaSeleccionada.estado_consulta) }}
+              </span>
+            </div>
+            <div class="detail-item" *ngIf="consultaSeleccionada.fecha_pago">
+              <label>Fecha de Pago:</label>
+              <span>{{ formatDate(consultaSeleccionada.fecha_pago) }}</span>
+            </div>
+            <div class="detail-item" *ngIf="consultaSeleccionada.metodo_pago">
+              <label>Método de Pago:</label>
+              <span>{{ consultaSeleccionada.metodo_pago }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Servicios -->
+        <div class="detail-section">
+          <h4>🩺 Servicios</h4>
+          <div class="servicios-detalle">
+            <div *ngFor="let servicio of consultaSeleccionada.servicios" class="servicio-detalle">
+              <div class="servicio-info">
+                <div class="servicio-nombre">{{ servicio.nombre_servicio }}</div>
+                <div class="servicio-descripcion" *ngIf="servicio.descripcion">{{ servicio.descripcion }}</div>
+              </div>
+              <div class="servicio-precio">
+                {{ formatCurrency(servicio.total_servicio, servicio.moneda_pago) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="detail-section total-section">
+          <h4>💰 Total de la Consulta</h4>
+          <div class="total-consulta-detalle">
+            <span class="total-label">Total:</span>
+            <span class="total-amount">{{ formatCurrency(consultaSeleccionada.total_consulta, consultaSeleccionada.moneda_principal) }}</span>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="detail-section" *ngIf="consultaSeleccionada.observaciones_financieras">
+          <h4>📝 Observaciones</h4>
+          <div class="observaciones">
+            {{ consultaSeleccionada.observaciones_financieras }}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cerrarModalDetalles()">Cerrar</button>
+        <button 
+          *ngIf="!consultaSeleccionada?.fecha_pago"
+          class="btn btn-success" 
+          (click)="marcarComoPagada(consultaSeleccionada!); cerrarModalDetalles()">
+          <i class="fas fa-check"></i>
+          Marcar como Pagada
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

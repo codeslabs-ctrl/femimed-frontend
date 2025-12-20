@@ -1,0 +1,216 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-0">
+            <i class="fas fa-signature text-success"></i>
+            Firmar Informe Digitalmente
+          </h2>
+          <p class="text-muted mb-0">Aplicar firma digital con validez legal al informe médico</p>
+        </div>
+        <div>
+          <button class="btn btn-clear me-2" (click)="cancelar()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button class="btn btn-info" (click)="previsualizarFirma()">
+            <i class="fas fa-eye"></i> Vista Previa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-success" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando informe para firma...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger" role="alert">
+    <i class="fas fa-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Información del Informe -->
+  <div *ngIf="!cargando && informe" class="row mb-4">
+    <div class="col-12">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-file-medical"></i>
+            Información del Informe a Firmar
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Título:</strong> {{ informe.titulo }}</p>
+              <p><strong>Número:</strong> {{ informe.numero_informe }}</p>
+              <p><strong>Tipo:</strong> {{ obtenerTipoInformeTexto(informe.tipo_informe) }}</p>
+              <p><strong>Estado:</strong> 
+                <span class="badge bg-primary">{{ obtenerEstadoTexto(informe.estado) }}</span>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Paciente:</strong> {{ informe.pacientes?.nombres }} {{ informe.pacientes?.apellidos }}</p>
+              <p><strong>Médico:</strong> {{ informe.medicos?.nombres }} {{ informe.medicos?.apellidos }}</p>
+              <p><strong>Fecha:</strong> {{ formatearFecha(informe.fecha_emision) }}</p>
+              <p><strong>Cédula:</strong> {{ informe.pacientes?.cedula }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de Firma -->
+  <div *ngIf="!cargando && informe" class="row">
+    <div class="col-12">
+      <form [formGroup]="firmaForm" (ngSubmit)="firmarInforme()">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-certificate text-warning"></i>
+              Certificado Digital
+            </h5>
+          </div>
+          <div class="card-body">
+            <!-- Cargar Certificado -->
+            <div class="mb-4">
+              <label class="form-label">
+                <i class="fas fa-upload text-primary"></i> Cargar Certificado Digital *
+              </label>
+              <input type="file" class="form-control" 
+                     accept=".pem,.crt,.txt" 
+                     (change)="cargarCertificadoDigital($event)">
+              <small class="text-muted">
+                Formatos soportados: .pem, .crt, .txt. El certificado debe estar en formato X.509.
+              </small>
+            </div>
+
+            <!-- Información del Certificado -->
+            <div *ngIf="certificadoInfo" class="alert alert-info" role="alert">
+              <h6 class="alert-heading">
+                <i class="fas fa-info-circle"></i> Información del Certificado
+              </h6>
+              <div class="row">
+                <div class="col-md-4">
+                  <p><strong>Formato:</strong> {{ certificadoInfo.formato }}</p>
+                </div>
+                <div class="col-md-4">
+                  <p><strong>Longitud:</strong> {{ certificadoInfo.longitud }} caracteres</p>
+                </div>
+                <div class="col-md-4">
+                  <p><strong>Válido:</strong> 
+                    <span class="badge" [ngClass]="certificadoValido ? 'bg-success' : 'bg-danger'">
+                      {{ certificadoValido ? 'Sí' : 'No' }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Certificado Válido -->
+            <div *ngIf="certificadoValido" class="alert alert-success" role="alert">
+              <h6 class="alert-heading">
+                <i class="fas fa-check-circle"></i> Certificado Válido
+              </h6>
+              <p class="mb-0">El certificado digital ha sido validado y está listo para firmar el informe.</p>
+            </div>
+
+            <!-- Certificado Inválido -->
+            <div *ngIf="certificadoDigital && !certificadoValido" class="alert alert-danger" role="alert">
+              <h6 class="alert-heading">
+                <i class="fas fa-exclamation-triangle"></i> Certificado Inválido
+              </h6>
+              <p class="mb-0">El certificado digital no es válido. Por favor, verifique el formato y vuelva a cargarlo.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirmación de Firma -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-shield-alt text-warning"></i>
+              Confirmación de Firma Digital
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" formControlName="confirmacion_firma" id="confirmacion_firma">
+              <label class="form-check-label" for="confirmacion_firma">
+                <strong>Confirmo que:</strong>
+              </label>
+            </div>
+            <ul class="mt-3">
+              <li>He revisado el contenido del informe médico</li>
+              <li>El certificado digital es válido y pertenece al médico firmante</li>
+              <li>La firma digital tendrá validez legal</li>
+              <li>Una vez firmado, el informe no podrá ser modificado</li>
+              <li>Entiendo las implicaciones legales de la firma digital</li>
+            </ul>
+            <div *ngIf="confirmacion_firma?.invalid && confirmacion_firma?.touched" class="text-danger mt-2">
+              {{ obtenerErrorCampo('confirmacion_firma') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Información Legal -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-gavel text-info"></i>
+              Información Legal
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-warning" role="alert">
+              <h6 class="alert-heading">
+                <i class="fas fa-exclamation-triangle"></i> Importante
+              </h6>
+              <p>La firma digital confiere validez legal al documento médico. Una vez aplicada:</p>
+              <ul class="mb-0">
+                <li>El documento no podrá ser modificado sin invalidar la firma</li>
+                <li>La firma será verificable mediante el hash del documento</li>
+                <li>Se registrará la fecha, hora e IP de la firma</li>
+                <li>El documento tendrá validez legal en procesos judiciales</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="card mt-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-clear" (click)="cancelar()">
+                <i class="fas fa-times"></i> Cancelar
+              </button>
+              
+              <div>
+                <button type="button" class="btn btn-info me-2" (click)="previsualizarFirma()">
+                  <i class="fas fa-eye"></i> Vista Previa
+                </button>
+                
+                <button type="submit" class="btn btn-success" 
+                        [disabled]="firmando || firmaForm.invalid || !certificadoValido">
+                  <i class="fas fa-signature" *ngIf="!firmando"></i>
+                  <span class="spinner-border spinner-border-sm" *ngIf="firmando"></span>
+                  {{ firmando ? 'Firmando...' : 'Firmar Digitalmente' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
