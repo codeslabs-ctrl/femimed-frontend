@@ -896,6 +896,9 @@ export class PatientsComponent implements OnInit {
           if (response.success) {
             this.patients = response.data;
             this.pagination = null;
+            // Mantener consistencia con loadPatients(): hidratar historico_id para que el botón
+            // "Editar/Crear Historia" refleje el estado real incluso al filtrar.
+            this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
           }
         },
         error: (error) => {
@@ -914,6 +917,8 @@ export class PatientsComponent implements OnInit {
           if (response.success) {
             this.patients = response.data;
             this.pagination = null;
+            // Igual que en loadPatients(): cargar historico_id para mantener el estado del botón de historia.
+            this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
           }
         },
         error: (error) => {

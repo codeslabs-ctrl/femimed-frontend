@@ -12,8 +12,8 @@ import { environment } from '../../environments/environment';
 })
 export class AuthService {
   private readonly API_URL = `${environment.apiUrl}`;
-  private readonly TOKEN_KEY = 'demomed_token';
-  private readonly USER_KEY = 'demomed_user';
+  private readonly TOKEN_KEY = 'femimed_token';
+  private readonly USER_KEY = 'femimed_user';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();

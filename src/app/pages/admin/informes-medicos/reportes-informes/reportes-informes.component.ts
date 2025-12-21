@@ -278,7 +278,7 @@ export class ReportesInformesComponent implements OnInit {
         <title>${this.reporteData.titulo}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-          .header { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+          .header { border-bottom: 2px solid #f5576c; padding-bottom: 10px; margin-bottom: 20px; }
           .resumen { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
           .tabla { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
           .tabla th, .tabla td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
@@ -320,7 +320,7 @@ export class ReportesInformesComponent implements OnInit {
         ` : ''}
         
         <div class="footer">
-          <p>DemoMed - Sistema de Gestión Médica</p>
+          <p>FemiMed - Sistema de Gestión Médica</p>
           <p>Reporte generado automáticamente</p>
         </div>
       </body>

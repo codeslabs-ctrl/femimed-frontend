@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3001/api/v1',
-  appName: 'DemoMed Dashboard',
+  apiUrl: 'http://localhost:3000/api/v1',
+  appName: 'FemiMed Dashboard',
   version: '1.0.0',
   pagination: {
     defaultPageSize: 10,

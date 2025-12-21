@@ -223,7 +223,7 @@ export class InformeMedicoDetailComponent implements OnInit {
             color: #333;
           }
           .header { 
-            border-bottom: 3px solid #007bff; 
+            border-bottom: 3px solid #f5576c; 
             padding-bottom: 15px; 
             margin-bottom: 30px; 
           }
@@ -232,7 +232,7 @@ export class InformeMedicoDetailComponent implements OnInit {
             padding: 20px; 
             border-radius: 8px; 
             margin-bottom: 25px; 
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #f5576c;
           }
           .contenido { 
             line-height: 1.8; 
@@ -266,7 +266,7 @@ export class InformeMedicoDetailComponent implements OnInit {
       </head>
       <body>
         <div class="header">
-          <h1 style="color: #007bff; margin: 0;">${this.informe.titulo}</h1>
+          <h1 style="color: #f5576c; margin: 0;">${this.informe.titulo}</h1>
           <p style="margin: 5px 0; font-size: 1.1em;"><strong>Número:</strong> ${this.informe.numero_informe}</p>
         </div>
         
@@ -286,13 +286,13 @@ export class InformeMedicoDetailComponent implements OnInit {
         </div>
         
         <div class="contenido">
-          <h3 style="color: #007bff; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">Contenido del Informe:</h3>
+          <h3 style="color: #f5576c; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">Contenido del Informe:</h3>
           <div>${this.informe.contenido}</div>
         </div>
         
         ${this.informe.observaciones ? `
         <div class="info">
-          <h4 style="color: #007bff; margin-top: 0;">Observaciones:</h4>
+          <h4 style="color: #f5576c; margin-top: 0;">Observaciones:</h4>
           <p style="margin: 0;">${this.informe.observaciones}</p>
         </div>
         ` : ''}
@@ -309,7 +309,7 @@ export class InformeMedicoDetailComponent implements OnInit {
         
         <div class="footer">
           <p>Generado el: ${new Date().toLocaleString('es-ES')}</p>
-          <p>DemoMed - Sistema de Gestión Médica</p>
+          <p>FemiMed - Sistema de Gestión Médica</p>
         </div>
       </body>
       </html>

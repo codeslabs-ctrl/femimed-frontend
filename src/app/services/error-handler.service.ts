@@ -15,7 +15,26 @@ export class ErrorHandlerService {
    * @returns Mensaje seguro para el usuario
    */
   getSafeErrorMessage(error: any, context: string = 'operación'): string {
-    // Siempre mostrar mensajes genéricos y seguros
+    // Intentar usar un mensaje "seguro" del backend (sanitizado) si existe.
+    // Esto mejora UX para errores comunes (validación, informe firmado, etc.).
+    const candidates: Array<unknown> = [
+      error?.error?.message,
+      error?.error?.error,
+      error?.error?.details,
+      error?.message
+    ];
+
+    for (const c of candidates) {
+      if (typeof c === 'string' && c.trim().length > 0) {
+        const msg = this.sanitizeMessage(c.trim());
+        // Evitar mostrar mensajes excesivamente largos
+        if (msg.length <= 280) {
+          return `⚠️ ${msg}`;
+        }
+      }
+    }
+
+    // Fallback genérico y seguro
     return `❌ Error en ${context}. Por favor, verifica los datos e intenta de nuevo.`;
   }
 

@@ -215,9 +215,9 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       text-align: center;
       margin-bottom: 32px;
       padding: 24px;
-      background: linear-gradient(135deg, #E8F0F8 0%, #D4E4F0 100%);
+      background: linear-gradient(135deg, rgba(240, 147, 251, 0.18) 0%, rgba(245, 87, 108, 0.12) 100%);
       border-radius: 12px;
-      border: 1px solid #B8D4E8;
+      border: 1px solid rgba(245, 87, 108, 0.25);
     }
 
     .welcome-icon {
@@ -227,7 +227,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 
     .welcome-message h3 {
       margin: 0 0 12px;
-      color: #5A7A9A;
+      color: var(--color-primary-dark);
       font-size: 1.25rem;
       font-weight: 600;
     }
@@ -272,8 +272,8 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 
     .form-input:focus {
       outline: none;
-      border-color: #7A9CC6;
-      box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.1);
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.12);
     }
 
     .form-input.error {
@@ -343,14 +343,14 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      background: var(--gradient-primary-solid);
       color: white;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #8BA8D1 0%, #6A8AAA 100%);
+      background: linear-gradient(135deg, #f3a4fc 0%, #ff6f80 100%);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
+      box-shadow: 0 4px 12px rgba(245, 87, 108, 0.28);
     }
 
     .loading-spinner {
@@ -460,7 +460,7 @@ export class ChangePasswordModalComponent {
     };
 
     // Obtener token del localStorage
-    const token = localStorage.getItem('demomed_token');
+    const token = localStorage.getItem('femimed_token');
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

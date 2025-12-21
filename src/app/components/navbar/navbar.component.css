@@ -39,7 +39,7 @@
 .brand-text {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #7A9CC6;
+  color: var(--color-primary);
   margin-left: 0.75rem;
   letter-spacing: 0.05em;
 }
@@ -94,9 +94,9 @@
 }
 
 .settings-trigger.active {
-  background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+  background: var(--gradient-primary-solid);
   color: white;
-  border-color: #5A7A9A;
+  border-color: var(--color-primary-dark);
 }
 
 .settings-icon {

@@ -484,7 +484,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
       border-radius: 50%;
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
@@ -542,7 +542,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
     }
@@ -555,18 +555,18 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #7A9CC6;
+      border: 1px solid var(--color-primary);
     }
 
     .btn-secondary:hover {
-      background: #7A9CC6;
+      background: var(--color-primary);
       color: white;
       transform: translateY(-2px);
     }
 
     .section-divider {
       height: 3px;
-      background: linear-gradient(90deg, #7A9CC6, #F5F5F5, #7A9CC6);
+      background: linear-gradient(90deg, var(--color-primary), #F5F5F5, var(--color-primary));
       margin: 2rem 0 1.5rem 0;
       border-radius: 2px;
       box-shadow: 0 2px 4px rgba(233, 30, 99, 0.2);
@@ -612,7 +612,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .patient-email {
-      color: #7A9CC6 !important;
+      color: var(--color-primary) !important;
     }
 
     .patient-actions .btn {
@@ -675,7 +675,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .consultas-count {
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
       color: white;
       padding: 0.25rem 0.75rem;
       border-radius: 9999px;
@@ -686,8 +686,8 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .refresh-btn {
       background: #F5F5F5;
-      border: 1px solid #7A9CC6;
-      color: #7A9CC6;
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
       padding: 0.5rem 1rem;
       border-radius: 0.5rem;
       font-size: 0.875rem;
@@ -698,7 +698,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .refresh-btn:hover {
-      background: #7A9CC6;
+      background: var(--color-primary);
       color: white;
       transform: translateY(-1px);
     }
@@ -711,7 +711,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       max-height: 600px;
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: #7A9CC6 #f1f5f9;
+      scrollbar-color: var(--color-primary) #f1f5f9;
     }
 
     .consultas-grid::-webkit-scrollbar {
@@ -724,12 +724,12 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .consultas-grid::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
       border-radius: 3px;
     }
 
     .consultas-grid::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(135deg, #5A7A9A, #AD1457);
+      background: linear-gradient(135deg, var(--color-primary-dark), #AD1457);
     }
 
     .consulta-card {
@@ -755,14 +755,14 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, #7A9CC6, #5A7A9A, #3B82F6);
+      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark), #3B82F6);
       border-radius: 1rem 1rem 0 0;
     }
 
     .consulta-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-      border-color: #7A9CC6;
+      border-color: var(--color-primary);
     }
 
     .consulta-header {
@@ -782,7 +782,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       left: 0;
       width: 40px;
       height: 2px;
-      background: linear-gradient(90deg, #7A9CC6, #5A7A9A);
+      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
       border-radius: 1px;
     }
 
@@ -791,7 +791,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       color: #1e293b;
       font-size: 1rem;
       font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -905,7 +905,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       padding: 0.5rem 0.6rem;
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       border-radius: 0.4rem;
-      border-left: 3px solid #7A9CC6;
+      border-left: 3px solid var(--color-primary);
       margin-bottom: 0.5rem;
     }
 
@@ -932,7 +932,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       content: '';
       width: 14px;
       height: 14px;
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
       border-radius: 50%;
       display: inline-block;
       margin-right: 0.4rem;
@@ -1230,7 +1230,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       padding: 1rem;
       border-radius: 0.5rem;
       margin-bottom: 1.5rem;
-      border-left: 3px solid #7A9CC6;
+      border-left: 3px solid var(--color-primary);
     }
 
     .consulta-details {
@@ -1245,7 +1245,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       font-weight: 600;
       margin: 0 0 0.75rem 0;
       padding-bottom: 0.5rem;
-      border-bottom: 2px solid #7A9CC6;
+      border-bottom: 2px solid var(--color-primary);
     }
 
     .detail-grid {
@@ -1296,7 +1296,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .form-control:focus {
       outline: none;
-      border-color: #7A9CC6;
+      border-color: var(--color-primary);
       box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
     }
 
@@ -1326,7 +1326,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .radio-option input[type="radio"] {
       margin-right: 0.75rem;
-      accent-color: #7A9CC6;
+      accent-color: var(--color-primary);
     }
 
     .radio-label {
@@ -1484,7 +1484,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .action-icon.pacientes {
-      background: linear-gradient(135deg, #7A9CC6, #5A7A9A);
+      background: var(--gradient-primary-solid);
     }
 
     .action-icon.medicos {

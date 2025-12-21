@@ -50,7 +50,7 @@ import { SnackbarComponent } from './components/snackbar/snackbar.component';
   `]
 })
 export class AppComponent implements OnInit {
-  title = 'demomed-dashboard';
+  title = 'femimed-dashboard';
   showNavbar = false;
   showPasswordModal = false;
   isFirstLogin = false;

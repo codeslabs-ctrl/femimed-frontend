@@ -389,12 +389,17 @@ export class InformeMedicoFormComponent implements OnInit {
   actualizarInforme(datos: any): void {
     if (!this.informeId) return;
 
+    // Joi (backend) requiere que observaciones sea string si se envía.
+    // En algunos flujos puede venir null/undefined desde BD o UI, así que lo omitimos si no es string.
+    const observaciones =
+      typeof datos?.observaciones === 'string' ? datos.observaciones : undefined;
+
     const informeRequest: ActualizarInformeRequest = {
       titulo: datos.titulo,
       tipo_informe: datos.tipo_informe,
       contenido: datos.contenido,
       estado: 'finalizado', // Valor por defecto
-      observaciones: datos.observaciones
+      ...(observaciones !== undefined ? { observaciones } : {})
     };
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({
@@ -403,7 +408,9 @@ export class InformeMedicoFormComponent implements OnInit {
         this.router.navigate(['/admin/informes-medicos']);
       },
       error: (error) => {
-        console.error('Error actualizando informe:', error);
+        this.errorHandler.logError(error, 'actualizar informe médico', { informeId: this.informeId, payload: informeRequest });
+        const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar informe médico');
+        alert(safeMessage);
         this.error = 'Error actualizando el informe médico';
         this.guardando = false;
       }

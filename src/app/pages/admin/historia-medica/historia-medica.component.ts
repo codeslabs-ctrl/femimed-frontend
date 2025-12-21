@@ -1586,7 +1586,8 @@ export class HistoriaMedicaComponent implements OnInit {
       next: (response) => {
         if (response.success) {
           alert('✅ Historia médica actualizada exitosamente');
-          this.router.navigate(['/admin/consultas']);
+          // Al finalizar edición, volver a Gestión de Pacientes
+          this.router.navigate(['/patients']);
         } else {
           alert('❌ Error al actualizar la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido'));
         }

@@ -795,10 +795,10 @@ export class PatientDetailComponent implements OnInit {
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           .header { text-align: center; margin-bottom: 30px; }
-          .logo { font-size: 24px; font-weight: bold; color: #7A9CC6; }
+          .logo { font-size: 24px; font-weight: bold; color: #f5576c; }
           .patient-info { margin-bottom: 20px; }
           .section { margin-bottom: 20px; }
-          .section h3 { color: #7A9CC6; border-bottom: 2px solid #7A9CC6; }
+          .section h3 { color: #f5576c; border-bottom: 2px solid #f5576c; }
           .info-row { display: flex; margin-bottom: 10px; }
           .info-label { font-weight: bold; width: 150px; }
           .footer { margin-top: 40px; text-align: center; font-size: 12px; }
@@ -807,7 +807,7 @@ export class PatientDetailComponent implements OnInit {
       </head>
       <body>
         <div class="header">
-          <div class="logo">DemoMed</div>
+          <div class="logo">FemiMed</div>
           <h1>Informe Médico</h1>
         </div>
         
@@ -875,7 +875,7 @@ export class PatientDetailComponent implements OnInit {
         
         <div class="footer">
           <p>Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}</p>
-          <p>DemoMed - Sistema de Gestión Médica</p>
+          <p>FemiMed - Sistema de Gestión Médica</p>
         </div>
       </body>
       </html>
