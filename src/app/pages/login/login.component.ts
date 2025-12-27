@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { HomePreferencesService } from '../../services/home-preferences.service';
 
 @Component({
   selector: 'app-login',
@@ -26,7 +27,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private homePrefs: HomePreferencesService
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -52,10 +54,11 @@ export class LoginComponent implements OnInit, OnDestroy {
         next: (response) => {
           console.log('🔐 Login successful, response:', response);
           this.isLoading = false;
-          // Esperar un momento para que el usuario se cargue completamente
-          setTimeout(() => {
+          // Sincronizar preferencias desde BD antes de redirigir (si falla, usar fallback local/default)
+          const currentUser = response?.user || this.authService.getCurrentUser();
+          this.homePrefs.syncFromServer(currentUser).subscribe(() => {
             this.redirectBasedOnRole();
-          }, 100);
+          });
         },
         error: (error) => {
           this.isLoading = false;
@@ -132,15 +135,9 @@ export class LoginComponent implements OnInit, OnDestroy {
     console.log('🔍 User role:', currentUser?.rol);
     console.log('🔍 Role comparison:', currentUser?.rol === 'finanzas');
     
-    if (currentUser?.rol === 'finanzas') {
-      console.log('✅ Redirecting to finanzas panel');
-      // Redirigir directamente al panel de finanzas
-      this.router.navigate(['/admin/finanzas']);
-    } else {
-      console.log('✅ Redirecting to general dashboard');
-      // Para otros roles, ir al dashboard general
-      this.router.navigate(['/dashboard']);
-    }
+    const target = this.homePrefs.resolveHomeRoute(currentUser);
+    console.log('✅ Redirecting to home route:', target);
+    this.router.navigate([target]);
   }
 
   ngOnDestroy() {

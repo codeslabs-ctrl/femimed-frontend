@@ -23,6 +23,7 @@ import { SnackbarComponent } from './components/snackbar/snackbar.component';
       <app-change-password-modal
         [isVisible]="showPasswordModal"
         [isFirstLogin]="isFirstLogin"
+        [isMandatory]="showPasswordModal"
         (close)="closePasswordModal()"
         (passwordChanged)="onPasswordChanged()">
       </app-change-password-modal>
@@ -76,16 +77,25 @@ export class AppComponent implements OnInit {
       if (user && this.authService.needsPasswordChange()) {
         this.isFirstLogin = user.first_login === true;
         this.showPasswordModal = true;
+        // Recalcular navbar inmediatamente (evita que quede visible durante el modal)
+        this.updateNavbarVisibility(this.router.url);
+      } else {
+        // Si ya no requiere cambio (o no hay usuario), asegurar que el navbar se muestre correctamente
+        this.showPasswordModal = false;
+        this.updateNavbarVisibility(this.router.url);
       }
     });
   }
 
   private updateNavbarVisibility(url: string) {
     // No mostrar navbar en la página de login
-    this.showNavbar = url !== '/login' && this.authService.isAuthenticated();
+    // Si el cambio de contraseña es obligatorio, ocultar navbar para evitar navegación.
+    this.showNavbar = url !== '/login' && this.authService.isAuthenticated() && !this.showPasswordModal;
   }
 
   closePasswordModal(): void {
+    // No permitir cerrar si el cambio es requerido (needsPasswordChange)
+    if (this.authService.needsPasswordChange()) return;
     this.showPasswordModal = false;
   }
 
@@ -94,6 +104,9 @@ export class AppComponent implements OnInit {
     
     // Actualizar el estado del usuario localmente
     this.authService.updateUserAfterPasswordChange();
+
+    // Recalcular navbar (puede que no haya navegación inmediata)
+    this.updateNavbarVisibility(this.router.url);
   }
 
 }

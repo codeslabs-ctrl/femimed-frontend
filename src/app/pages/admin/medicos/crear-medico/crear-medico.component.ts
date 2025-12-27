@@ -332,4 +332,27 @@ export class CrearMedicoComponent implements OnInit {
       this.cedulaChecked = false;
     }
   }
+
+  /**
+   * Normaliza la cédula para mejorar UX:
+   * - Remueve espacios, puntos y guiones
+   * - Pasa a mayúsculas
+   * - Si el usuario escribe solo números (7-8), asume prefijo "V"
+   *
+   * Nota: El sistema valida formato: [VEJPG][0-9]{7,8} (sin guiones).
+   */
+  normalizeCedula(): void {
+    const raw = (this.medicoData.cedula || '').toString().trim();
+    if (!raw) return;
+
+    // Quitar separadores comunes y normalizar
+    let cleaned = raw.replace(/[.\s-]/g, '').toUpperCase();
+
+    // Si es solo número, anteponer V
+    if (/^[0-9]{7,8}$/.test(cleaned)) {
+      cleaned = `V${cleaned}`;
+    }
+
+    this.medicoData.cedula = cleaned;
+  }
 }

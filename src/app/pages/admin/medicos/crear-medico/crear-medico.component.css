@@ -56,6 +56,25 @@
   color: #374151;
 }
 
+.form-label.required::after {
+  content: " *";
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.optional {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 0.9em;
+}
+
+.help-text {
+  margin-top: 0.35rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
 .form-input {
   width: 100%;
   padding: 0.75rem;

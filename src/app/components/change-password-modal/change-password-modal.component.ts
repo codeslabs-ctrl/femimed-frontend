@@ -14,7 +14,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       <div class="modal-container" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2>Cambiar Contraseña</h2>
-          <button class="close-btn" (click)="closeModal()" type="button">
+          <button class="close-btn" (click)="closeModal()" type="button" [disabled]="isMandatory">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
@@ -25,7 +25,8 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
           <div class="welcome-message" *ngIf="isFirstLogin">
             <div class="welcome-icon">🔐</div>
             <h3>¡Bienvenido!</h3>
-            <p>Por seguridad, debes cambiar tu contraseña temporal por una más segura y fácil de recordar.</p>
+            <p>Por seguridad, <strong>debes</strong> cambiar tu contraseña temporal por una más segura y fácil de recordar.</p>
+            <p class="mandatory-note" *ngIf="isMandatory">Este paso es obligatorio para continuar.</p>
           </div>
           
           <form #passwordForm="ngForm" (ngSubmit)="onSubmit()" class="password-form">
@@ -130,7 +131,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
                 type="button" 
                 class="btn btn-secondary" 
                 (click)="closeModal()"
-                [disabled]="isLoading">
+                [disabled]="isLoading || isMandatory">
                 Cancelar
               </button>
               <button 
@@ -236,6 +237,12 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       margin: 0;
       color: #4A6A8A;
       line-height: 1.5;
+    }
+
+    .mandatory-note {
+      margin-top: 10px;
+      color: var(--color-primary-dark);
+      font-weight: 600;
     }
 
     .password-form {
@@ -386,6 +393,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 export class ChangePasswordModalComponent {
   @Input() isVisible = false;
   @Input() isFirstLogin = false;
+  @Input() isMandatory = false;
   @Output() close = new EventEmitter<void>();
   @Output() passwordChanged = new EventEmitter<void>();
 
@@ -425,11 +433,15 @@ export class ChangePasswordModalComponent {
 
   onOverlayClick(event: Event): void {
     if (event.target === event.currentTarget) {
+      // En primer login obligatorio, no permitir cerrar el modal haciendo clic fuera.
+      if (this.isMandatory) return;
       this.closeModal();
     }
   }
 
   closeModal(): void {
+    // En primer login obligatorio, no permitir cerrar el modal.
+    if (this.isMandatory) return;
     this.close.emit();
     this.resetForm();
   }

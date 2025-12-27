@@ -22,7 +22,7 @@
 }
 
 .logo-image {
-  width: 100px;
+  width: 120px;
   height: auto;
   margin-bottom: 1rem;
   background: transparent;
@@ -137,6 +137,28 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: rgba(255, 255, 255, 1);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .login-btn:hover:not(:disabled) {
@@ -163,6 +185,13 @@
 
 .login-btn.loading {
   position: relative;
+}
+
+.loading-hint {
+  margin-top: 0.75rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 .forgot-password-container {
@@ -193,7 +222,7 @@
   }
 
   .logo-image {
-    width: 80px;
+    width: 96px;
   }
 
   .password-toggle {

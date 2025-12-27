@@ -2,7 +2,7 @@
   <div class="login-card">
     <div class="login-header">
       <div class="logo">
-        <img src="assets/logos/clinica/logo.webp" alt="FemiMed Logo" class="logo-image">
+        <img src="assets/logos/clinica/logo.svg" alt="FemiMed Logo" class="logo-image">
         <p>Centro Médico Especializado</p>
       </div>
     </div>
@@ -15,6 +15,7 @@
           id="username" 
           formControlName="username" 
           placeholder="Ingresa tu usuario"
+          [disabled]="isLoading || isRateLimited"
           [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
         >
         <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
@@ -30,6 +31,7 @@
             id="password" 
             formControlName="password" 
             placeholder="Ingresa tu contraseña"
+            [disabled]="isLoading || isRateLimited"
             [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
             class="password-input"
           >
@@ -37,6 +39,7 @@
             type="button" 
             class="password-toggle" 
             (click)="togglePasswordVisibility()"
+            [disabled]="isLoading || isRateLimited"
             [title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           >
             <span class="password-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
@@ -53,11 +56,19 @@
         [disabled]="loginForm.invalid || isLoading || isRateLimited"
         [class.loading]="isLoading"
         [class.rate-limited]="isRateLimited"
+        [attr.aria-busy]="isLoading ? 'true' : 'false'"
       >
-        <span *ngIf="!isLoading && !isRateLimited">Iniciar Sesión</span>
-        <span *ngIf="isLoading">Iniciando...</span>
+        <span class="btn-content" *ngIf="!isRateLimited">
+          <span class="spinner" *ngIf="isLoading" aria-hidden="true"></span>
+          <span *ngIf="!isLoading">Iniciar Sesión</span>
+          <span *ngIf="isLoading">Validando credenciales...</span>
+        </span>
         <span *ngIf="isRateLimited">Bloqueado ({{ getFormattedTimeRemaining() }})</span>
       </button>
+
+      <div *ngIf="isLoading" class="loading-hint">
+        Esto puede tardar unos segundos.
+      </div>
 
       <div class="forgot-password-container">
         <a routerLink="/forgot-password" class="forgot-password-link">

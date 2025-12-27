@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
+import { HomePreferencesService } from '../../services/home-preferences.service';
 
 interface MenuGroup {
   title: string;
@@ -28,6 +29,7 @@ export class NavbarComponent implements OnInit {
   currentUser: User | null = null;
   showSettingsMenu = false;
   expandedGroups: Set<string> = new Set();
+  canChooseHome = false;
 
   // Grupos de menú para administrador
   adminMenuGroups: MenuGroup[] = [
@@ -118,12 +120,16 @@ export class NavbarComponent implements OnInit {
     }
   ];
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private homePrefs: HomePreferencesService
+  ) {}
 
   ngOnInit() {
     // Suscribirse a los cambios del usuario actual
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      this.canChooseHome = this.homePrefs.canChooseHome(user);
       // Inicializar grupos colapsados por defecto (ninguno expandido)
       if (user?.rol === 'administrador') {
         this.expandedGroups.clear();
