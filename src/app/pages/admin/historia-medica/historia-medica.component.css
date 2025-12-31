@@ -118,6 +118,87 @@
   color: #ef4444;
 }
 
+/* ===== Controles del paciente (lista) ===== */
+.controles-section {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.controles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.loading-inline,
+.error-inline,
+.empty-inline {
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.error-inline {
+  color: #b91c1c;
+}
+
+.controles-table .table {
+  width: 100%;
+}
+
+.controles-table tr.selected {
+  background: #fdf2f8; /* rosa suave */
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+/* ===== Layout: Historial (izquierda) + Formulario (derecha) ===== */
+.historial-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .historial-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.historial-right .form-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.historial-right .form-panel.empty {
+  color: #64748b;
+}
+
+.form-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-panel-header h3 {
+  margin: 0;
+}
+
 .btn-delete:hover {
   background: #fee2e2;
   color: #dc2626;

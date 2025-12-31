@@ -132,7 +132,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                     Editar
                   </a>
                   <button 
-                    *ngIf="currentUser?.rol === 'medico'"
+                    *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador' || currentUser?.rol === 'admin'"
                     class="action-btn history-btn" 
                     [class.has-history]="tieneHistoriaMedica(patient)"
                     (click)="gestionarHistoriaMedica(patient)" 
@@ -140,7 +140,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                     <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                     </svg>
-                    {{ tieneHistoriaMedica(patient) ? 'Editar Historia' : 'Crear Historia' }}
+                    {{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}
                     <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
                   </button>
                   <button 
@@ -219,7 +219,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                 Editar
               </a>
               <button 
-                *ngIf="currentUser?.rol === 'medico'"
+                *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador' || currentUser?.rol === 'admin'"
                 class="action-btn history-btn" 
                 [class.has-history]="tieneHistoriaMedica(patient)"
                 (click)="gestionarHistoriaMedica(patient)" 
@@ -227,7 +227,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                 </svg>
-                {{ tieneHistoriaMedica(patient) ? 'Editar Historia' : 'Crear Historia' }}
+                {{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}
                 <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
               </button>
               <button 
@@ -1061,9 +1061,11 @@ export class PatientsComponent implements OnInit {
 
   // Método para obtener el tooltip del botón de historia
   getHistoriaTooltip(patient: Patient): string {
-    return this.tieneHistoriaMedica(patient) 
-      ? 'Editar historia médica existente' 
-      : 'Crear nueva historia médica';
+    const rol = this.currentUser?.rol;
+    if (rol === 'medico') {
+      return 'Ver controles del paciente / Crear nuevo control';
+    }
+    return 'Ver controles del paciente (solo lectura)';
   }
 
   // Método para gestionar la historia médica

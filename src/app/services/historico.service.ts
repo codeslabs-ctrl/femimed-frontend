@@ -25,6 +25,7 @@ export interface HistoricoWithDetails extends HistoricoData {
   medico_nombre?: string;
   medico_apellidos?: string;
   nombre_medico?: string; // Field that actually comes from the backend
+  especialidad_nombre?: string;
 }
 
 @Injectable({

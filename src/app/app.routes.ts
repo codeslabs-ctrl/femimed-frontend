@@ -100,6 +100,16 @@ export const routes: Routes = [
   },
   {
     path: 'patients/:id/historia-medica',
+    loadComponent: () => import('./pages/admin/historia-medica/historia-medica-list.component').then(m => m.HistoriaMedicaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'patients/:id/historia-medica/nuevo',
+    loadComponent: () => import('./pages/admin/historia-medica/historia-medica.component').then(m => m.HistoriaMedicaComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'patients/:id/historia-medica/:historicoId',
     loadComponent: () => import('./pages/admin/historia-medica/historia-medica.component').then(m => m.HistoriaMedicaComponent),
     canActivate: [authGuard]
   },
