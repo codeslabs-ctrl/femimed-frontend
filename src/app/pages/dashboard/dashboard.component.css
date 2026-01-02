@@ -159,23 +159,62 @@
   font-weight: 600;
 }
 
-.btn-refresh {
-  background: #f3f4f6;
-  color: #374151;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.consultas-section .section-header .btn-refresh,
+.section-header button.btn-refresh {
+  background: #ffffff !important;
+  color: #f5576c !important;
+  border: 2px solid #f5576c !important;
+  padding: 0.375rem 0.75rem !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  font-family: 'Montserrat', sans-serif !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.btn-refresh:hover {
-  background: #e5e7eb;
+.consultas-section .section-header .btn-refresh:hover:not([disabled]),
+.section-header button.btn-refresh:hover:not([disabled]) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3) !important;
+}
+
+.consultas-section .section-header .btn-refresh:active:not([disabled]),
+.section-header button.btn-refresh:active:not([disabled]) {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 4px rgba(245, 87, 108, 0.2) !important;
+}
+
+.consultas-section .section-header .btn-refresh[disabled],
+.section-header button.btn-refresh[disabled] {
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+.consultas-section .section-header .btn-refresh .spinner,
+.section-header button.btn-refresh .spinner {
+  display: inline-block !important;
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid currentColor !important;
+  border-top-color: transparent !important;
+  border-radius: 50% !important;
+  animation: spin 0.8s linear infinite !important;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .consultas-container {
