@@ -3,6 +3,7 @@ export interface MensajeDifusion {
   titulo: string;
   contenido: string;
   tipo_mensaje?: string;
+  canal?: string | string[];
   estado?: string;
   fecha_creacion?: string;
   fecha_programado?: string;
@@ -33,6 +34,7 @@ export interface MensajeFormData {
   titulo: string;
   contenido: string;
   tipo_mensaje: string;
+  canal?: string | string[];
   fecha_programado?: string;
   destinatarios: number[]; // IDs de pacientes
 }
