@@ -43,6 +43,10 @@ export class InformeMedicoFormComponent implements OnInit {
   // Valores para rich text editors
   contenidoValue = '';
   observacionesValue = '';
+  antecedentesPersonalesValue = '';
+  antecedentesFamiliaresValue = '';
+  antecedentesQuirurgicosValue = '';
+  antecedentesOtrosValue = '';
 
   // Filtros
   especialidadSeleccionada: number | null = null;
@@ -95,7 +99,11 @@ export class InformeMedicoFormComponent implements OnInit {
       paciente_id: ['', Validators.required],
       medico_id: ['', Validators.required],
       fecha_emision: [new Date().toISOString().split('T')[0], Validators.required],
-      observaciones: ['', Validators.maxLength(1000)]
+      observaciones: ['', Validators.maxLength(1000)],
+      antecedentes_personales: ['', Validators.maxLength(5000)],
+      antecedentes_familiares: ['', Validators.maxLength(5000)],
+      antecedentes_quirurgicos: ['', Validators.maxLength(5000)],
+      antecedentes_otros: ['', Validators.maxLength(5000)]
     });
   }
 
@@ -223,12 +231,20 @@ export class InformeMedicoFormComponent implements OnInit {
       paciente_id: this.informe.paciente_id,
       medico_id: this.informe.medico_id,
       fecha_emision: this.informe.fecha_emision.split('T')[0],
-      observaciones: this.informe.observaciones
+      observaciones: this.informe.observaciones,
+      antecedentes_personales: this.informe.antecedentes_personales || '',
+      antecedentes_familiares: this.informe.antecedentes_familiares || '',
+      antecedentes_quirurgicos: this.informe.antecedentes_quirurgicos || '',
+      antecedentes_otros: this.informe.antecedentes_otros || ''
     });
 
     // Inicializar valores de rich text editors
     this.contenidoValue = this.informe.contenido || '';
     this.observacionesValue = this.informe.observaciones || '';
+    this.antecedentesPersonalesValue = this.informe.antecedentes_personales || '';
+    this.antecedentesFamiliaresValue = this.informe.antecedentes_familiares || '';
+    this.antecedentesQuirurgicosValue = this.informe.antecedentes_quirurgicos || '';
+    this.antecedentesOtrosValue = this.informe.antecedentes_otros || '';
   }
 
 
@@ -241,6 +257,26 @@ export class InformeMedicoFormComponent implements OnInit {
   onObservacionesChange(value: string): void {
     this.observacionesValue = value;
     this.informeForm.patchValue({ observaciones: value });
+  }
+
+  onAntecedentesPersonalesChange(value: string): void {
+    this.antecedentesPersonalesValue = value;
+    this.informeForm.patchValue({ antecedentes_personales: value });
+  }
+
+  onAntecedentesFamiliaresChange(value: string): void {
+    this.antecedentesFamiliaresValue = value;
+    this.informeForm.patchValue({ antecedentes_familiares: value });
+  }
+
+  onAntecedentesQuirurgicosChange(value: string): void {
+    this.antecedentesQuirurgicosValue = value;
+    this.informeForm.patchValue({ antecedentes_quirurgicos: value });
+  }
+
+  onAntecedentesOtrosChange(value: string): void {
+    this.antecedentesOtrosValue = value;
+    this.informeForm.patchValue({ antecedentes_otros: value });
   }
 
 
@@ -338,7 +374,11 @@ export class InformeMedicoFormComponent implements OnInit {
       template_id: undefined, // Valor por defecto
       estado: 'finalizado', // Valor por defecto
       fecha_emision: datos.fecha_emision,
-      observaciones: datos.observaciones
+      observaciones: datos.observaciones,
+      antecedentes_personales: datos.antecedentes_personales || '',
+      antecedentes_familiares: datos.antecedentes_familiares || '',
+      antecedentes_quirurgicos: datos.antecedentes_quirurgicos || '',
+      antecedentes_otros: datos.antecedentes_otros || ''
     };
 
     const informeCompleto = {
@@ -399,7 +439,11 @@ export class InformeMedicoFormComponent implements OnInit {
       tipo_informe: datos.tipo_informe,
       contenido: datos.contenido,
       estado: 'finalizado', // Valor por defecto
-      ...(observaciones !== undefined ? { observaciones } : {})
+      ...(observaciones !== undefined ? { observaciones } : {}),
+      antecedentes_personales: datos.antecedentes_personales || '',
+      antecedentes_familiares: datos.antecedentes_familiares || '',
+      antecedentes_quirurgicos: datos.antecedentes_quirurgicos || '',
+      antecedentes_otros: datos.antecedentes_otros || ''
     };
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({

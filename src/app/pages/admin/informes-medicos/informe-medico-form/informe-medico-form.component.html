@@ -161,6 +161,69 @@
         </div>
       </div>
 
+      <!-- Antecedentes Médicos -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3>
+            <i class="fas fa-history"></i>
+            Antecedentes Médicos
+          </h3>
+        </div>
+        <div class="section-content">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-user"></i> Antecedentes Personales
+              </label>
+              <app-rich-text-editor
+                [placeholder]="'Ingrese los antecedentes personales del paciente...'"
+                [height]="120"
+                [value]="antecedentesPersonalesValue"
+                (valueChange)="onAntecedentesPersonalesChange($event)">
+              </app-rich-text-editor>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-users"></i> Antecedentes Familiares
+              </label>
+              <app-rich-text-editor
+                [placeholder]="'Ingrese los antecedentes familiares del paciente...'"
+                [height]="120"
+                [value]="antecedentesFamiliaresValue"
+                (valueChange)="onAntecedentesFamiliaresChange($event)">
+              </app-rich-text-editor>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-cut"></i> Antecedentes Quirúrgicos
+              </label>
+              <app-rich-text-editor
+                [placeholder]="'Ingrese los antecedentes quirúrgicos del paciente...'"
+                [height]="120"
+                [value]="antecedentesQuirurgicosValue"
+                (valueChange)="onAntecedentesQuirurgicosChange($event)">
+              </app-rich-text-editor>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-notes-medical"></i> Antecedentes Otros
+              </label>
+              <app-rich-text-editor
+                [placeholder]="'Ingrese otros antecedentes relevantes...'"
+                [height]="120"
+                [value]="antecedentesOtrosValue"
+                (valueChange)="onAntecedentesOtrosChange($event)">
+              </app-rich-text-editor>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Contenido del Informe -->
       <div class="form-section">
         <div class="section-header">

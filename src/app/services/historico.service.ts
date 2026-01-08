@@ -12,6 +12,10 @@ export interface HistoricoData {
   diagnostico?: string;
   conclusiones?: string;
   plan?: string;
+  antecedentes_personales?: string;
+  antecedentes_familiares?: string;
+  antecedentes_quirurgicos?: string;
+  antecedentes_otros?: string;
   fecha_consulta: string;
   fecha_creacion: string;
   fecha_actualizacion: string;
