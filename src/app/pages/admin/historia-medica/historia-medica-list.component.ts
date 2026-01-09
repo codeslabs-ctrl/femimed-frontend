@@ -75,6 +75,7 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
             <table class="table">
               <thead>
                 <tr>
+                  <th>Número de Control</th>
                   <th>Fecha</th>
                   <th>Médico</th>
                   <th>Especialidad</th>
@@ -83,6 +84,7 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
               </thead>
               <tbody>
                 <tr *ngFor="let h of historicos">
+                  <td>{{ h.id }}</td>
                   <td>{{ formatDate(h.fecha_consulta) }}</td>
                   <td>Dr./Dra. {{ h.medico_nombre }} {{ h.medico_apellidos }}</td>
                   <td>{{ h.especialidad_nombre || '-' }}</td>
