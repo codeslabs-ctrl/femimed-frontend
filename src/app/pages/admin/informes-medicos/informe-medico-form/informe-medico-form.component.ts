@@ -428,11 +428,7 @@ export class InformeMedicoFormComponent implements OnInit {
           template_id: undefined,
           estado: 'finalizado',
           fecha_emision: datos.fecha_emision,
-          observaciones: datos.observaciones,
-          antecedentes_personales: '',
-          antecedentes_familiares: '',
-          antecedentes_quirurgicos: '',
-          antecedentes_otros: ''
+          observaciones: datos.observaciones
         };
 
         const informeCompleto = {
@@ -698,8 +694,6 @@ export class InformeMedicoFormComponent implements OnInit {
       console.log('📝 Contenido actual:', contenidoActual);
       
       if (!contenidoActual || contenidoActual.trim().length < 50) {
-        let contenidoSugerido = '';
-        
         // Obtener antecedentes de la historia médica más reciente
         const pacienteId = this.informeForm.get('paciente_id')?.value;
         const medicoId = this.informeForm.get('medico_id')?.value;
