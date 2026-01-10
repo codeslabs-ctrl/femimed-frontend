@@ -14,10 +14,6 @@ export interface InformeMedico {
   clinica_alias: string;
   observaciones?: string;
   numero_secuencial?: number;
-  antecedentes_personales?: string;
-  antecedentes_familiares?: string;
-  antecedentes_quirurgicos?: string;
-  antecedentes_otros?: string;
   // Relaciones
   pacientes?: {
     id: number;
@@ -146,10 +142,6 @@ export interface CrearInformeRequest {
   estado?: 'borrador' | 'finalizado' | 'firmado' | 'enviado';
   fecha_emision?: string;
   observaciones?: string;
-  antecedentes_personales?: string;
-  antecedentes_familiares?: string;
-  antecedentes_quirurgicos?: string;
-  antecedentes_otros?: string;
 }
 
 export interface ActualizarInformeRequest {
@@ -158,10 +150,6 @@ export interface ActualizarInformeRequest {
   contenido?: string;
   estado?: 'borrador' | 'finalizado' | 'firmado' | 'enviado';
   observaciones?: string;
-  antecedentes_personales?: string;
-  antecedentes_familiares?: string;
-  antecedentes_quirurgicos?: string;
-  antecedentes_otros?: string;
 }
 
 export interface CrearTemplateRequest {

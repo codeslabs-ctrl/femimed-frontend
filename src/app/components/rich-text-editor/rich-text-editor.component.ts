@@ -65,9 +65,24 @@ export class RichTextEditorComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['value'] && this.quill) {
-      const newValue = changes['value'].currentValue;
-      if (newValue !== this.quill.root.innerHTML) {
-        this.quill.root.innerHTML = newValue || '';
+      const newValue = changes['value'].currentValue || '';
+      const currentValue = this.quill.root.innerHTML || '';
+      
+      // Comparar valores normalizados (sin espacios en blanco al inicio/final y sin etiquetas vacías)
+      const normalizedNew = newValue.trim().replace(/<p><br><\/p>/g, '').replace(/<p><\/p>/g, '');
+      const normalizedCurrent = currentValue.trim().replace(/<p><br><\/p>/g, '').replace(/<p><\/p>/g, '');
+      
+      if (normalizedNew !== normalizedCurrent) {
+        console.log('🔄 RichTextEditor: Actualizando contenido, length:', newValue.length);
+        // Usar setContents en lugar de innerHTML para mejor compatibilidad con Quill
+        try {
+          const delta = this.quill.clipboard.convert({ html: newValue });
+          this.quill.setContents(delta, 'silent');
+        } catch (error) {
+          // Fallback a innerHTML si setContents falla
+          console.warn('⚠️ Error usando setContents, usando innerHTML:', error);
+          this.quill.root.innerHTML = newValue;
+        }
       }
     }
   }

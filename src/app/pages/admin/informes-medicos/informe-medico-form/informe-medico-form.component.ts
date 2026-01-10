@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 import { InformeMedicoService } from '../../../../services/informe-medico.service';
 import { PatientService } from '../../../../services/patient.service';
@@ -43,10 +44,6 @@ export class InformeMedicoFormComponent implements OnInit {
   // Valores para rich text editors
   contenidoValue = '';
   observacionesValue = '';
-  antecedentesPersonalesValue = '';
-  antecedentesFamiliaresValue = '';
-  antecedentesQuirurgicosValue = '';
-  antecedentesOtrosValue = '';
 
   // Filtros
   especialidadSeleccionada: number | null = null;
@@ -90,7 +87,8 @@ export class InformeMedicoFormComponent implements OnInit {
     public contextualDataService: ContextualDataService,
     private authService: AuthService,
     private errorHandler: ErrorHandlerService,
-    private historicoService: HistoricoService
+    private historicoService: HistoricoService,
+    private cdr: ChangeDetectorRef
   ) {
     this.informeForm = this.fb.group({
       titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -99,11 +97,7 @@ export class InformeMedicoFormComponent implements OnInit {
       paciente_id: ['', Validators.required],
       medico_id: ['', Validators.required],
       fecha_emision: [new Date().toISOString().split('T')[0], Validators.required],
-      observaciones: ['', Validators.maxLength(1000)],
-      antecedentes_personales: ['', Validators.maxLength(5000)],
-      antecedentes_familiares: ['', Validators.maxLength(5000)],
-      antecedentes_quirurgicos: ['', Validators.maxLength(5000)],
-      antecedentes_otros: ['', Validators.maxLength(5000)]
+      observaciones: ['', Validators.maxLength(1000)]
     });
   }
 
@@ -231,20 +225,12 @@ export class InformeMedicoFormComponent implements OnInit {
       paciente_id: this.informe.paciente_id,
       medico_id: this.informe.medico_id,
       fecha_emision: this.informe.fecha_emision.split('T')[0],
-      observaciones: this.informe.observaciones,
-      antecedentes_personales: this.informe.antecedentes_personales || '',
-      antecedentes_familiares: this.informe.antecedentes_familiares || '',
-      antecedentes_quirurgicos: this.informe.antecedentes_quirurgicos || '',
-      antecedentes_otros: this.informe.antecedentes_otros || ''
+      observaciones: this.informe.observaciones
     });
 
     // Inicializar valores de rich text editors
     this.contenidoValue = this.informe.contenido || '';
     this.observacionesValue = this.informe.observaciones || '';
-    this.antecedentesPersonalesValue = this.informe.antecedentes_personales || '';
-    this.antecedentesFamiliaresValue = this.informe.antecedentes_familiares || '';
-    this.antecedentesQuirurgicosValue = this.informe.antecedentes_quirurgicos || '';
-    this.antecedentesOtrosValue = this.informe.antecedentes_otros || '';
   }
 
 
@@ -259,25 +245,6 @@ export class InformeMedicoFormComponent implements OnInit {
     this.informeForm.patchValue({ observaciones: value });
   }
 
-  onAntecedentesPersonalesChange(value: string): void {
-    this.antecedentesPersonalesValue = value;
-    this.informeForm.patchValue({ antecedentes_personales: value });
-  }
-
-  onAntecedentesFamiliaresChange(value: string): void {
-    this.antecedentesFamiliaresValue = value;
-    this.informeForm.patchValue({ antecedentes_familiares: value });
-  }
-
-  onAntecedentesQuirurgicosChange(value: string): void {
-    this.antecedentesQuirurgicosValue = value;
-    this.informeForm.patchValue({ antecedentes_quirurgicos: value });
-  }
-
-  onAntecedentesOtrosChange(value: string): void {
-    this.antecedentesOtrosValue = value;
-    this.informeForm.patchValue({ antecedentes_otros: value });
-  }
 
 
   async guardarInforme(): Promise<void> {
@@ -365,63 +332,146 @@ export class InformeMedicoFormComponent implements OnInit {
   }
 
   crearInforme(datos: any): void {
-    const informeRequest: CrearInformeRequest = {
-      titulo: datos.titulo,
-      tipo_informe: datos.tipo_informe,
-      contenido: datos.contenido,
-      paciente_id: parseInt(datos.paciente_id), // Convertir a número
-      medico_id: parseInt(datos.medico_id), // Asegurar que sea número
-      template_id: undefined, // Valor por defecto
-      estado: 'finalizado', // Valor por defecto
-      fecha_emision: datos.fecha_emision,
-      observaciones: datos.observaciones,
-      antecedentes_personales: datos.antecedentes_personales || '',
-      antecedentes_familiares: datos.antecedentes_familiares || '',
-      antecedentes_quirurgicos: datos.antecedentes_quirurgicos || '',
-      antecedentes_otros: datos.antecedentes_otros || ''
-    };
+    const pacienteId = parseInt(datos.paciente_id);
+    const medicoId = parseInt(datos.medico_id);
 
-    const informeCompleto = {
-      ...informeRequest,
-      estado: datos.estado || 'borrador', // Asegurar que el estado no sea undefined
-      fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0], // Asegurar que la fecha no sea undefined
-      creado_por: parseInt(datos.medico_id) // Agregar campo requerido por el backend
-    };
-    
-    // Log temporal para debugging
-    console.log('🔍 Datos que se envían al backend:', JSON.stringify(informeCompleto, null, 2));
-    
-    this.informeMedicoService.crearInforme(informeCompleto).subscribe({
-      next: (response) => {
-        this.errorHandler.logInfo('Informe creado exitosamente', response);
-        this.guardando = false;
+    // Obtener la historia médica más reciente del médico seleccionado para este paciente
+    this.historicoService.getHistoricoByPacienteAndMedico(pacienteId, medicoId).subscribe({
+      next: (historicoResponse) => {
+        const historico = historicoResponse.data;
+        let contenidoConAntecedentes = datos.contenido || '';
+
+        // Construir sección de antecedentes si existen
+        const antecedentesSecciones: string[] = [];
         
-        // Verificar que el ID existe antes de navegar
-        const informeId = response?.id || response?.data?.id;
-        if (response && informeId) {
-          console.log('✅ ID del informe encontrado:', informeId);
-          alert('✅ Informe médico creado exitosamente');
-          this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
-        } else {
-          console.error('❌ Error: No se recibió ID del informe creado');
-          console.error('❌ Respuesta completa:', response);
-          alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
-          this.router.navigate(['/admin/informes-medicos/lista']);
+        if (historico?.antecedentes_personales) {
+          antecedentesSecciones.push(`<h4>Antecedentes Personales:</h4><p>${historico.antecedentes_personales}</p>`);
         }
+        if (historico?.antecedentes_familiares) {
+          antecedentesSecciones.push(`<h4>Antecedentes Familiares:</h4><p>${historico.antecedentes_familiares}</p>`);
+        }
+        if (historico?.antecedentes_quirurgicos) {
+          antecedentesSecciones.push(`<h4>Antecedentes Quirúrgicos:</h4><p>${historico.antecedentes_quirurgicos}</p>`);
+        }
+        if (historico?.antecedentes_otros) {
+          antecedentesSecciones.push(`<h4>Antecedentes Otros:</h4><p>${historico.antecedentes_otros}</p>`);
+        }
+
+        // Si hay antecedentes, añadirlos al inicio del contenido
+        if (antecedentesSecciones.length > 0) {
+          const antecedentesHTML = `<div class="antecedentes-seccion">${antecedentesSecciones.join('')}</div><hr>`;
+          contenidoConAntecedentes = antecedentesHTML + contenidoConAntecedentes;
+        }
+
+        const informeRequest: CrearInformeRequest = {
+          titulo: datos.titulo,
+          tipo_informe: datos.tipo_informe,
+          contenido: contenidoConAntecedentes,
+          paciente_id: pacienteId,
+          medico_id: medicoId,
+          template_id: undefined,
+          estado: 'finalizado',
+          fecha_emision: datos.fecha_emision,
+          observaciones: datos.observaciones
+        };
+
+        const informeCompleto = {
+          ...informeRequest,
+          estado: datos.estado || 'borrador',
+          fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0],
+          creado_por: medicoId
+        };
+        
+        console.log('🔍 Datos que se envían al backend:', JSON.stringify(informeCompleto, null, 2));
+        
+        this.informeMedicoService.crearInforme(informeCompleto).subscribe({
+          next: (response) => {
+            this.errorHandler.logInfo('Informe creado exitosamente', response);
+            this.guardando = false;
+            
+            const informeId = response?.id || response?.data?.id;
+            if (response && informeId) {
+              console.log('✅ ID del informe encontrado:', informeId);
+              alert('✅ Informe médico creado exitosamente');
+              this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
+            } else {
+              console.error('❌ Error: No se recibió ID del informe creado');
+              console.error('❌ Respuesta completa:', response);
+              alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
+              this.router.navigate(['/admin/informes-medicos/lista']);
+            }
+          },
+          error: (error) => {
+            this.errorHandler.logError(error, 'crear informe médico');
+            this.error = 'Error creando el informe médico';
+            this.guardando = false;
+            
+            console.log('❌ Error completo del backend:', error);
+            console.log('❌ Error body:', error.error);
+            console.log('❌ Error message:', error.message);
+            
+            const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
+            alert(safeMessage);
+          }
+        });
       },
       error: (error) => {
-        this.errorHandler.logError(error, 'crear informe médico');
-        this.error = 'Error creando el informe médico';
-        this.guardando = false;
+        // Si no hay historial, crear el informe sin antecedentes
+        console.warn('⚠️ No se encontró historial médico, creando informe sin antecedentes');
         
-        // Log temporal para debugging del error
-        console.log('❌ Error completo del backend:', error);
-        console.log('❌ Error body:', error.error);
-        console.log('❌ Error message:', error.message);
+        const informeRequest: CrearInformeRequest = {
+          titulo: datos.titulo,
+          tipo_informe: datos.tipo_informe,
+          contenido: datos.contenido,
+          paciente_id: pacienteId,
+          medico_id: medicoId,
+          template_id: undefined,
+          estado: 'finalizado',
+          fecha_emision: datos.fecha_emision,
+          observaciones: datos.observaciones,
+          antecedentes_personales: '',
+          antecedentes_familiares: '',
+          antecedentes_quirurgicos: '',
+          antecedentes_otros: ''
+        };
+
+        const informeCompleto = {
+          ...informeRequest,
+          estado: datos.estado || 'borrador',
+          fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0],
+          creado_por: medicoId
+        };
         
-        // Mostrar alert con mensaje seguro
-        const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
-        alert(safeMessage);
+        this.informeMedicoService.crearInforme(informeCompleto).subscribe({
+          next: (response) => {
+            this.errorHandler.logInfo('Informe creado exitosamente', response);
+            this.guardando = false;
+            
+            const informeId = response?.id || response?.data?.id;
+            if (response && informeId) {
+              console.log('✅ ID del informe encontrado:', informeId);
+              alert('✅ Informe médico creado exitosamente');
+              this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
+            } else {
+              console.error('❌ Error: No se recibió ID del informe creado');
+              console.error('❌ Respuesta completa:', response);
+              alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
+              this.router.navigate(['/admin/informes-medicos/lista']);
+            }
+          },
+          error: (error) => {
+            this.errorHandler.logError(error, 'crear informe médico');
+            this.error = 'Error creando el informe médico';
+            this.guardando = false;
+            
+            console.log('❌ Error completo del backend:', error);
+            console.log('❌ Error body:', error.error);
+            console.log('❌ Error message:', error.message);
+            
+            const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
+            alert(safeMessage);
+          }
+        });
       }
     });
   }
@@ -429,21 +479,12 @@ export class InformeMedicoFormComponent implements OnInit {
   actualizarInforme(datos: any): void {
     if (!this.informeId) return;
 
-    // Joi (backend) requiere que observaciones sea string si se envía.
-    // En algunos flujos puede venir null/undefined desde BD o UI, así que lo omitimos si no es string.
+    // Solo permitir actualizar observaciones, no contenido ni antecedentes
     const observaciones =
       typeof datos?.observaciones === 'string' ? datos.observaciones : undefined;
 
     const informeRequest: ActualizarInformeRequest = {
-      titulo: datos.titulo,
-      tipo_informe: datos.tipo_informe,
-      contenido: datos.contenido,
-      estado: 'finalizado', // Valor por defecto
-      ...(observaciones !== undefined ? { observaciones } : {}),
-      antecedentes_personales: datos.antecedentes_personales || '',
-      antecedentes_familiares: datos.antecedentes_familiares || '',
-      antecedentes_quirurgicos: datos.antecedentes_quirurgicos || '',
-      antecedentes_otros: datos.antecedentes_otros || ''
+      ...(observaciones !== undefined ? { observaciones } : {})
     };
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({
@@ -659,7 +700,61 @@ export class InformeMedicoFormComponent implements OnInit {
       if (!contenidoActual || contenidoActual.trim().length < 50) {
         let contenidoSugerido = '';
         
-        // Agregar datos del paciente
+        // Obtener antecedentes de la historia médica más reciente
+        const pacienteId = this.informeForm.get('paciente_id')?.value;
+        const medicoId = this.informeForm.get('medico_id')?.value;
+        
+        let antecedentesHTML = '';
+        if (pacienteId && medicoId) {
+          try {
+            console.log('🔍 Buscando antecedentes para auto-aplicar - Paciente ID:', pacienteId, 'Médico ID:', medicoId);
+            const historicoResponse = await firstValueFrom(
+              this.historicoService.getHistoricoByPacienteAndMedico(
+                parseInt(pacienteId), 
+                parseInt(medicoId)
+              )
+            );
+            
+            const historico = historicoResponse?.data;
+            if (historico) {
+              console.log('📋 Historia médica encontrada para antecedentes:', historico.id);
+              
+              const antecedentesSecciones: string[] = [];
+              
+              if (historico.antecedentes_personales && historico.antecedentes_personales.trim() !== '' && historico.antecedentes_personales.trim() !== '<p></p>') {
+                antecedentesSecciones.push(`<h4><strong>Antecedentes Personales:</strong></h4><p>${historico.antecedentes_personales}</p>`);
+              }
+              
+              if (historico.antecedentes_familiares && historico.antecedentes_familiares.trim() !== '' && historico.antecedentes_familiares.trim() !== '<p></p>') {
+                antecedentesSecciones.push(`<h4><strong>Antecedentes Familiares:</strong></h4><p>${historico.antecedentes_familiares}</p>`);
+              }
+              
+              if (historico.antecedentes_quirurgicos && historico.antecedentes_quirurgicos.trim() !== '' && historico.antecedentes_quirurgicos.trim() !== '<p></p>') {
+                antecedentesSecciones.push(`<h4><strong>Antecedentes Quirúrgicos:</strong></h4><p>${historico.antecedentes_quirurgicos}</p>`);
+              }
+              
+              if (historico.antecedentes_otros && historico.antecedentes_otros.trim() !== '' && historico.antecedentes_otros.trim() !== '<p></p>') {
+                antecedentesSecciones.push(`<h4><strong>Antecedentes Otros:</strong></h4><p>${historico.antecedentes_otros}</p>`);
+              }
+              
+              if (antecedentesSecciones.length > 0) {
+                antecedentesHTML = `<div class="antecedentes-seccion">${antecedentesSecciones.join('')}</div><hr>`;
+                console.log('✅ Antecedentes encontrados y añadidos al contenido auto-aplicado');
+              } else {
+                console.log('⚠️ No se encontraron antecedentes en la historia médica');
+              }
+            } else {
+              console.log('⚠️ No se encontró historia médica para obtener antecedentes');
+            }
+          } catch (error) {
+            console.warn('⚠️ Error obteniendo antecedentes para auto-aplicar:', error);
+          }
+        }
+        
+        // Construir contenido en el orden correcto
+        let contenidoSugerido = '';
+        
+        // 1. Agregar datos del paciente
         if (this.datosContextuales.paciente) {
           console.log('👤 Datos del paciente para auto-aplicar:', this.datosContextuales.paciente);
           console.log('👤 Edad del paciente:', this.datosContextuales.paciente.edad);
@@ -673,7 +768,7 @@ export class InformeMedicoFormComponent implements OnInit {
           contenidoSugerido += `<hr>`;
         }
         
-        // Agregar datos del médico
+        // 2. Agregar datos del médico
         if (this.datosContextuales.medico) {
           contenidoSugerido += `<h2>Datos del Médico</h2>`;
           contenidoSugerido += `<p><strong>Dr.</strong> ${this.datosContextuales.medico.nombres} ${this.datosContextuales.medico.apellidos}</p>`;
@@ -681,7 +776,12 @@ export class InformeMedicoFormComponent implements OnInit {
           contenidoSugerido += `<hr>`;
         }
         
-        // Agregar datos del último informe
+        // 3. Agregar antecedentes (después de datos del paciente y médico)
+        if (antecedentesHTML) {
+          contenidoSugerido += antecedentesHTML;
+        }
+        
+        // 4. Agregar datos del último informe
         if (ultimoInforme.motivo_consulta) {
           contenidoSugerido += `<h3>Motivo de Consulta:</h3><p>${ultimoInforme.motivo_consulta}</p>`;
         }
@@ -698,21 +798,35 @@ export class InformeMedicoFormComponent implements OnInit {
           contenidoSugerido += `<h3>Conclusiones:</h3><p>${ultimoInforme.conclusiones}</p>`;
         }
         
-        console.log('✨ Contenido auto-aplicado:', contenidoSugerido);
+        console.log('✨ Contenido auto-aplicado (primeros 500 caracteres):', contenidoSugerido.substring(0, 500));
+        console.log('✨ Contenido auto-aplicado completo length:', contenidoSugerido.length);
         
         if (contenidoSugerido) {
           // Aplicar firma digital al contenido
           const medicoId = this.informeForm.get('medico_id')?.value;
+          let contenidoFinal = contenidoSugerido;
+          
           if (medicoId) {
-            const contenidoConFirma = await this.aplicarFirmaAlInforme(contenidoSugerido, medicoId);
-            this.informeForm.patchValue({ contenido: contenidoConFirma });
-            this.contenidoValue = contenidoConFirma;
-            console.log('✅ Sugerencias y firma aplicadas automáticamente al formulario');
-          } else {
-            this.informeForm.patchValue({ contenido: contenidoSugerido });
-            this.contenidoValue = contenidoSugerido;
-            console.log('✅ Sugerencias aplicadas automáticamente al formulario (sin firma - médico no seleccionado)');
+            contenidoFinal = await this.aplicarFirmaAlInforme(contenidoSugerido, medicoId);
           }
+          
+          // Actualizar el valor del formulario primero
+          this.informeForm.patchValue({ contenido: contenidoFinal });
+          
+          // Actualizar contenidoValue con un pequeño delay para asegurar que Angular detecte el cambio
+          // Esto es necesario porque el editor Quill puede no detectar cambios muy rápidos
+          setTimeout(() => {
+            this.contenidoValue = contenidoFinal;
+            this.cdr.detectChanges();
+            
+            console.log('✅ Contenido aplicado al formulario y editor');
+            console.log('📝 contenidoValue length:', this.contenidoValue.length);
+            console.log('📝 contenidoValue (primeros 500 caracteres):', this.contenidoValue.substring(0, 500));
+            
+            // Verificar que el valor del formulario se actualizó
+            const contenidoEnFormulario = this.informeForm.get('contenido')?.value;
+            console.log('📝 Contenido en formulario length:', contenidoEnFormulario?.length || 0);
+          }, 50);
         }
       } else {
         console.log('⚠️ El contenido ya tiene suficiente texto, no se aplican sugerencias automáticas');
