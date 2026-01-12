@@ -87,15 +87,17 @@ export class FinanzasComponent implements OnInit {
     // Cargar especialidades para mapeo
     this.loadEspecialidades();
 
-    // Establecer fechas por defecto (último mes) usando zona horaria de Venezuela
-    this.filtros.fecha_desde = this.dateService.getCurrentDateISO();
-    this.filtros.fecha_hasta = this.dateService.getCurrentDateISO();
-    
-    // Calcular hace un mes
+    // Establecer fechas por defecto (rango amplio para incluir todas las consultas)
+    // Usar un rango amplio: desde hace 1 año hasta 1 año en el futuro
     const hoy = new Date();
-    const haceUnMes = new Date();
-    haceUnMes.setMonth(hoy.getMonth() - 1);
-    this.filtros.fecha_desde = haceUnMes.toISOString().split('T')[0];
+    const haceUnAno = new Date();
+    haceUnAno.setFullYear(hoy.getFullYear() - 1);
+    const enUnAno = new Date();
+    enUnAno.setFullYear(hoy.getFullYear() + 1);
+    
+    // Formatear fechas en formato YYYY-MM-DD
+    this.filtros.fecha_desde = haceUnAno.toISOString().split('T')[0];
+    this.filtros.fecha_hasta = enUnAno.toISOString().split('T')[0];
     
     console.log('📅 Filtros iniciales:', this.filtros);
 
@@ -142,6 +144,23 @@ export class FinanzasComponent implements OnInit {
         // El backend ya filtra por moneda, no necesitamos filtro adicional
         this.consultas = response.data || [];
         this.paginacion = response.paginacion || null;
+        
+        // Log para debugging
+        console.log('📊 Consultas recibidas del backend:', this.consultas.length);
+        if (this.consultas.length > 0) {
+          console.log('📊 Primera consulta:', {
+            id: this.consultas[0].id,
+            total_consulta: this.consultas[0].total_consulta,
+            moneda_principal: this.consultas[0].moneda_principal,
+            servicios: this.consultas[0].servicios?.length || 0,
+            servicios_detalle: this.consultas[0].servicios?.map((s: any) => ({
+              nombre: s.nombre_servicio,
+              monto: s.total_servicio,
+              moneda: s.moneda_pago
+            }))
+          });
+        }
+        
         consultasCargadas = true;
         verificarEstadoFinal();
       },
@@ -405,7 +424,17 @@ export class FinanzasComponent implements OnInit {
     return this.dateService.formatTime(timeString);
   }
 
-  formatCurrency(amount: number, currency: string = 'COP'): string {
+  formatCurrency(amount: number | null | undefined, currency: string | null | undefined = 'VES'): string {
+    // Validar y convertir amount
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      amount = 0;
+    }
+    
+    // Validar currency
+    if (!currency) {
+      currency = 'VES';
+    }
+    
     const currencyMap: { [key: string]: string } = {
       'VES': 'VES',
       'USD': 'USD', 
@@ -413,12 +442,17 @@ export class FinanzasComponent implements OnInit {
       'EUR': 'EUR'
     };
     
-    const currencyCode = currencyMap[currency] || 'COP';
+    const currencyCode = currencyMap[currency] || 'VES';
     
-    return new Intl.NumberFormat('es-VE', {
-      style: 'currency',
-      currency: currencyCode
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('es-VE', {
+        style: 'currency',
+        currency: currencyCode
+      }).format(amount);
+    } catch (error) {
+      // Fallback si hay error con el formato
+      return `${currencyCode} ${amount.toFixed(2)}`;
+    }
   }
 
   getEstadoText(estado: string): string {

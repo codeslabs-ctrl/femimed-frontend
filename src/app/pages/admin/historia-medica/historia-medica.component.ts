@@ -149,6 +149,17 @@ import { Patient } from '../../../models/patient.model';
                   </div>
 
                   <div class="form-group">
+                    <label for="antecedentes_otros">Antecedentes Médicos</label>
+                    <app-rich-text-editor
+                      [value]="historiaForm.antecedentes_otros"
+                      [placeholder]="'Ingrese los antecedentes médicos del paciente...'"
+                      [height]="120"
+                      (valueChange)="historiaForm.antecedentes_otros = $event"
+                      [class.readonly]="!esEditable">
+                    </app-rich-text-editor>
+                  </div>
+
+                  <div class="form-group">
                     <label for="diagnostico">Diagnóstico *</label>
                     <app-rich-text-editor
                       [value]="historiaForm.diagnostico"
@@ -177,55 +188,6 @@ import { Patient } from '../../../models/patient.model';
                       [placeholder]="'Plan de acciones a seguir en el tratamiento...'"
                       [height]="120"
                       (valueChange)="historiaForm.plan = $event"
-                      [class.readonly]="!esEditable">
-                    </app-rich-text-editor>
-                  </div>
-                </div>
-
-                <!-- Sección de Antecedentes -->
-                <div class="form-section">
-                  <h3>Antecedentes Médicos</h3>
-                  
-                  <div class="form-group">
-                    <label for="antecedentes_personales">Antecedentes Personales</label>
-                    <app-rich-text-editor
-                      [value]="historiaForm.antecedentes_personales"
-                      [placeholder]="'Ingrese los antecedentes personales del paciente...'"
-                      [height]="120"
-                      (valueChange)="historiaForm.antecedentes_personales = $event"
-                      [class.readonly]="!esEditable">
-                    </app-rich-text-editor>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="antecedentes_familiares">Antecedentes Familiares</label>
-                    <app-rich-text-editor
-                      [value]="historiaForm.antecedentes_familiares"
-                      [placeholder]="'Ingrese los antecedentes familiares del paciente...'"
-                      [height]="120"
-                      (valueChange)="historiaForm.antecedentes_familiares = $event"
-                      [class.readonly]="!esEditable">
-                    </app-rich-text-editor>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="antecedentes_quirurgicos">Antecedentes Quirúrgicos</label>
-                    <app-rich-text-editor
-                      [value]="historiaForm.antecedentes_quirurgicos"
-                      [placeholder]="'Ingrese los antecedentes quirúrgicos del paciente...'"
-                      [height]="120"
-                      (valueChange)="historiaForm.antecedentes_quirurgicos = $event"
-                      [class.readonly]="!esEditable">
-                    </app-rich-text-editor>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="antecedentes_otros">Antecedentes Otros</label>
-                    <app-rich-text-editor
-                      [value]="historiaForm.antecedentes_otros"
-                      [placeholder]="'Ingrese otros antecedentes relevantes...'"
-                      [height]="120"
-                      (valueChange)="historiaForm.antecedentes_otros = $event"
                       [class.readonly]="!esEditable">
                     </app-rich-text-editor>
                   </div>
@@ -1105,9 +1067,6 @@ export class HistoriaMedicaComponent implements OnInit {
     diagnostico: '',
     conclusiones: '',
     plan: '',
-    antecedentes_personales: '',
-    antecedentes_familiares: '',
-    antecedentes_quirurgicos: '',
     antecedentes_otros: ''
   };
 
@@ -1145,10 +1104,7 @@ export class HistoriaMedicaComponent implements OnInit {
     diagnostico_template: '',
     conclusiones_template: '',
     plan_template: '',
-    antecedentes_personales_template: '',
-    antecedentes_familiares_template: '',
-    antecedentes_quirurgicos_template: '',
-    antecedentes_otros_template: ''
+    antecedentes_medicos_template: ''
   };
 
   constructor(
@@ -1352,9 +1308,6 @@ export class HistoriaMedicaComponent implements OnInit {
         diagnostico: '', 
         conclusiones: '', 
         plan: '',
-        antecedentes_personales: '',
-        antecedentes_familiares: '',
-        antecedentes_quirurgicos: '',
         antecedentes_otros: ''
       };
       this.historiaOriginal = { ...this.historiaForm };
@@ -1377,9 +1330,6 @@ export class HistoriaMedicaComponent implements OnInit {
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
-            antecedentes_personales: this.historiaData.antecedentes_personales || '',
-            antecedentes_familiares: this.historiaData.antecedentes_familiares || '',
-            antecedentes_quirurgicos: this.historiaData.antecedentes_quirurgicos || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
           this.historiaOriginal = { ...this.historiaForm };
@@ -1410,16 +1360,13 @@ export class HistoriaMedicaComponent implements OnInit {
               const medicoId = this.currentUser?.medico_id;
               this.esEditable = this.isMedico && !!medicoId && this.historiaData.medico_id === medicoId;
               this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
-              this.historiaForm = {
-                motivo_consulta: this.historiaData.motivo_consulta || '',
-                diagnostico: this.historiaData.diagnostico || '',
-                conclusiones: this.historiaData.conclusiones || '',
-                plan: this.historiaData.plan || '',
-                antecedentes_personales: this.historiaData.antecedentes_personales || '',
-                antecedentes_familiares: this.historiaData.antecedentes_familiares || '',
-                antecedentes_quirurgicos: this.historiaData.antecedentes_quirurgicos || '',
-                antecedentes_otros: this.historiaData.antecedentes_otros || ''
-              };
+          this.historiaForm = {
+            motivo_consulta: this.historiaData.motivo_consulta || '',
+            diagnostico: this.historiaData.diagnostico || '',
+            conclusiones: this.historiaData.conclusiones || '',
+            plan: this.historiaData.plan || '',
+            antecedentes_otros: this.historiaData.antecedentes_otros || ''
+          };
               this.historiaOriginal = { ...this.historiaForm };
               this.cargarArchivos();
               this.loading = false;
@@ -1548,9 +1495,6 @@ export class HistoriaMedicaComponent implements OnInit {
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
-            antecedentes_personales: this.historiaData.antecedentes_personales || '',
-            antecedentes_familiares: this.historiaData.antecedentes_familiares || '',
-            antecedentes_quirurgicos: this.historiaData.antecedentes_quirurgicos || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
           this.historiaOriginal = { ...this.historiaForm };
@@ -1568,9 +1512,6 @@ export class HistoriaMedicaComponent implements OnInit {
             diagnostico: '',
             conclusiones: '',
             plan: '',
-            antecedentes_personales: '',
-            antecedentes_familiares: '',
-            antecedentes_quirurgicos: '',
             antecedentes_otros: ''
           };
           console.log('ℹ️ No existe mi historia, modo creación');
@@ -1618,9 +1559,6 @@ export class HistoriaMedicaComponent implements OnInit {
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
-            antecedentes_personales: this.historiaData.antecedentes_personales || '',
-            antecedentes_familiares: this.historiaData.antecedentes_familiares || '',
-            antecedentes_quirurgicos: this.historiaData.antecedentes_quirurgicos || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
           this.historiaOriginal = { ...this.historiaForm };
@@ -1638,9 +1576,6 @@ export class HistoriaMedicaComponent implements OnInit {
             diagnostico: '',
             conclusiones: '',
             plan: '',
-            antecedentes_personales: '',
-            antecedentes_familiares: '',
-            antecedentes_quirurgicos: '',
             antecedentes_otros: ''
           };
           console.log('ℹ️ No existe historia para el médico seleccionado');
@@ -1713,9 +1648,6 @@ export class HistoriaMedicaComponent implements OnInit {
       diagnostico: this.historiaForm.diagnostico,
       conclusiones: this.historiaForm.conclusiones,
       plan: this.historiaForm.plan,
-      antecedentes_personales: this.historiaForm.antecedentes_personales,
-      antecedentes_familiares: this.historiaForm.antecedentes_familiares,
-      antecedentes_quirurgicos: this.historiaForm.antecedentes_quirurgicos,
       antecedentes_otros: this.historiaForm.antecedentes_otros,
       fecha_consulta: new Date().toISOString(),
       consulta_id: this.consultaData.id && this.consultaData.id > 0 ? this.consultaData.id : undefined
@@ -1754,7 +1686,8 @@ export class HistoriaMedicaComponent implements OnInit {
       motivo_consulta: this.historiaForm.motivo_consulta,
       diagnostico: this.historiaForm.diagnostico,
       conclusiones: this.historiaForm.conclusiones,
-      plan: this.historiaForm.plan
+      plan: this.historiaForm.plan,
+      antecedentes_otros: this.historiaForm.antecedentes_otros
     };
 
     this.historicoService.updateHistorico(this.historiaData.id, updateData).subscribe({
@@ -1785,9 +1718,6 @@ export class HistoriaMedicaComponent implements OnInit {
         diagnostico: '',
         conclusiones: '',
         plan: '',
-        antecedentes_personales: '',
-        antecedentes_familiares: '',
-        antecedentes_quirurgicos: '',
         antecedentes_otros: ''
       };
     }
@@ -1937,22 +1867,34 @@ export class HistoriaMedicaComponent implements OnInit {
 
   // Métodos para manejar interconsultas
   tieneHistoriaMedica(): boolean {
-    // Verificar si hay historia médica cargada con el médico actual
-    if (!this.consultaData?.medico_id || !this.medicoActual) {
-      return false;
-    }
-
-    // Verificar si historiaData está cargada y pertenece al médico actual
-    if (this.historiaData && this.historiaData.medico_id === this.medicoActual.medico_id) {
+    // Si estamos editando una historia, historiaData existe y tiene medico_id
+    if (this.historiaData && this.historiaData.medico_id) {
       return true;
     }
 
-    // Verificar si el médico actual está en la lista de médicos con historia
-    const tieneHistoriaConMedicoActual = this.medicosConHistoria.some(
-      medico => medico.medico_id === this.medicoActual.medico_id
-    );
+    // Si no hay consultaData o medico_id, no hay historia
+    if (!this.consultaData?.medico_id) {
+      return false;
+    }
 
-    return tieneHistoriaConMedicoActual;
+    // Verificar si el médico actual está en la lista de médicos con historia
+    if (this.medicoActual) {
+      const tieneHistoriaConMedicoActual = this.medicosConHistoria.some(
+        medico => medico.medico_id === this.medicoActual.medico_id
+      );
+      return tieneHistoriaConMedicoActual;
+    }
+
+    // Si no hay medicoActual pero hay consultaData.medico_id, verificar directamente
+    const medicoId = this.consultaData?.medico_id;
+    if (medicoId) {
+      const tieneHistoriaConMedico = this.medicosConHistoria.some(
+        medico => medico.medico_id === medicoId
+      );
+      return tieneHistoriaConMedico;
+    }
+
+    return false;
   }
 
   abrirModalInterconsultas(): void {
@@ -2104,10 +2046,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
       diagnostico_template: this.historiaForm.diagnostico,
       conclusiones_template: this.historiaForm.conclusiones,
       plan_template: this.historiaForm.plan,
-      antecedentes_personales_template: this.historiaForm.antecedentes_personales,
-      antecedentes_familiares_template: this.historiaForm.antecedentes_familiares,
-      antecedentes_quirurgicos_template: this.historiaForm.antecedentes_quirurgicos,
-      antecedentes_otros_template: this.historiaForm.antecedentes_otros
+      antecedentes_medicos_template: this.historiaForm.antecedentes_otros
     };
     this.modoModalPlantilla = 'crear';
     this.mostrarModalPlantilla = true;
@@ -2121,10 +2060,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
       diagnostico_template: '',
       conclusiones_template: '',
       plan_template: '',
-      antecedentes_personales_template: '',
-      antecedentes_familiares_template: '',
-      antecedentes_quirurgicos_template: '',
-      antecedentes_otros_template: ''
+      antecedentes_medicos_template: ''
     };
   }
 

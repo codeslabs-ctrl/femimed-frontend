@@ -319,21 +319,6 @@
 
   <!-- Pie de Página con Totales -->
   <div class="table-footer" *ngIf="resumen">
-    <div class="footer-summary">
-      <div class="summary-card">
-        <div class="summary-label">Total Consultas</div>
-        <div class="summary-value">{{ resumen.total_consultas }}</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-label">Consultas Pagadas</div>
-        <div class="summary-value">{{ resumen.consultas_pagadas }}</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-label">Consultas Pendientes</div>
-        <div class="summary-value">{{ resumen.consultas_pendientes }}</div>
-      </div>
-    </div>
-    
     <!-- Totales por Moneda -->
     <div class="currency-summary" *ngIf="resumen.estadisticas_por_moneda">
       <h4>Totales por Moneda</h4>

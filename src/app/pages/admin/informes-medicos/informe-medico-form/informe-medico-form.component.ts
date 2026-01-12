@@ -344,17 +344,8 @@ export class InformeMedicoFormComponent implements OnInit {
         // Construir sección de antecedentes si existen
         const antecedentesSecciones: string[] = [];
         
-        if (historico?.antecedentes_personales) {
-          antecedentesSecciones.push(`<h4>Antecedentes Personales:</h4><p>${historico.antecedentes_personales}</p>`);
-        }
-        if (historico?.antecedentes_familiares) {
-          antecedentesSecciones.push(`<h4>Antecedentes Familiares:</h4><p>${historico.antecedentes_familiares}</p>`);
-        }
-        if (historico?.antecedentes_quirurgicos) {
-          antecedentesSecciones.push(`<h4>Antecedentes Quirúrgicos:</h4><p>${historico.antecedentes_quirurgicos}</p>`);
-        }
         if (historico?.antecedentes_otros) {
-          antecedentesSecciones.push(`<h4>Antecedentes Otros:</h4><p>${historico.antecedentes_otros}</p>`);
+          antecedentesSecciones.push(`<h4><strong>Antecedentes Médicos:</strong></h4><p>${historico.antecedentes_otros}</p>`);
         }
 
         // Si hay antecedentes, añadirlos al inicio del contenido
@@ -715,20 +706,8 @@ export class InformeMedicoFormComponent implements OnInit {
               
               const antecedentesSecciones: string[] = [];
               
-              if (historico.antecedentes_personales && historico.antecedentes_personales.trim() !== '' && historico.antecedentes_personales.trim() !== '<p></p>') {
-                antecedentesSecciones.push(`<h4><strong>Antecedentes Personales:</strong></h4><p>${historico.antecedentes_personales}</p>`);
-              }
-              
-              if (historico.antecedentes_familiares && historico.antecedentes_familiares.trim() !== '' && historico.antecedentes_familiares.trim() !== '<p></p>') {
-                antecedentesSecciones.push(`<h4><strong>Antecedentes Familiares:</strong></h4><p>${historico.antecedentes_familiares}</p>`);
-              }
-              
-              if (historico.antecedentes_quirurgicos && historico.antecedentes_quirurgicos.trim() !== '' && historico.antecedentes_quirurgicos.trim() !== '<p></p>') {
-                antecedentesSecciones.push(`<h4><strong>Antecedentes Quirúrgicos:</strong></h4><p>${historico.antecedentes_quirurgicos}</p>`);
-              }
-              
               if (historico.antecedentes_otros && historico.antecedentes_otros.trim() !== '' && historico.antecedentes_otros.trim() !== '<p></p>') {
-                antecedentesSecciones.push(`<h4><strong>Antecedentes Otros:</strong></h4><p>${historico.antecedentes_otros}</p>`);
+                antecedentesSecciones.push(`<h4><strong>Antecedentes Médicos:</strong></h4><p>${historico.antecedentes_otros}</p>`);
               }
               
               if (antecedentesSecciones.length > 0) {
