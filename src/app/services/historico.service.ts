@@ -9,6 +9,7 @@ export interface HistoricoData {
   paciente_id: number;
   medico_id: number;
   motivo_consulta: string;
+  examenes_medico?: string;
   diagnostico?: string;
   conclusiones?: string;
   plan?: string;

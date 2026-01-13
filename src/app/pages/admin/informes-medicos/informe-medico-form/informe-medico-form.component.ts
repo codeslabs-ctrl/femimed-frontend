@@ -335,130 +335,76 @@ export class InformeMedicoFormComponent implements OnInit {
     const pacienteId = parseInt(datos.paciente_id);
     const medicoId = parseInt(datos.medico_id);
 
-    // Obtener la historia médica más reciente del médico seleccionado para este paciente
-    this.historicoService.getHistoricoByPacienteAndMedico(pacienteId, medicoId).subscribe({
-      next: (historicoResponse) => {
-        const historico = historicoResponse.data;
-        let contenidoConAntecedentes = datos.contenido || '';
+    // El contenido ya viene con toda la información (datos del paciente, médico y historia médica)
+    // desde aplicarSugerenciasAutomaticamente, por lo que NO debemos agregar nada más
+    // Solo usamos el contenido tal cual está en el formulario
+    let contenidoFinal = datos.contenido || '';
+    
+    // NO agregar historia médica aquí porque ya fue agregada por aplicarSugerenciasAutomaticamente
+    // El contenido del formulario ya tiene todo lo necesario
+    // Solo proceder a crear el informe con el contenido tal cual está
+    this.continuarCreacionInforme(datos, pacienteId, medicoId, contenidoFinal);
+  }
 
-        // Construir sección de antecedentes si existen
-        const antecedentesSecciones: string[] = [];
+  private continuarCreacionInforme(datos: any, pacienteId: number, medicoId: number, contenidoFinal: string): void {
+    // Verificar si el contenido tiene duplicación antes de guardar
+    const tieneDuplicacion = this.detectarDuplicacionContenido(contenidoFinal);
+    if (tieneDuplicacion) {
+      console.warn('⚠️ ADVERTENCIA: El contenido parece tener duplicación. Limpiando...');
+      contenidoFinal = this.limpiarContenidoDuplicado(contenidoFinal);
+    }
+    
+    const informeRequest: CrearInformeRequest = {
+      titulo: datos.titulo,
+      tipo_informe: datos.tipo_informe,
+      contenido: contenidoFinal,
+      paciente_id: pacienteId,
+      medico_id: medicoId,
+      template_id: undefined,
+      estado: 'finalizado',
+      fecha_emision: datos.fecha_emision,
+      observaciones: datos.observaciones
+    };
+
+    const informeCompleto = {
+      ...informeRequest,
+      estado: datos.estado || 'borrador',
+      fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0],
+      creado_por: medicoId
+    };
+    
+    console.log('🔍 Datos que se envían al backend:');
+    console.log('📄 Contenido (primeros 1000 caracteres):', contenidoFinal.substring(0, 1000));
+    console.log('📄 Longitud del contenido:', contenidoFinal.length);
+    
+    this.informeMedicoService.crearInforme(informeCompleto).subscribe({
+      next: (response) => {
+        this.errorHandler.logInfo('Informe creado exitosamente', response);
+        this.guardando = false;
         
-        if (historico?.antecedentes_otros) {
-          antecedentesSecciones.push(`<h4><strong>Antecedentes Médicos:</strong></h4><p>${historico.antecedentes_otros}</p>`);
+        const informeId = response?.id || response?.data?.id;
+        if (response && informeId) {
+          console.log('✅ ID del informe encontrado:', informeId);
+          alert('✅ Informe médico creado exitosamente');
+          this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
+        } else {
+          console.error('❌ Error: No se recibió ID del informe creado');
+          console.error('❌ Respuesta completa:', response);
+          alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
+          this.router.navigate(['/admin/informes-medicos/lista']);
         }
-
-        // Si hay antecedentes, añadirlos al inicio del contenido
-        if (antecedentesSecciones.length > 0) {
-          const antecedentesHTML = `<div class="antecedentes-seccion">${antecedentesSecciones.join('')}</div><hr>`;
-          contenidoConAntecedentes = antecedentesHTML + contenidoConAntecedentes;
-        }
-
-        const informeRequest: CrearInformeRequest = {
-          titulo: datos.titulo,
-          tipo_informe: datos.tipo_informe,
-          contenido: contenidoConAntecedentes,
-          paciente_id: pacienteId,
-          medico_id: medicoId,
-          template_id: undefined,
-          estado: 'finalizado',
-          fecha_emision: datos.fecha_emision,
-          observaciones: datos.observaciones
-        };
-
-        const informeCompleto = {
-          ...informeRequest,
-          estado: datos.estado || 'borrador',
-          fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0],
-          creado_por: medicoId
-        };
-        
-        console.log('🔍 Datos que se envían al backend:', JSON.stringify(informeCompleto, null, 2));
-        
-        this.informeMedicoService.crearInforme(informeCompleto).subscribe({
-          next: (response) => {
-            this.errorHandler.logInfo('Informe creado exitosamente', response);
-            this.guardando = false;
-            
-            const informeId = response?.id || response?.data?.id;
-            if (response && informeId) {
-              console.log('✅ ID del informe encontrado:', informeId);
-              alert('✅ Informe médico creado exitosamente');
-              this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
-            } else {
-              console.error('❌ Error: No se recibió ID del informe creado');
-              console.error('❌ Respuesta completa:', response);
-              alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
-              this.router.navigate(['/admin/informes-medicos/lista']);
-            }
-          },
-          error: (error) => {
-            this.errorHandler.logError(error, 'crear informe médico');
-            this.error = 'Error creando el informe médico';
-            this.guardando = false;
-            
-            console.log('❌ Error completo del backend:', error);
-            console.log('❌ Error body:', error.error);
-            console.log('❌ Error message:', error.message);
-            
-            const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
-            alert(safeMessage);
-          }
-        });
       },
       error: (error) => {
-        // Si no hay historial, crear el informe sin antecedentes
-        console.warn('⚠️ No se encontró historial médico, creando informe sin antecedentes');
+        this.errorHandler.logError(error, 'crear informe médico');
+        this.error = 'Error creando el informe médico';
+        this.guardando = false;
         
-        const informeRequest: CrearInformeRequest = {
-          titulo: datos.titulo,
-          tipo_informe: datos.tipo_informe,
-          contenido: datos.contenido,
-          paciente_id: pacienteId,
-          medico_id: medicoId,
-          template_id: undefined,
-          estado: 'finalizado',
-          fecha_emision: datos.fecha_emision,
-          observaciones: datos.observaciones
-        };
-
-        const informeCompleto = {
-          ...informeRequest,
-          estado: datos.estado || 'borrador',
-          fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0],
-          creado_por: medicoId
-        };
+        console.log('❌ Error completo del backend:', error);
+        console.log('❌ Error body:', error.error);
+        console.log('❌ Error message:', error.message);
         
-        this.informeMedicoService.crearInforme(informeCompleto).subscribe({
-          next: (response) => {
-            this.errorHandler.logInfo('Informe creado exitosamente', response);
-            this.guardando = false;
-            
-            const informeId = response?.id || response?.data?.id;
-            if (response && informeId) {
-              console.log('✅ ID del informe encontrado:', informeId);
-              alert('✅ Informe médico creado exitosamente');
-              this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
-            } else {
-              console.error('❌ Error: No se recibió ID del informe creado');
-              console.error('❌ Respuesta completa:', response);
-              alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
-              this.router.navigate(['/admin/informes-medicos/lista']);
-            }
-          },
-          error: (error) => {
-            this.errorHandler.logError(error, 'crear informe médico');
-            this.error = 'Error creando el informe médico';
-            this.guardando = false;
-            
-            console.log('❌ Error completo del backend:', error);
-            console.log('❌ Error body:', error.error);
-            console.log('❌ Error message:', error.message);
-            
-            const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
-            alert(safeMessage);
-          }
-        });
+        const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
+        alert(safeMessage);
       }
     });
   }
@@ -724,7 +670,7 @@ export class InformeMedicoFormComponent implements OnInit {
           }
         }
         
-        // Construir contenido en el orden correcto
+        // Construir contenido en el mismo orden que la historia del paciente
         let contenidoSugerido = '';
         
         // 1. Agregar datos del paciente
@@ -749,26 +695,51 @@ export class InformeMedicoFormComponent implements OnInit {
           contenidoSugerido += `<hr>`;
         }
         
-        // 3. Agregar antecedentes (después de datos del paciente y médico)
-        if (antecedentesHTML) {
-          contenidoSugerido += antecedentesHTML;
+        // 3. Obtener la historia médica completa para usar el mismo orden
+        let historico: any = null;
+        if (pacienteId && medicoId) {
+          try {
+            const historicoResponse = await firstValueFrom(
+              this.historicoService.getHistoricoByPacienteAndMedico(
+                parseInt(pacienteId), 
+                parseInt(medicoId)
+              )
+            );
+            historico = historicoResponse?.data;
+          } catch (error) {
+            console.warn('⚠️ Error obteniendo historia médica completa:', error);
+          }
         }
         
-        // 4. Agregar datos del último informe
-        if (ultimoInforme.motivo_consulta) {
-          contenidoSugerido += `<h3>Motivo de Consulta:</h3><p>${ultimoInforme.motivo_consulta}</p>`;
+        // 4. Agregar campos en el mismo orden que la historia del paciente
+        // 4.1. Motivo de Consulta
+        if (historico?.motivo_consulta && historico.motivo_consulta.trim() !== '' && historico.motivo_consulta.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Motivo de Consulta:</strong></h3><p>${historico.motivo_consulta}</p>`;
         }
         
-        if (ultimoInforme.diagnostico) {
-          contenidoSugerido += `<h3>Diagnóstico:</h3><p>${ultimoInforme.diagnostico}</p>`;
+        // 4.2. Antecedentes Médicos
+        if (historico?.antecedentes_otros && historico.antecedentes_otros.trim() !== '' && historico.antecedentes_otros.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Antecedentes Médicos:</strong></h3><p>${historico.antecedentes_otros}</p>`;
         }
         
-        if (ultimoInforme.tratamiento) {
-          contenidoSugerido += `<h3>Tratamiento:</h3><p>${ultimoInforme.tratamiento}</p>`;
+        // 4.3. Examenes Médicos
+        if (historico?.examenes_medico && historico.examenes_medico.trim() !== '' && historico.examenes_medico.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Examenes Médicos:</strong></h3><p>${historico.examenes_medico}</p>`;
         }
         
-        if (ultimoInforme.conclusiones) {
-          contenidoSugerido += `<h3>Conclusiones:</h3><p>${ultimoInforme.conclusiones}</p>`;
+        // 4.4. Diagnóstico
+        if (historico?.diagnostico && historico.diagnostico.trim() !== '' && historico.diagnostico.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Diagnóstico:</strong></h3><p>${historico.diagnostico}</p>`;
+        }
+        
+        // 4.5. Conclusiones
+        if (historico?.conclusiones && historico.conclusiones.trim() !== '' && historico.conclusiones.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Conclusiones:</strong></h3><p>${historico.conclusiones}</p>`;
+        }
+        
+        // 4.6. Plan de Tratamiento
+        if (historico?.plan && historico.plan.trim() !== '' && historico.plan.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Plan de Tratamiento:</strong></h3><p>${historico.plan}</p>`;
         }
         
         console.log('✨ Contenido auto-aplicado (primeros 500 caracteres):', contenidoSugerido.substring(0, 500));
@@ -1052,6 +1023,79 @@ export class InformeMedicoFormComponent implements OnInit {
       return this.contextualDataService.calcularDiasTranscurridos(this.datosContextuales.ultimoInforme.fecha_consulta);
     }
     return 0;
+  }
+
+  /**
+   * Detecta si el contenido tiene duplicación de secciones
+   */
+  private detectarDuplicacionContenido(contenido: string): boolean {
+    if (!contenido) return false;
+    
+    // Contar ocurrencias de secciones clave
+    const motivoCount = (contenido.match(/Motivo de Consulta/gi) || []).length;
+    const antecedentesCount = (contenido.match(/Antecedentes Médicos/gi) || []).length;
+    const examenesCount = (contenido.match(/Examenes Médicos/gi) || []).length;
+    const diagnosticoCount = (contenido.match(/Diagnóstico:/gi) || []).length;
+    
+    // Si alguna sección aparece más de una vez, hay duplicación
+    return motivoCount > 1 || antecedentesCount > 1 || examenesCount > 1 || diagnosticoCount > 1;
+  }
+
+  /**
+   * Limpia contenido duplicado, manteniendo solo la primera ocurrencia de cada sección
+   */
+  private limpiarContenidoDuplicado(contenido: string): string {
+    if (!contenido) return contenido;
+    
+    // Dividir el contenido por secciones principales
+    const secciones = contenido.split(/(?=<h[23]><strong>)/i);
+    const seccionesUnicas = new Map<string, string>();
+    const ordenSecciones: string[] = [];
+    
+    // Procesar cada sección
+    for (const seccion of secciones) {
+      if (!seccion.trim()) continue;
+      
+      // Identificar el tipo de sección
+      let tipoSeccion = '';
+      if (seccion.includes('Motivo de Consulta')) tipoSeccion = 'motivo';
+      else if (seccion.includes('Antecedentes Médicos')) tipoSeccion = 'antecedentes';
+      else if (seccion.includes('Examenes Médicos')) tipoSeccion = 'examenes';
+      else if (seccion.includes('Diagnóstico:')) tipoSeccion = 'diagnostico';
+      else if (seccion.includes('Conclusiones:')) tipoSeccion = 'conclusiones';
+      else if (seccion.includes('Plan de Tratamiento')) tipoSeccion = 'plan';
+      else if (seccion.includes('Datos del Paciente')) tipoSeccion = 'paciente';
+      else if (seccion.includes('Datos del Médico')) tipoSeccion = 'medico';
+      else {
+        // Sección desconocida, agregarla al final
+        tipoSeccion = `otro_${Date.now()}`;
+      }
+      
+      // Solo agregar si no existe ya
+      if (tipoSeccion && !seccionesUnicas.has(tipoSeccion)) {
+        seccionesUnicas.set(tipoSeccion, seccion);
+        if (!tipoSeccion.startsWith('otro_')) {
+          ordenSecciones.push(tipoSeccion);
+        }
+      }
+    }
+    
+    // Reconstruir el contenido en el orden correcto
+    let contenidoLimpio = '';
+    
+    // Primero agregar secciones conocidas en orden
+    for (const tipo of ordenSecciones) {
+      contenidoLimpio += seccionesUnicas.get(tipo) || '';
+    }
+    
+    // Luego agregar secciones desconocidas
+    for (const [tipo, seccion] of seccionesUnicas.entries()) {
+      if (tipo.startsWith('otro_')) {
+        contenidoLimpio += seccion;
+      }
+    }
+    
+    return contenidoLimpio;
   }
 
   // Getters para validación (con verificación null-safe)

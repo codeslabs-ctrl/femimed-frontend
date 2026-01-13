@@ -125,7 +125,7 @@ import { Patient } from '../../../models/patient.model';
               type="button" 
               class="btn btn-sm btn-outline"
               (click)="abrirModalGuardarPlantilla()"
-              [disabled]="!historiaForm.motivo_consulta && !historiaForm.diagnostico">
+              [disabled]="!historiaForm.motivo_consulta && !historiaForm.examenes_medico">
               <i class="fas fa-save"></i>
               Guardar como plantilla
             </button>
@@ -160,10 +160,21 @@ import { Patient } from '../../../models/patient.model';
                   </div>
 
                   <div class="form-group">
+                    <label for="examenes_medico">Examenes Médicos *</label>
+                    <app-rich-text-editor
+                      [value]="historiaForm.examenes_medico"
+                      [placeholder]="'Ingrese los exámenes médicos del paciente...'"
+                      [height]="120"
+                      (valueChange)="historiaForm.examenes_medico = $event"
+                      [class.readonly]="!esEditable">
+                    </app-rich-text-editor>
+                  </div>
+
+                  <div class="form-group">
                     <label for="diagnostico">Diagnóstico *</label>
                     <app-rich-text-editor
                       [value]="historiaForm.diagnostico"
-                      [placeholder]="'Diagnóstico médico...'"
+                      [placeholder]="'Ingrese el diagnóstico médico...'"
                       [height]="120"
                       (valueChange)="historiaForm.diagnostico = $event"
                       [class.readonly]="!esEditable">
@@ -354,6 +365,10 @@ import { Patient } from '../../../models/patient.model';
               <div class="preview-item" *ngIf="plantillaForm.motivo_consulta_template">
                 <strong>Motivo de Consulta:</strong>
                 <div [innerHTML]="plantillaForm.motivo_consulta_template"></div>
+              </div>
+              <div class="preview-item" *ngIf="plantillaForm.examenes_medico_template">
+                <strong>Examenes Médicos:</strong>
+                <div [innerHTML]="plantillaForm.examenes_medico_template"></div>
               </div>
               <div class="preview-item" *ngIf="plantillaForm.diagnostico_template">
                 <strong>Diagnóstico:</strong>
@@ -1064,6 +1079,7 @@ export class HistoriaMedicaComponent implements OnInit {
 
   historiaForm = {
     motivo_consulta: '',
+    examenes_medico: '',
     diagnostico: '',
     conclusiones: '',
     plan: '',
@@ -1101,6 +1117,7 @@ export class HistoriaMedicaComponent implements OnInit {
   plantillaForm = {
     nombre: '',
     motivo_consulta_template: '',
+    examenes_medico_template: '',
     diagnostico_template: '',
     conclusiones_template: '',
     plan_template: '',
@@ -1305,6 +1322,7 @@ export class HistoriaMedicaComponent implements OnInit {
       this.modoVisualizacion = 'edicion';
       this.historiaForm = { 
         motivo_consulta: '', 
+        examenes_medico: '',
         diagnostico: '', 
         conclusiones: '', 
         plan: '',
@@ -1327,6 +1345,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
+            examenes_medico: this.historiaData.examenes_medico || '',
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
@@ -1362,6 +1381,7 @@ export class HistoriaMedicaComponent implements OnInit {
               this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
+            examenes_medico: this.historiaData.examenes_medico || '',
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
@@ -1492,6 +1512,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = response.data;
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
+            examenes_medico: this.historiaData.examenes_medico || '',
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
@@ -1509,6 +1530,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = null;
           this.historiaForm = {
             motivo_consulta: '',
+            examenes_medico: '',
             diagnostico: '',
             conclusiones: '',
             plan: '',
@@ -1556,6 +1578,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = response.data;
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
+            examenes_medico: this.historiaData.examenes_medico || '',
             diagnostico: this.historiaData.diagnostico || '',
             conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
@@ -1573,6 +1596,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = null;
           this.historiaForm = {
             motivo_consulta: '',
+            examenes_medico: '',
             diagnostico: '',
             conclusiones: '',
             plan: '',
@@ -1601,14 +1625,14 @@ export class HistoriaMedicaComponent implements OnInit {
 
     // Validaciones básicas (remover HTML tags para validar contenido)
     const motivoText = this.stripHtml(this.historiaForm.motivo_consulta).trim();
-    const diagnosticoText = this.stripHtml(this.historiaForm.diagnostico).trim();
+    const examenesMedicoText = this.stripHtml(this.historiaForm.examenes_medico).trim();
 
     if (!motivoText) {
       alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta.');
       return;
     }
 
-    if (!diagnosticoText) {
+    if (!examenesMedicoText) {
       alert('⚠️ Diagnóstico requerido\n\nPor favor, ingrese el diagnóstico médico.');
       return;
     }
@@ -1645,6 +1669,7 @@ export class HistoriaMedicaComponent implements OnInit {
       paciente_id: this.consultaData.paciente_id,
       medico_id: medicoId,
       motivo_consulta: this.historiaForm.motivo_consulta,
+      examenes_medico: this.historiaForm.examenes_medico,
       diagnostico: this.historiaForm.diagnostico,
       conclusiones: this.historiaForm.conclusiones,
       plan: this.historiaForm.plan,
@@ -1684,6 +1709,7 @@ export class HistoriaMedicaComponent implements OnInit {
 
     const updateData = {
       motivo_consulta: this.historiaForm.motivo_consulta,
+      examenes_medico: this.historiaForm.examenes_medico,
       diagnostico: this.historiaForm.diagnostico,
       conclusiones: this.historiaForm.conclusiones,
       plan: this.historiaForm.plan,
@@ -1715,6 +1741,7 @@ export class HistoriaMedicaComponent implements OnInit {
     } else {
       this.historiaForm = {
         motivo_consulta: '',
+        examenes_medico: '',
         diagnostico: '',
         conclusiones: '',
         plan: '',
@@ -1926,6 +1953,7 @@ export class HistoriaMedicaComponent implements OnInit {
 
     console.log('🔄 Abriendo modal de interconsultas con contexto clínico:', {
       paciente: this.pacienteData,
+      examenesMedico: this.historiaForm.examenes_medico,
       diagnostico: this.historiaForm.diagnostico,
       motivoConsulta: this.historiaForm.motivo_consulta,
       consultaId: this.consultaData.id
@@ -2025,6 +2053,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     console.log('✅ Datos a aplicar:', datosAplicados);
     
     this.historiaForm.motivo_consulta = datosAplicados.motivo_consulta;
+    this.historiaForm.examenes_medico = datosAplicados.examenes_medico || '';
     this.historiaForm.diagnostico = datosAplicados.diagnostico;
     this.historiaForm.conclusiones = datosAplicados.conclusiones;
     this.historiaForm.plan = datosAplicados.plan;
@@ -2043,6 +2072,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     this.plantillaForm = {
       nombre: '',
       motivo_consulta_template: this.historiaForm.motivo_consulta,
+      examenes_medico_template: this.historiaForm.examenes_medico,
       diagnostico_template: this.historiaForm.diagnostico,
       conclusiones_template: this.historiaForm.conclusiones,
       plan_template: this.historiaForm.plan,
@@ -2057,6 +2087,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     this.plantillaForm = {
       nombre: '',
       motivo_consulta_template: '',
+      examenes_medico_template: '',
       diagnostico_template: '',
       conclusiones_template: '',
       plan_template: '',
@@ -2082,6 +2113,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
       medico_id: medicoId,
       nombre: this.plantillaForm.nombre.trim(),
       motivo_consulta_template: this.plantillaForm.motivo_consulta_template,
+      examenes_medico_template: this.plantillaForm.examenes_medico_template,
       diagnostico_template: this.plantillaForm.diagnostico_template,
       conclusiones_template: this.plantillaForm.conclusiones_template,
       plan_template: this.plantillaForm.plan_template,

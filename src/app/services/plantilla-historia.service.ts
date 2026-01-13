@@ -9,6 +9,7 @@ export interface PlantillaHistoria {
   nombre: string;
   descripcion?: string;
   motivo_consulta_template?: string;
+  examenes_medico_template?: string;
   diagnostico_template?: string;
   conclusiones_template?: string;
   plan_template?: string;
@@ -66,12 +67,14 @@ export class PlantillaHistoriaService {
    */
   aplicarPlantilla(plantilla: PlantillaHistoria): {
     motivo_consulta: string;
+    examenes_medico: string;
     diagnostico: string;
     conclusiones: string;
     plan: string;
   } {
     return {
       motivo_consulta: plantilla.motivo_consulta_template || '',
+      examenes_medico: plantilla.examenes_medico_template || '',
       diagnostico: plantilla.diagnostico_template || '',
       conclusiones: plantilla.conclusiones_template || '',
       plan: plantilla.plan_template || ''
