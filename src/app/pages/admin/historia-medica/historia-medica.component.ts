@@ -297,6 +297,17 @@ import { Patient } from '../../../models/patient.model';
               <span class="btn-text">Interconsultas</span>
             </button>
             
+            <!-- Botón de Agendar Cita -->
+            <button 
+              type="button" 
+              class="btn btn-success" 
+              (click)="agendarCita()"
+              [disabled]="isSubmitting || !consultaData?.paciente_id || !puedeAgendarCita()"
+              [title]="getAgendarCitaTooltip()">
+              <span class="btn-icon">📅</span>
+              <span class="btn-text">Agendar Cita</span>
+            </button>
+            
             <button 
               type="submit" 
               class="btn btn-primary" 
@@ -1999,6 +2010,87 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     
     // Cerrar el modal
     this.cerrarModalInterconsultas();
+  }
+
+  // Métodos para agendar cita
+  puedeAgendarCita(): boolean {
+    // En modo "create" (nuevo control), solo se puede agendar después de guardar
+    // En modo "edit", se puede agendar desde el inicio
+    if (this.mode === 'create') {
+      // En nuevo control, solo habilitar si ya se guardó (tiene historiaData)
+      return !!this.historiaData && !!this.historiaData.id;
+    } else if (this.mode === 'edit') {
+      // En editar, siempre habilitar si hay datos del paciente y médico
+      return !!this.consultaData?.paciente_id && !!this.obtenerMedicoId();
+    }
+    return false;
+  }
+
+  obtenerMedicoId(): number | null {
+    // Si estamos editando, usar el medico_id de la historia
+    if (this.historiaData?.medico_id) {
+      return this.historiaData.medico_id;
+    }
+    // Si hay consultaData, usar el medico_id de la consulta
+    if (this.consultaData?.medico_id) {
+      return this.consultaData.medico_id;
+    }
+    // Si el usuario es médico, usar su medico_id
+    if (this.currentUser?.medico_id) {
+      return this.currentUser.medico_id;
+    }
+    return null;
+  }
+
+  getAgendarCitaTooltip(): string {
+    if (!this.consultaData?.paciente_id) {
+      return 'No hay datos del paciente disponibles';
+    }
+    if (this.mode === 'create' && !this.historiaData?.id) {
+      return 'Debe guardar el control primero antes de agendar una cita';
+    }
+    if (!this.obtenerMedicoId()) {
+      return 'No hay médico seleccionado';
+    }
+    return 'Agendar una nueva consulta con este paciente y médico';
+  }
+
+  agendarCita(): void {
+    if (!this.consultaData?.paciente_id) {
+      alert('❌ Error: No hay datos del paciente disponibles para agendar la cita.');
+      return;
+    }
+
+    const medicoId = this.obtenerMedicoId();
+    if (!medicoId) {
+      alert('❌ Error: No hay médico seleccionado para agendar la cita.');
+      return;
+    }
+
+    // Navegar a nueva consulta con paciente preseleccionado
+    const queryParams: any = {
+      paciente_id: this.consultaData.paciente_id
+    };
+
+    // Si el usuario no es médico, también pasar el medico_id
+    // Nota: El componente nueva-consulta necesitará soportar este parámetro
+    if (this.currentUser?.rol !== 'medico' && medicoId) {
+      queryParams.medico_id = medicoId;
+    }
+
+    console.log('📅 Navegando a Nueva Consulta con:', queryParams);
+    
+    this.router.navigate(['/admin/consultas/nueva'], { queryParams }).then(success => {
+      if (success) {
+        console.log('✅ Navegación exitosa a Nueva Consulta');
+      } else {
+        console.error('❌ Error en la navegación');
+        alert('❌ Error al navegar a la pantalla de Nueva Consulta. Por favor, intente nuevamente.');
+      }
+    }).catch(error => {
+      console.error('❌ Error de navegación:', error);
+      alert('❌ Error al navegar a la pantalla de Nueva Consulta. Por favor, intente nuevamente.');
+    });
   }
 
   // Métodos para manejar plantillas
