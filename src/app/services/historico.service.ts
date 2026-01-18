@@ -11,11 +11,10 @@ export interface HistoricoData {
   motivo_consulta: string;
   examenes_medico?: string;
   diagnostico?: string;
-  conclusiones?: string;
   plan?: string;
   antecedentes_personales?: string;
   antecedentes_familiares?: string;
-  antecedentes_quirurgicos?: string;
+  examenes_paraclinicos?: string;
   antecedentes_otros?: string;
   fecha_consulta: string;
   fecha_creacion: string;

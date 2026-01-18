@@ -160,12 +160,23 @@ import { Patient } from '../../../models/patient.model';
                   </div>
 
                   <div class="form-group">
-                    <label for="examenes_medico">Examenes Médicos *</label>
+                    <label for="examenes_medico">Examenes Fisicos *</label>
                     <app-rich-text-editor
                       [value]="historiaForm.examenes_medico"
-                      [placeholder]="'Ingrese los exámenes médicos del paciente...'"
+                      [placeholder]="'Ingrese los exámenes físicos del paciente...'"
                       [height]="120"
                       (valueChange)="historiaForm.examenes_medico = $event"
+                      [class.readonly]="!esEditable">
+                    </app-rich-text-editor>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="examenes_paraclinicos">Examenes Paraclínicos</label>
+                    <app-rich-text-editor
+                      [value]="historiaForm.examenes_paraclinicos"
+                      [placeholder]="'Ingrese los exámenes paraclínicos del paciente...'"
+                      [height]="120"
+                      (valueChange)="historiaForm.examenes_paraclinicos = $event"
                       [class.readonly]="!esEditable">
                     </app-rich-text-editor>
                   </div>
@@ -177,17 +188,6 @@ import { Patient } from '../../../models/patient.model';
                       [placeholder]="'Ingrese el diagnóstico médico...'"
                       [height]="120"
                       (valueChange)="historiaForm.diagnostico = $event"
-                      [class.readonly]="!esEditable">
-                    </app-rich-text-editor>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="conclusiones">Conclusiones</label>
-                    <app-rich-text-editor
-                      [value]="historiaForm.conclusiones"
-                      [placeholder]="'Conclusiones y recomendaciones...'"
-                      [height]="120"
-                      (valueChange)="historiaForm.conclusiones = $event"
                       [class.readonly]="!esEditable">
                     </app-rich-text-editor>
                   </div>
@@ -378,16 +378,12 @@ import { Patient } from '../../../models/patient.model';
                 <div [innerHTML]="plantillaForm.motivo_consulta_template"></div>
               </div>
               <div class="preview-item" *ngIf="plantillaForm.examenes_medico_template">
-                <strong>Examenes Médicos:</strong>
+                <strong>Examenes Fisicos:</strong>
                 <div [innerHTML]="plantillaForm.examenes_medico_template"></div>
               </div>
               <div class="preview-item" *ngIf="plantillaForm.diagnostico_template">
                 <strong>Diagnóstico:</strong>
                 <div [innerHTML]="plantillaForm.diagnostico_template"></div>
-              </div>
-              <div class="preview-item" *ngIf="plantillaForm.conclusiones_template">
-                <strong>Conclusiones:</strong>
-                <div [innerHTML]="plantillaForm.conclusiones_template"></div>
               </div>
               <div class="preview-item" *ngIf="plantillaForm.plan_template">
                 <strong>Plan:</strong>
@@ -1091,8 +1087,8 @@ export class HistoriaMedicaComponent implements OnInit {
   historiaForm = {
     motivo_consulta: '',
     examenes_medico: '',
+    examenes_paraclinicos: '',
     diagnostico: '',
-    conclusiones: '',
     plan: '',
     antecedentes_otros: ''
   };
@@ -1129,8 +1125,8 @@ export class HistoriaMedicaComponent implements OnInit {
     nombre: '',
     motivo_consulta_template: '',
     examenes_medico_template: '',
+    examenes_paraclinicos_template: '',
     diagnostico_template: '',
-    conclusiones_template: '',
     plan_template: '',
     antecedentes_medicos_template: ''
   };
@@ -1277,7 +1273,6 @@ export class HistoriaMedicaComponent implements OnInit {
       especialidad_nombre: medico.especialidad_nombre || 'Sin especialidad',
       historico_id: patientData.historico_id,
       diagnostico: patientData.diagnostico,
-      conclusiones: patientData.conclusiones,
       plan: patientData.plan
     };
     
@@ -1309,7 +1304,6 @@ export class HistoriaMedicaComponent implements OnInit {
       especialidad_nombre: 'Sin especialidad',
       historico_id: patientData.historico_id,
       diagnostico: patientData.diagnostico,
-      conclusiones: patientData.conclusiones,
       plan: patientData.plan
     };
     
@@ -1334,8 +1328,8 @@ export class HistoriaMedicaComponent implements OnInit {
       this.historiaForm = { 
         motivo_consulta: '', 
         examenes_medico: '',
+        examenes_paraclinicos: '',
         diagnostico: '', 
-        conclusiones: '', 
         plan: '',
         antecedentes_otros: ''
       };
@@ -1357,8 +1351,8 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
             examenes_medico: this.historiaData.examenes_medico || '',
+            examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData.diagnostico || '',
-            conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
@@ -1393,8 +1387,8 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
             examenes_medico: this.historiaData.examenes_medico || '',
+            examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData.diagnostico || '',
-            conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
@@ -1524,8 +1518,8 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
             examenes_medico: this.historiaData.examenes_medico || '',
+            examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData.diagnostico || '',
-            conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
@@ -1542,8 +1536,8 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaForm = {
             motivo_consulta: '',
             examenes_medico: '',
+            examenes_paraclinicos: '',
             diagnostico: '',
-            conclusiones: '',
             plan: '',
             antecedentes_otros: ''
           };
@@ -1590,8 +1584,8 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
             examenes_medico: this.historiaData.examenes_medico || '',
+            examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData.diagnostico || '',
-            conclusiones: this.historiaData.conclusiones || '',
             plan: this.historiaData.plan || '',
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
@@ -1608,8 +1602,8 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaForm = {
             motivo_consulta: '',
             examenes_medico: '',
+            examenes_paraclinicos: '',
             diagnostico: '',
-            conclusiones: '',
             plan: '',
             antecedentes_otros: ''
           };
@@ -1681,8 +1675,8 @@ export class HistoriaMedicaComponent implements OnInit {
       medico_id: medicoId,
       motivo_consulta: this.historiaForm.motivo_consulta,
       examenes_medico: this.historiaForm.examenes_medico,
+      examenes_paraclinicos: this.historiaForm.examenes_paraclinicos,
       diagnostico: this.historiaForm.diagnostico,
-      conclusiones: this.historiaForm.conclusiones,
       plan: this.historiaForm.plan,
       antecedentes_otros: this.historiaForm.antecedentes_otros,
       fecha_consulta: new Date().toISOString(),
@@ -1721,8 +1715,8 @@ export class HistoriaMedicaComponent implements OnInit {
     const updateData = {
       motivo_consulta: this.historiaForm.motivo_consulta,
       examenes_medico: this.historiaForm.examenes_medico,
+      examenes_paraclinicos: this.historiaForm.examenes_paraclinicos,
       diagnostico: this.historiaForm.diagnostico,
-      conclusiones: this.historiaForm.conclusiones,
       plan: this.historiaForm.plan,
       antecedentes_otros: this.historiaForm.antecedentes_otros
     };
@@ -1753,8 +1747,8 @@ export class HistoriaMedicaComponent implements OnInit {
       this.historiaForm = {
         motivo_consulta: '',
         examenes_medico: '',
+        examenes_paraclinicos: '',
         diagnostico: '',
-        conclusiones: '',
         plan: '',
         antecedentes_otros: ''
       };
@@ -2146,8 +2140,8 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     
     this.historiaForm.motivo_consulta = datosAplicados.motivo_consulta;
     this.historiaForm.examenes_medico = datosAplicados.examenes_medico || '';
+    this.historiaForm.examenes_paraclinicos = (datosAplicados as any).examenes_paraclinicos || '';
     this.historiaForm.diagnostico = datosAplicados.diagnostico;
-    this.historiaForm.conclusiones = datosAplicados.conclusiones;
     this.historiaForm.plan = datosAplicados.plan;
     
     console.log('✅ Plantilla aplicada exitosamente');
@@ -2165,8 +2159,8 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
       nombre: '',
       motivo_consulta_template: this.historiaForm.motivo_consulta,
       examenes_medico_template: this.historiaForm.examenes_medico,
+      examenes_paraclinicos_template: this.historiaForm.examenes_paraclinicos,
       diagnostico_template: this.historiaForm.diagnostico,
-      conclusiones_template: this.historiaForm.conclusiones,
       plan_template: this.historiaForm.plan,
       antecedentes_medicos_template: this.historiaForm.antecedentes_otros
     };
@@ -2180,8 +2174,8 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
       nombre: '',
       motivo_consulta_template: '',
       examenes_medico_template: '',
+      examenes_paraclinicos_template: '',
       diagnostico_template: '',
-      conclusiones_template: '',
       plan_template: '',
       antecedentes_medicos_template: ''
     };
@@ -2206,8 +2200,8 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
       nombre: this.plantillaForm.nombre.trim(),
       motivo_consulta_template: this.plantillaForm.motivo_consulta_template,
       examenes_medico_template: this.plantillaForm.examenes_medico_template,
+      examenes_paraclinicos_template: this.plantillaForm.examenes_paraclinicos_template,
       diagnostico_template: this.plantillaForm.diagnostico_template,
-      conclusiones_template: this.plantillaForm.conclusiones_template,
       plan_template: this.plantillaForm.plan_template,
       activo: true
     };

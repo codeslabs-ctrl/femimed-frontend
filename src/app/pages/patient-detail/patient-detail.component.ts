@@ -120,11 +120,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
                     <label>Diagnóstico</label>
                 <div class="info-text" [innerHTML]="historico?.diagnostico || patient.diagnostico"></div>
                   </div>
-              <div class="info-item full-width" *ngIf="historico?.conclusiones || patient.conclusiones">
-                    <label>Conclusiones</label>
-                <div class="info-text" [innerHTML]="historico?.conclusiones || patient.conclusiones"></div>
-              </div>
-              <!-- Campos removidos: antecedentes_medicos, medicamentos, alergias, observaciones -->
+              <!-- Campos removidos: antecedentes_medicos, medicamentos, alergias, observaciones, conclusiones -->
               <!-- Estos campos no existen en la estructura actual de la base de datos -->
               <div class="info-item full-width" *ngIf="patient.plan">
                     <label>Plan de Tratamiento</label>
@@ -184,11 +180,11 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
 
         <div class="patient-actions">
           <div class="action-group">
-            <button class="btn btn-primary" (click)="printReport()">
+            <button class="btn btn-primary" (click)="irAInformesMedicos()">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
               </svg>
-              Imprimir Informe
+              Informes Médicos
             </button>
             <button class="btn btn-secondary" (click)="referPatient()">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -725,16 +721,15 @@ export class PatientDetailComponent implements OnInit {
     });
   }
 
-  printReport() {
-    if (this.patient) {
-      // Crear una nueva ventana para imprimir
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        const printContent = this.generatePrintContent();
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        printWindow.print();
-      }
+  irAInformesMedicos() {
+    if (this.patient && this.patient.id) {
+      // Redirigir a Informes Médicos con el paciente preseleccionado
+      this.router.navigate(['/admin/informes-medicos'], {
+        queryParams: { paciente_id: this.patient.id }
+      });
+    } else {
+      // Si no hay paciente, solo ir a Informes Médicos
+      this.router.navigate(['/admin/informes-medicos']);
     }
   }
 
@@ -849,14 +844,7 @@ export class PatientDetailComponent implements OnInit {
         </div>
         ` : ''}
         
-        ${(this.historico?.conclusiones || this.patient.conclusiones) ? `
-        <div class="section">
-          <h3>Conclusiones</h3>
-          <div>${this.historico?.conclusiones || this.patient.conclusiones}</div>
-        </div>
-        ` : ''}
-        
-        <!-- Campos removidos: antecedentes_medicos, medicamentos, alergias, observaciones -->
+        <!-- Campos removidos: antecedentes_medicos, medicamentos, alergias, observaciones, conclusiones -->
         <!-- Estos campos no existen en la estructura actual de la base de datos -->
         
         ${this.patient.plan ? `

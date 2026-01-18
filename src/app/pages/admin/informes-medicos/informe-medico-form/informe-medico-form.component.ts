@@ -105,6 +105,28 @@ export class InformeMedicoFormComponent implements OnInit {
     this.verificarUsuarioActual();
     this.cargarDatosIniciales();
     this.verificarModoEdicion();
+    this.verificarQueryParams();
+  }
+
+  verificarQueryParams(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['paciente_id']) {
+        const pacienteId = parseInt(params['paciente_id']);
+        if (pacienteId && !isNaN(pacienteId)) {
+          // Esperar a que los pacientes se carguen antes de preseleccionar
+          setTimeout(() => {
+            this.informeForm.patchValue({
+              paciente_id: pacienteId
+            });
+            // Disparar el evento de cambio para cargar datos contextuales
+            const pacienteControl = this.informeForm.get('paciente_id');
+            if (pacienteControl) {
+              pacienteControl.updateValueAndValidity();
+            }
+          }, 500);
+        }
+      }
+    });
   }
 
   verificarUsuarioActual(): void {
@@ -722,19 +744,19 @@ export class InformeMedicoFormComponent implements OnInit {
           contenidoSugerido += `<h3><strong>Antecedentes Médicos:</strong></h3><p>${historico.antecedentes_otros}</p>`;
         }
         
-        // 4.3. Examenes Médicos
+        // 4.3. Examenes Fisicos
         if (historico?.examenes_medico && historico.examenes_medico.trim() !== '' && historico.examenes_medico.trim() !== '<p></p>') {
-          contenidoSugerido += `<h3><strong>Examenes Médicos:</strong></h3><p>${historico.examenes_medico}</p>`;
+          contenidoSugerido += `<h3><strong>Examenes Fisicos:</strong></h3><p>${historico.examenes_medico}</p>`;
         }
         
-        // 4.4. Diagnóstico
+        // 4.4. Examenes Paraclínicos
+        if ((historico as any)?.examenes_paraclinicos && (historico as any).examenes_paraclinicos.trim() !== '' && (historico as any).examenes_paraclinicos.trim() !== '<p></p>') {
+          contenidoSugerido += `<h3><strong>Examenes Paraclínicos:</strong></h3><p>${(historico as any).examenes_paraclinicos}</p>`;
+        }
+        
+        // 4.5. Diagnóstico
         if (historico?.diagnostico && historico.diagnostico.trim() !== '' && historico.diagnostico.trim() !== '<p></p>') {
           contenidoSugerido += `<h3><strong>Diagnóstico:</strong></h3><p>${historico.diagnostico}</p>`;
-        }
-        
-        // 4.5. Conclusiones
-        if (historico?.conclusiones && historico.conclusiones.trim() !== '' && historico.conclusiones.trim() !== '<p></p>') {
-          contenidoSugerido += `<h3><strong>Conclusiones:</strong></h3><p>${historico.conclusiones}</p>`;
         }
         
         // 4.6. Plan de Tratamiento

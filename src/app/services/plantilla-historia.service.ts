@@ -10,8 +10,8 @@ export interface PlantillaHistoria {
   descripcion?: string;
   motivo_consulta_template?: string;
   examenes_medico_template?: string;
+  examenes_paraclinicos_template?: string;
   diagnostico_template?: string;
-  conclusiones_template?: string;
   plan_template?: string;
   activo: boolean;
   fecha_creacion?: string;
@@ -68,15 +68,15 @@ export class PlantillaHistoriaService {
   aplicarPlantilla(plantilla: PlantillaHistoria): {
     motivo_consulta: string;
     examenes_medico: string;
+    examenes_paraclinicos: string;
     diagnostico: string;
-    conclusiones: string;
     plan: string;
   } {
     return {
       motivo_consulta: plantilla.motivo_consulta_template || '',
       examenes_medico: plantilla.examenes_medico_template || '',
+      examenes_paraclinicos: plantilla.examenes_paraclinicos_template || '',
       diagnostico: plantilla.diagnostico_template || '',
-      conclusiones: plantilla.conclusiones_template || '',
       plan: plantilla.plan_template || ''
     };
   }
