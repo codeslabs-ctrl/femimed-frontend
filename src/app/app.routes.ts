@@ -201,6 +201,11 @@ export const routes: Routes = [
     canActivate: [adminMedicoGuard]
   },
   {
+    path: 'admin/perfiles',
+    loadComponent: () => import('./pages/admin/perfiles/perfiles.component').then(m => m.PerfilesComponent),
+    canActivate: [adminOnlyGuard]
+  },
+  {
     path: 'statistics',
     loadComponent: () => import('./pages/statistics/statistics.component').then(m => m.StatisticsComponent),
     canActivate: [authGuard]

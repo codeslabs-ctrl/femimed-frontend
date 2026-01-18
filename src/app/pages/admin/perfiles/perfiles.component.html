@@ -1,0 +1,195 @@
+<div class="perfiles-page">
+  <div class="page-header">
+    <h1>
+      <i class="fas fa-user-shield"></i>
+      Gestión de Perfiles y Permisos
+    </h1>
+  </div>
+
+  <div class="perfiles-container" *ngIf="!loading">
+    <!-- Lista de perfiles -->
+    <div class="perfiles-sidebar">
+      <h2>Perfiles</h2>
+      <div class="perfiles-list">
+        <div 
+          *ngFor="let perfil of perfiles" 
+          class="perfil-item"
+          [class.active]="selectedPerfil?.id === perfil.id"
+          (click)="selectPerfil(perfil)">
+          <div class="perfil-name">{{ perfil.nombre }}</div>
+          <div class="perfil-desc" *ngIf="perfil.descripcion">{{ perfil.descripcion }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de permisos -->
+    <div class="permisos-panel" *ngIf="selectedPerfil">
+      <div class="panel-header">
+        <h2>Permisos: {{ selectedPerfil.nombre }}</h2>
+        <button 
+          class="btn btn-save" 
+          (click)="saveAllPermisos()"
+          [disabled]="saving">
+          <i class="fas fa-save"></i>
+          {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </div>
+
+      <div class="permisos-content">
+        <div class="permisos-tree">
+          <div *ngFor="let item of menuItems" class="menu-item">
+            <!-- Encabezado -->
+            <div 
+              class="menu-header"
+              [class.expanded]="isExpanded(item.id)"
+              *ngIf="item.tipo === 'encabezado'">
+              <div class="menu-header-content" (click)="toggleItem(item.id)">
+                <i class="fas" [class.fa-chevron-down]="isExpanded(item.id)" [class.fa-chevron-right]="!isExpanded(item.id)"></i>
+                <span class="menu-name">{{ item.nombre }}</span>
+              </div>
+            </div>
+
+            <!-- Opciones del encabezado -->
+            <div class="menu-children" *ngIf="item.tipo === 'encabezado' && isExpanded(item.id) && item.hijos">
+              <div *ngFor="let hijo of item.hijos" class="menu-option">
+                <div class="option-header">
+                  <span class="option-name">{{ hijo.nombre }}</span>
+                </div>
+                <div class="permisos-grid">
+                  <div class="permiso-checkbox">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_acceder')"
+                        (change)="togglePermiso(hijo.id, 'puede_acceder')">
+                      <span>Acceder</span>
+                    </label>
+                  </div>
+                  <div class="permiso-checkbox">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_crear')"
+                        (change)="togglePermiso(hijo.id, 'puede_crear')"
+                        [disabled]="!getPermisoValue(hijo.id, 'puede_acceder')">
+                      <span>Crear</span>
+                    </label>
+                  </div>
+                  <div class="permiso-checkbox">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_editar')"
+                        (change)="togglePermiso(hijo.id, 'puede_editar')"
+                        [disabled]="!getPermisoValue(hijo.id, 'puede_acceder')">
+                      <span>Editar</span>
+                    </label>
+                  </div>
+                  <div class="permiso-checkbox">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_eliminar')"
+                        (change)="togglePermiso(hijo.id, 'puede_eliminar')"
+                        [disabled]="!getPermisoValue(hijo.id, 'puede_acceder')">
+                      <span>Eliminar</span>
+                    </label>
+                  </div>
+                  <div class="permiso-checkbox" *ngIf="hijo.nombre.includes('Consultas')">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_finalizar')"
+                        (change)="togglePermiso(hijo.id, 'puede_finalizar')"
+                        [disabled]="!getPermisoValue(hijo.id, 'puede_acceder')">
+                      <span>Finalizar</span>
+                    </label>
+                  </div>
+                  <div class="permiso-checkbox" *ngIf="hijo.nombre.includes('Consultas')">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_completar')"
+                        (change)="togglePermiso(hijo.id, 'puede_completar')"
+                        [disabled]="!getPermisoValue(hijo.id, 'puede_acceder')">
+                      <span>Completar</span>
+                    </label>
+                  </div>
+                  <div class="permiso-checkbox" *ngIf="hijo.nombre.includes('Consultas')">
+                    <label>
+                      <input 
+                        type="checkbox"
+                        [checked]="getPermisoValue(hijo.id, 'puede_ver_servicios')"
+                        (change)="togglePermiso(hijo.id, 'puede_ver_servicios')"
+                        [disabled]="!getPermisoValue(hijo.id, 'puede_acceder')">
+                      <span>Ver Servicios</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Opción directa (sin encabezado) -->
+            <div *ngIf="item.tipo === 'opcion'" class="menu-option">
+              <div class="option-header">
+                <span class="option-name">{{ item.nombre }}</span>
+              </div>
+              <div class="permisos-grid">
+                <div class="permiso-checkbox">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      [checked]="getPermisoValue(item.id, 'puede_acceder')"
+                      (change)="togglePermiso(item.id, 'puede_acceder')">
+                    <span>Acceder</span>
+                  </label>
+                </div>
+                <div class="permiso-checkbox">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      [checked]="getPermisoValue(item.id, 'puede_crear')"
+                      (change)="togglePermiso(item.id, 'puede_crear')"
+                      [disabled]="!getPermisoValue(item.id, 'puede_acceder')">
+                    <span>Crear</span>
+                  </label>
+                </div>
+                <div class="permiso-checkbox">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      [checked]="getPermisoValue(item.id, 'puede_editar')"
+                      (change)="togglePermiso(item.id, 'puede_editar')"
+                      [disabled]="!getPermisoValue(item.id, 'puede_acceder')">
+                    <span>Editar</span>
+                  </label>
+                </div>
+                <div class="permiso-checkbox">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      [checked]="getPermisoValue(item.id, 'puede_eliminar')"
+                      (change)="togglePermiso(item.id, 'puede_eliminar')"
+                      [disabled]="!getPermisoValue(item.id, 'puede_acceder')">
+                    <span>Eliminar</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensaje cuando no hay perfil seleccionado -->
+    <div class="no-selection" *ngIf="!selectedPerfil">
+      <p>Selecciona un perfil para gestionar sus permisos</p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" *ngIf="loading">
+    <p>Cargando...</p>
+  </div>
+</div>
+

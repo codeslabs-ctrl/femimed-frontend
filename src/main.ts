@@ -5,6 +5,11 @@ import { routes } from './app/app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
 import { errorInterceptor } from './app/interceptors/error.interceptor';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+
+// Registrar locale español
+registerLocaleData(localeEs);
 
 bootstrapApplication(AppComponent, {
   providers: [

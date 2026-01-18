@@ -85,6 +85,11 @@ export class NavbarComponent implements OnInit {
           label: 'Gestionar Servicios',
           route: '/admin/servicios',
           icon: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z'
+        },
+        {
+          label: 'Perfiles',
+          route: '/admin/perfiles',
+          icon: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'
         }
       ],
       expanded: false

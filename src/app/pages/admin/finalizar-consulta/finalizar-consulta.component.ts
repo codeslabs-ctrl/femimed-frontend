@@ -214,10 +214,44 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
     (servicio as any)[field] = value;
   }
 
-  onMontoInput(servicioId: number, event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.updateServicioSeleccionado(servicioId, 'monto_pagado', parseFloat(target.value) || 0);
-    this.calcularTotales();
+  getMontoFormateado(servicioId: number): string {
+    const servicio = this.getServicioSeleccionado(servicioId);
+    if (!servicio || servicio.monto_pagado === 0) return '';
+    // Formatear con coma como separador decimal
+    return servicio.monto_pagado.toString().replace('.', ',');
+  }
+
+  onMontoChange(servicioId: number, value: string): void {
+    // Remover caracteres no numéricos excepto coma y punto
+    let cleanValue = value.replace(/[^\d,.-]/g, '');
+    
+    // Permitir solo una coma o un punto como separador decimal
+    const parts = cleanValue.split(/[,.]/);
+    if (parts.length > 2) {
+      // Si hay más de un separador, mantener solo el primero
+      cleanValue = parts[0] + (parts.length > 1 ? ',' + parts.slice(1).join('') : '');
+    }
+    
+    // Convertir coma a punto para parseFloat
+    const numericValue = parseFloat(cleanValue.replace(',', '.'));
+    
+    if (!isNaN(numericValue) && numericValue >= 0) {
+      this.updateServicioSeleccionado(servicioId, 'monto_pagado', numericValue);
+      this.calcularTotales();
+    } else if (cleanValue === '' || cleanValue === '-') {
+      // Permitir campo vacío mientras se escribe
+      this.updateServicioSeleccionado(servicioId, 'monto_pagado', 0);
+    }
+  }
+
+  onMontoBlur(servicioId: number, event: Event): void {
+    const servicio = this.getServicioSeleccionado(servicioId);
+    
+    // Asegurar que el valor sea válido al perder el foco
+    if (isNaN(servicio.monto_pagado) || servicio.monto_pagado < 0) {
+      servicio.monto_pagado = servicio.monto_base || 0;
+      this.calcularTotales();
+    }
   }
 
   onMonedaChange(servicioId: number, event: Event): void {
