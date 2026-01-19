@@ -104,11 +104,13 @@ export class CrearMedicoComponent implements OnInit {
       };
       
       this.medicoService.createMedico(medicoDataToSend).subscribe({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             // Si hay firma digital, subirla después de crear el médico
-            if (this.firmaFile && response.data && response.data.medico && response.data.medico.id) {
-              this.uploadFirmaAfterCreate(response.data.medico.id);
+            // El backend retorna: { data: { medico: {...}, usuario: {...}, message: "..." } }
+            const medicoId = response.data?.medico?.id || response.data?.id;
+            if (this.firmaFile && medicoId) {
+              this.uploadFirmaAfterCreate(medicoId);
             } else {
               this.showSnackbarMessage(
                 `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Email enviado.`,
