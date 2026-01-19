@@ -107,8 +107,8 @@ export class CrearMedicoComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             // Si hay firma digital, subirla después de crear el médico
-            if (this.firmaFile && response.data && response.data.id) {
-              this.uploadFirmaAfterCreate(response.data.id);
+            if (this.firmaFile && response.data && response.data.medico && response.data.medico.id) {
+              this.uploadFirmaAfterCreate(response.data.medico.id);
             } else {
               this.showSnackbarMessage(
                 `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Email enviado.`,
