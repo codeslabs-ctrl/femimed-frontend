@@ -49,9 +49,11 @@ import { Medico } from '../../../services/medico.service';
               <option value="">Todos los estados</option>
               <option value="agendada">Agendada</option>
               <option value="por_agendar">Por Agendar</option>
-              <option value="cancelada">Cancelada</option>
+              <option value="en_progreso">En Progreso</option>
+              <option value="completada">Completada</option>
               <option value="finalizada">Finalizada</option>
               <option value="reagendada">Reagendada</option>
+              <option value="cancelada">Cancelada</option>
               <option value="no_asistio">No Asistió</option>
             </select>
           </div>
@@ -129,8 +131,8 @@ import { Medico } from '../../../services/medico.service';
               <tr *ngFor="let consulta of consultas">
                 <td>
                   <div class="paciente-info">
-                    <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
-                    <div class="paciente-cedula">Cédula: {{ consulta.paciente_cedula }}</div>
+                    <div class="paciente-nombre">{{ getPacienteNombre(consulta) }}</div>
+                    <div class="paciente-cedula">Cédula: {{ consulta.paciente_cedula || 'N/A' }}</div>
                   </div>
                 </td>
                 <td>
@@ -875,6 +877,16 @@ import { Medico } from '../../../services/medico.service';
     .estado-por_agendar {
       background: #fef3c7;
       color: #92400e;
+    }
+
+    .estado-en_progreso {
+      background: #ddd6fe;
+      color: #5b21b6;
+    }
+
+    .estado-completada {
+      background: #fef3c7;
+      color: #d97706;
     }
 
     .estado-cancelada {
@@ -1650,6 +1662,16 @@ export class ConsultasComponent implements OnInit {
     this.consultaService.getConsultas(searchFilters)
       .subscribe({
         next: (response) => {
+          console.log('🔍 Consultas recibidas del backend:', response.data?.length || 0);
+          if (response.data && response.data.length > 0) {
+            console.log('🔍 Primera consulta recibida:', {
+              id: response.data[0].id,
+              paciente_nombre: response.data[0].paciente_nombre,
+              paciente_apellidos: response.data[0].paciente_apellidos,
+              paciente_cedula: response.data[0].paciente_cedula,
+              paciente_id: response.data[0].paciente_id
+            });
+          }
           // Mapear datos para asegurar que se muestre el nombre correcto de la especialidad
           this.consultas = response.data.map(consulta => ({
             ...consulta,
@@ -1930,9 +1952,11 @@ export class ConsultasComponent implements OnInit {
     const estados: { [key: string]: string } = {
       'agendada': 'Agendada',
       'por_agendar': 'Por Agendar',
-      'cancelada': 'Cancelada',
+      'en_progreso': 'En Progreso',
+      'completada': 'Completada',
       'finalizada': 'Finalizada',
       'reagendada': 'Reagendada',
+      'cancelada': 'Cancelada',
       'no_asistio': 'No Asistió'
     };
     return estados[estado] || estado;
@@ -1960,5 +1984,18 @@ export class ConsultasComponent implements OnInit {
 
   getTodayDate(): string {
     return this.dateService.getCurrentDateISO();
+  }
+
+  getPacienteNombre(consulta: ConsultaWithDetails): string {
+    if (consulta.paciente_nombre && consulta.paciente_apellidos) {
+      return `${consulta.paciente_nombre} ${consulta.paciente_apellidos}`;
+    }
+    if (consulta.paciente_nombre) {
+      return consulta.paciente_nombre;
+    }
+    if (consulta.paciente_apellidos) {
+      return consulta.paciente_apellidos;
+    }
+    return 'Sin nombre';
   }
 }
