@@ -105,17 +105,27 @@ export class EditarMedicoComponent implements OnInit {
       return firmaPath;
     }
     
-    // Construir URL base del backend sin /api/v1 para los assets
+    // Si tenemos el ID del médico, usar el endpoint del API
+    if (this.medicoData.id) {
+      const apiBaseUrl = APP_CONFIG.API_BASE_URL;
+      const firmaUrl = `${apiBaseUrl}/firmas/${this.medicoData.id}/imagen`;
+      console.log('🔍 [EditarMedico] Construyendo URL de firma (endpoint API):', {
+        firmaPath,
+        medicoId: this.medicoData.id,
+        apiBaseUrl,
+        firmaUrl
+      });
+      return firmaUrl;
+    }
+    
+    // Fallback: construir URL directa (para compatibilidad)
     const apiBaseUrl = APP_CONFIG.API_BASE_URL;
-    // Extraer el protocolo, host y puerto del API_BASE_URL
     const url = new URL(apiBaseUrl);
     const baseUrl = `${url.protocol}//${url.host}`;
-    
-    // Asegurar que la ruta comience con /
     const normalizedPath = firmaPath.startsWith('/') ? firmaPath : `/${firmaPath}`;
-    
     const fullUrl = `${baseUrl}${normalizedPath}`;
-    console.log('🔍 [EditarMedico] Construyendo URL de firma:', {
+    
+    console.log('🔍 [EditarMedico] Construyendo URL de firma (fallback):', {
       firmaPath,
       apiBaseUrl,
       baseUrl,
