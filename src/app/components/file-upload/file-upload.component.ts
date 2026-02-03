@@ -437,9 +437,9 @@ export class FileUploadComponent implements OnInit {
 
     // Validar cada archivo
     for (const file of files) {
-      // Validar tamaño (10MB máximo)
-      if (file.size > 10 * 1024 * 1024) {
-        this.errorMessage = `El archivo "${file.name}" es demasiado grande. Máximo 10MB.`;
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        this.errorMessage = `El archivo "${file.name}" es demasiado grande. Máximo 5MB.`;
         return;
       }
 

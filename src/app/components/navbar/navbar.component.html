@@ -21,78 +21,57 @@
       </div>
       
       <div class="settings-dropdown" *ngIf="showSettingsMenu">
-        <!-- Opciones para Médicos -->
-        <div class="settings-section" *ngIf="currentUser?.rol === 'medico'">
-          <div class="settings-section-title">Médico</div>
-          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
-            </svg>
-            <span>Gestión de Pacientes</span>
-          </a>
-          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-            </svg>
-            <span>Gestión de Consultas</span>
-          </a>
-          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
-            </svg>
-            <span>Informes Médicos</span>
-          </a>
+        <!-- Menú dinámico para roles no-admin (médico, secretaria, finanzas) -->
+        <div *ngIf="currentUser && currentUser.rol !== 'administrador'">
+          <div class="settings-section" *ngIf="getDirectMenuItems().length > 0">
+            <div class="settings-section-title">{{ currentUser.rol === 'medico' ? 'Médico' : currentUser.rol === 'secretaria' ? 'Secretaría' : currentUser.rol === 'finanzas' ? 'Finanzas' : '' }}</div>
+            <a *ngFor="let item of getDirectMenuItems()" 
+               (click)="navigateToRoute(item.route); closeSettingsMenu()"
+               class="settings-item"
+               [attr.href]="item.route">
+              <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor" *ngIf="item.icon">
+                <path [attr.d]="item.icon"/>
+              </svg>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
         </div>
         
-        <!-- Separador para médicos -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'medico'"></div>
-        
-        <!-- Opciones para Secretarias -->
-        <div class="settings-section" *ngIf="currentUser?.rol === 'secretaria'">
-          <div class="settings-section-title">Secretaría</div>
-          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
-            </svg>
-            <span>Gestión de Pacientes</span>
-          </a>
-          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-            </svg>
-            <span>Gestión de Consultas</span>
-          </a>
-          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
-            </svg>
-            <span>Informes Médicos</span>
-          </a>
-        </div>
-        
-        <!-- Separador para secretarias -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'secretaria'"></div>
-        
-        <!-- Opciones de Finanzas (solo para rol finanzas, no para administradores) -->
-        <div class="settings-section" *ngIf="currentUser?.rol === 'finanzas'">
-          <div class="settings-section-title">Finanzas</div>
-          <a routerLink="/admin/finanzas" class="settings-item" (click)="closeSettingsMenu()">
-            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
-            </svg>
-            <span>Panel de Finanzas</span>
-          </a>
-        </div>
-        
-        <!-- Separador para finanzas -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'finanzas'"></div>
+        <!-- Separador para roles no-admin -->
+        <div class="settings-divider" *ngIf="currentUser && currentUser.rol !== 'administrador' && getDirectMenuItems().length > 0"></div>
         
         <!-- Opciones de Administración con grupos expandibles (solo para administradores) -->
-        <div *ngIf="currentUser?.rol === 'administrador'">
-          <div class="menu-group" *ngFor="let group of adminMenuGroups">
-            <div class="menu-group-header" (click)="toggleGroup(group.title)">
+        <div *ngIf="currentUser && currentUser.rol === 'administrador'">
+          <!-- Menú dinámico -->
+          <div class="menu-group" *ngFor="let group of getMenuGroups()">
+            <div class="menu-group-header" (click)="toggleGroup(group.title, $event)">
+              <div class="menu-group-title">
+                <svg class="menu-group-icon" viewBox="0 0 24 24" fill="currentColor" *ngIf="group.icon">
+                  <path [attr.d]="group.icon"/>
+                </svg>
+                <span>{{ group.title }}</span>
+              </div>
+              <svg class="menu-group-arrow" [class.expanded]="isGroupExpanded(group.title)" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+              </svg>
+            </div>
+            <div class="menu-group-items" [class.expanded]="isGroupExpanded(group.title)">
+              <a *ngFor="let item of group.items" 
+                 [routerLink]="item.route" 
+                 class="settings-item" 
+                 (click)="closeSettingsMenu()">
+                <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor" *ngIf="item.icon">
+                  <path [attr.d]="item.icon"/>
+                </svg>
+                <span>{{ item.label }}</span>
+              </a>
+            </div>
+          </div>
+          
+          <!-- Fallback al menú hardcodeado si no hay menú dinámico -->
+          <ng-container *ngIf="getMenuGroups().length === 0">
+            <div class="menu-group" *ngFor="let group of adminMenuGroups">
+            <div class="menu-group-header" (click)="toggleGroup(group.title, $event)">
               <div class="menu-group-title">
                 <svg class="menu-group-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path [attr.d]="group.icon"/>
@@ -115,10 +94,11 @@
               </a>
             </div>
           </div>
+          </ng-container>
         </div>
         
         <!-- Separador -->
-        <div class="settings-divider" *ngIf="currentUser?.rol === 'administrador'"></div>
+        <div class="settings-divider" *ngIf="currentUser && currentUser.rol === 'administrador'"></div>
         
         <!-- Opciones de Usuario -->
         <div class="settings-section">

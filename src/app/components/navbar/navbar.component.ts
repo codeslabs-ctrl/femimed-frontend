@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { HomePreferencesService } from '../../services/home-preferences.service';
+import { MenuService, MenuItem as DynamicMenuItem } from '../../services/menu.service';
+import { firstValueFrom, Subscription } from 'rxjs';
 
 interface MenuGroup {
   title: string;
@@ -25,13 +27,16 @@ interface MenuItem {
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   showSettingsMenu = false;
   expandedGroups: Set<string> = new Set();
   canChooseHome = false;
+  dynamicMenuItems: DynamicMenuItem[] = [];
+  loadingMenu = false;
+  private userSubscription?: Subscription;
 
-  // Grupos de menú para administrador
+  // Grupos de menú hardcodeados (fallback si no hay menú dinámico)
   adminMenuGroups: MenuGroup[] = [
     {
       title: 'Gestionar',
@@ -127,14 +132,22 @@ export class NavbarComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private homePrefs: HomePreferencesService
+    private homePrefs: HomePreferencesService,
+    private menuService: MenuService,
+    private router: Router
   ) {}
 
   ngOnInit() {
     // Suscribirse a los cambios del usuario actual
-    this.authService.currentUser$.subscribe(user => {
+    this.userSubscription = this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.canChooseHome = this.homePrefs.canChooseHome(user);
+      // Cargar menú dinámico cuando cambie el usuario
+      if (user) {
+        this.loadDynamicMenu(user.rol);
+      } else {
+        this.dynamicMenuItems = [];
+      }
       // Inicializar grupos colapsados por defecto (ninguno expandido)
       if (user?.rol === 'administrador') {
         this.expandedGroups.clear();
@@ -150,10 +163,145 @@ export class NavbarComponent implements OnInit {
     });
   }
 
-  toggleGroup(groupTitle: string) {
+  ngOnDestroy() {
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * Carga el menú dinámico desde el backend según el rol del usuario
+   */
+  async loadDynamicMenu(rol: string) {
+    try {
+      this.loadingMenu = true;
+      // Mapear rol del usuario al nombre del perfil en la BD
+      const perfilNombre = this.mapRolToPerfil(rol);
+      console.log(`🔍 [Navbar] Cargando menú para rol: ${rol} -> perfil: ${perfilNombre}`);
+      if (!perfilNombre) {
+        console.warn(`⚠️ [Navbar] No se encontró perfil para el rol: ${rol}`);
+        this.dynamicMenuItems = [];
+        return;
+      }
+
+      const response = await firstValueFrom(this.menuService.getMenuByPerfil(perfilNombre));
+      console.log(`📥 [Navbar] Respuesta del backend:`, response);
+      if (response.success && response.data) {
+        this.dynamicMenuItems = response.data;
+        console.log(`✅ [Navbar] Menú dinámico cargado: ${this.dynamicMenuItems.length} items`);
+        console.log(`📋 [Navbar] Items:`, this.dynamicMenuItems.map(i => ({ 
+          nombre: i.nombre, 
+          tipo: i.tipo, 
+          padre_id: i.padre_id,
+          ruta: i.ruta,
+          hijos: i.hijos?.length || 0
+        })));
+      } else {
+        console.warn('⚠️ [Navbar] No se pudo cargar el menú dinámico:', response);
+        this.dynamicMenuItems = [];
+      }
+    } catch (error) {
+      console.error('❌ [Navbar] Error cargando menú dinámico:', error);
+      this.dynamicMenuItems = [];
+    } finally {
+      this.loadingMenu = false;
+    }
+  }
+
+  /**
+   * Mapea el rol del usuario al nombre del perfil en la base de datos
+   */
+  private mapRolToPerfil(rol: string): string | null {
+    const rolToPerfilMap: { [key: string]: string } = {
+      'administrador': 'administrador',
+      'medico': 'medico',
+      'secretaria': 'secretaria',
+      'finanzas': 'finanzas'
+    };
+    return rolToPerfilMap[rol] || null;
+  }
+
+  /**
+   * Convierte el menú dinámico a la estructura de MenuGroup para compatibilidad
+   */
+  getMenuGroups(): MenuGroup[] {
+    if (this.dynamicMenuItems.length === 0) {
+      // Fallback al menú hardcodeado si no hay menú dinámico
+      return this.currentUser?.rol === 'administrador' ? this.adminMenuGroups : [];
+    }
+
+    return this.dynamicMenuItems
+      .filter(item => item.tipo === 'encabezado' && item.es_visible)
+      .map(header => ({
+        title: header.nombre,
+        icon: header.icono || '',
+        items: (header.hijos || [])
+          .filter(child => child.tipo === 'opcion' && child.es_visible && child.ruta)
+          .map(child => ({
+            label: child.nombre,
+            route: child.ruta || '',
+            icon: child.icono || ''
+          })),
+        expanded: this.expandedGroups.has(header.nombre)
+      }))
+      .filter(group => group.items.length > 0); // Solo mostrar grupos con items
+  }
+
+  /**
+   * Obtiene items de menú directos (sin encabezados) para roles que no son admin
+   */
+  getDirectMenuItems(): MenuItem[] {
+    if (this.dynamicMenuItems.length === 0) {
+      console.log(`📭 [Navbar] No hay items dinámicos, retornando array vacío`);
+      return [];
+    }
+
+    // Para roles no-admin, buscar items directos (sin padre o con padre null)
+    // También incluir items que están dentro de encabezados
+    const allItems: MenuItem[] = [];
+    
+    this.dynamicMenuItems.forEach(item => {
+      if (item.tipo === 'opcion' && item.es_visible && item.ruta) {
+        // Si no tiene padre, es un item directo
+        if (!item.padre_id) {
+          allItems.push({
+            label: item.nombre,
+            route: item.ruta || '',
+            icon: item.icono || ''
+          });
+        }
+      }
+      // Si es un encabezado, agregar sus hijos
+      if (item.tipo === 'encabezado' && item.hijos) {
+        item.hijos.forEach(hijo => {
+          if (hijo.tipo === 'opcion' && hijo.es_visible && hijo.ruta) {
+            allItems.push({
+              label: hijo.nombre,
+              route: hijo.ruta || '',
+              icon: hijo.icono || ''
+            });
+          }
+        });
+      }
+    });
+
+    console.log(`📋 [Navbar] getDirectMenuItems() retorna ${allItems.length} items:`, allItems.map(i => i.label));
+    return allItems;
+  }
+
+  toggleGroup(groupTitle: string, event?: Event) {
+    // Prevenir que el clic cierre el menú principal
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Si el grupo ya está expandido, colapsarlo
     if (this.expandedGroups.has(groupTitle)) {
       this.expandedGroups.delete(groupTitle);
     } else {
+      // Si se está expandiendo un grupo, colapsar todos los demás primero
+      // Esto asegura que solo un grupo esté expandido a la vez
+      this.expandedGroups.clear();
       this.expandedGroups.add(groupTitle);
     }
   }
@@ -183,5 +331,11 @@ export class NavbarComponent implements OnInit {
 
   closeSettingsMenu() {
     this.showSettingsMenu = false;
+  }
+
+  navigateToRoute(route: string) {
+    if (route) {
+      this.router.navigate([route]);
+    }
   }
 }

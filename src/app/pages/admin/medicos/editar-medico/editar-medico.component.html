@@ -134,13 +134,14 @@
                   <div class="card-body">
                     <div class="row">
                       <!-- Firma actual -->
-                      <div class="col-md-6 mb-3" *ngIf="medicoData.firma_digital">
+                      <div class="col-md-6 mb-3" *ngIf="firmaActualUrl">
                         <label class="form-label">Firma Actual:</label>
                         <div class="firma-actual">
                           <img 
-                            [src]="medicoData.firma_digital!" 
+                            [src]="firmaActualUrl" 
                             alt="Firma actual" 
-                            class="firma-preview">
+                            class="firma-preview"
+                            (error)="firmaActualUrl = null">
                         </div>
                       </div>
 

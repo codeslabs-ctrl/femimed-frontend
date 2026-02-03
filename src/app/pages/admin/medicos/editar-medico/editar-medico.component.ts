@@ -6,6 +6,7 @@ import { MedicoService, Medico } from '../../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../../services/especialidad.service';
 import { FirmaService } from '../../../../services/firma.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
+import { APP_CONFIG } from '../../../../config/app.config';
 
 @Component({
   selector: 'app-editar-medico',
@@ -38,6 +39,7 @@ export class EditarMedicoComponent implements OnInit {
   firmaFile: File | null = null;
   firmaPreview: string | null = null;
   uploadingFirma = false;
+  firmaActualUrl: string | null = null;
   
   // Variables para validación de email
   emailExists = false;
@@ -70,6 +72,12 @@ export class EditarMedicoComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.medicoData = response.data;
+            // Construir URL completa de la firma si existe
+            if (this.medicoData.firma_digital) {
+              this.firmaActualUrl = this.getFirmaUrl(this.medicoData.firma_digital);
+            } else {
+              this.firmaActualUrl = null;
+            }
             this.loading = false;
           }
         },
@@ -80,6 +88,49 @@ export class EditarMedicoComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Construye la URL completa de la firma digital
+   * @param firmaPath Ruta relativa de la firma (ej: "assets/firmas/medico_1_firma.png")
+   * @returns URL completa de la firma
+   */
+  getFirmaUrl(firmaPath: string | null | undefined): string | null {
+    if (!firmaPath) {
+      return null;
+    }
+    
+    // Si ya es una URL completa (http:// o https://), retornarla tal cual
+    if (firmaPath.startsWith('http://') || firmaPath.startsWith('https://')) {
+      return firmaPath;
+    }
+    
+    // Construir URL base del backend
+    const apiBaseUrl = APP_CONFIG.API_BASE_URL;
+    const url = new URL(apiBaseUrl);
+    
+    // En producción, usar el mismo host pero con puerto 3000 directamente
+    // ya que Apache no está configurado para servir /assets/firmas/
+    const host = url.hostname;
+    const protocol = url.protocol;
+    const port = '3000'; // Puerto del backend de Femimed
+    
+    // Construir URL del backend con puerto 3000
+    const baseUrl = `${protocol}//${host}:${port}`;
+    
+    // Asegurar que la ruta comience con /
+    const normalizedPath = firmaPath.startsWith('/') ? firmaPath : `/${firmaPath}`;
+    
+    const fullUrl = `${baseUrl}${normalizedPath}`;
+    console.log('🔍 [EditarMedico] Construyendo URL de firma:', {
+      firmaPath,
+      apiBaseUrl,
+      baseUrl,
+      normalizedPath,
+      fullUrl
+    });
+    
+    return fullUrl;
   }
 
   loadEspecialidades() {
@@ -224,6 +275,8 @@ export class EditarMedicoComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.medicoData.firma_digital = response.data.firma_digital;
+          // Actualizar URL de la firma actual
+          this.firmaActualUrl = this.getFirmaUrl(response.data.firma_digital);
           this.showSnackbarMessage('✅ Firma digital subida exitosamente', 'success');
           this.firmaFile = null;
           this.firmaPreview = null;
@@ -260,6 +313,8 @@ export class EditarMedicoComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.medicoData.firma_digital = response.data.firma_digital;
+          // Actualizar URL de la firma actual
+          this.firmaActualUrl = this.getFirmaUrl(response.data.firma_digital);
           this.showSnackbarMessage(
             `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente con firma digital.`,
             'success'
