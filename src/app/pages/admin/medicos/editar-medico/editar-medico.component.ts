@@ -105,18 +105,11 @@ export class EditarMedicoComponent implements OnInit {
       return firmaPath;
     }
     
-    // Construir URL base del backend
+    // Construir URL base del backend sin /api/v1 para los assets
     const apiBaseUrl = APP_CONFIG.API_BASE_URL;
+    // Extraer el protocolo, host y puerto del API_BASE_URL
     const url = new URL(apiBaseUrl);
-    
-    // En producción, usar el mismo host pero con puerto 3000 directamente
-    // ya que Apache no está configurado para servir /assets/firmas/
-    const host = url.hostname;
-    const protocol = url.protocol;
-    const port = '3000'; // Puerto del backend de Femimed
-    
-    // Construir URL del backend con puerto 3000
-    const baseUrl = `${protocol}//${host}:${port}`;
+    const baseUrl = `${url.protocol}//${url.host}`;
     
     // Asegurar que la ruta comience con /
     const normalizedPath = firmaPath.startsWith('/') ? firmaPath : `/${firmaPath}`;
