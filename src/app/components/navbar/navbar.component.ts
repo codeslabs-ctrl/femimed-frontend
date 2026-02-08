@@ -5,7 +5,8 @@ import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { HomePreferencesService } from '../../services/home-preferences.service';
 import { MenuService, MenuItem as DynamicMenuItem } from '../../services/menu.service';
-import { firstValueFrom, Subscription } from 'rxjs';
+import { Subscription, of, EMPTY } from 'rxjs';
+import { switchMap, debounceTime, distinctUntilChanged, catchError, tap, finalize } from 'rxjs/operators';
 
 interface MenuGroup {
   title: string;
@@ -34,7 +35,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   canChooseHome = false;
   dynamicMenuItems: DynamicMenuItem[] = [];
   loadingMenu = false;
+  menuError = false;
   private userSubscription?: Subscription;
+  private menuLoadInProgress = false;
 
   // Grupos de menú hardcodeados (fallback si no hay menú dinámico)
   adminMenuGroups: MenuGroup[] = [
@@ -138,21 +141,44 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Suscribirse a los cambios del usuario actual
-    this.userSubscription = this.authService.currentUser$.subscribe(user => {
-      this.currentUser = user;
-      this.canChooseHome = this.homePrefs.canChooseHome(user);
-      // Cargar menú dinámico cuando cambie el usuario
-      if (user) {
-        this.loadDynamicMenu(user.rol);
-      } else {
+    // Suscribirse a los cambios del usuario actual con debounce y switchMap
+    // para evitar múltiples llamadas y cancelar peticiones anteriores
+    this.userSubscription = this.authService.currentUser$.pipe(
+      // Esperar 300ms después de cada cambio para evitar llamadas rápidas
+      debounceTime(300),
+      // Solo procesar si el usuario realmente cambió
+      distinctUntilChanged((prev, curr) => {
+        if (!prev && !curr) return true;
+        if (!prev || !curr) return false;
+        return prev.id === curr.id && prev.rol === curr.rol;
+      }),
+      // Cancelar peticiones anteriores y procesar solo la última
+      switchMap(user => {
+        this.currentUser = user;
+        this.canChooseHome = this.homePrefs.canChooseHome(user);
+        
+        // Inicializar grupos colapsados por defecto (ninguno expandido)
+        if (user?.rol === 'administrador') {
+          this.expandedGroups.clear();
+        }
+        
+        // Si hay usuario, cargar menú; si no, limpiar
+        if (user && user.rol) {
+          return this.loadDynamicMenuObservable(user.rol);
+        } else {
+          this.dynamicMenuItems = [];
+          this.menuError = false;
+          return EMPTY;
+        }
+      }),
+      // Manejar errores sin romper el flujo
+      catchError(error => {
+        console.error('❌ [Navbar] Error en el flujo de carga del menú:', error);
+        this.menuError = true;
         this.dynamicMenuItems = [];
-      }
-      // Inicializar grupos colapsados por defecto (ninguno expandido)
-      if (user?.rol === 'administrador') {
-        this.expandedGroups.clear();
-      }
-    });
+        return EMPTY;
+      })
+    ).subscribe();
 
     // Cerrar menú al hacer clic fuera
     document.addEventListener('click', (event) => {
@@ -171,41 +197,72 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   /**
    * Carga el menú dinámico desde el backend según el rol del usuario
+   * Versión Observable para usar con switchMap
+   */
+  private loadDynamicMenuObservable(rol: string) {
+    // Protección contra llamadas concurrentes
+    if (this.menuLoadInProgress) {
+      console.log(`⏸️ [Navbar] Carga de menú ya en progreso, ignorando solicitud para rol: ${rol}`);
+      return EMPTY;
+    }
+
+    this.menuLoadInProgress = true;
+    this.loadingMenu = true;
+    this.menuError = false;
+
+    // Mapear rol del usuario al nombre del perfil en la BD
+    const perfilNombre = this.mapRolToPerfil(rol);
+    console.log(`🔍 [Navbar] Cargando menú para rol: ${rol} -> perfil: ${perfilNombre}`);
+    
+    if (!perfilNombre) {
+      console.warn(`⚠️ [Navbar] No se encontró perfil para el rol: ${rol}`);
+      this.dynamicMenuItems = [];
+      this.loadingMenu = false;
+      this.menuLoadInProgress = false;
+      return EMPTY;
+    }
+
+    return this.menuService.getMenuByPerfil(perfilNombre).pipe(
+      tap(response => {
+        console.log(`📥 [Navbar] Respuesta del backend:`, response);
+        if (response.success && response.data) {
+          this.dynamicMenuItems = response.data;
+          this.menuError = false;
+          console.log(`✅ [Navbar] Menú dinámico cargado: ${this.dynamicMenuItems.length} items`);
+          console.log(`📋 [Navbar] Items:`, this.dynamicMenuItems.map(i => ({ 
+            nombre: i.nombre, 
+            tipo: i.tipo, 
+            padre_id: i.padre_id,
+            ruta: i.ruta,
+            hijos: i.hijos?.length || 0
+          })));
+        } else {
+          console.warn('⚠️ [Navbar] No se pudo cargar el menú dinámico:', response);
+          this.dynamicMenuItems = [];
+          this.menuError = true;
+        }
+      }),
+      catchError(error => {
+        console.error('❌ [Navbar] Error cargando menú dinámico:', error);
+        this.dynamicMenuItems = [];
+        this.menuError = true;
+        return EMPTY;
+      }),
+      // Usar finalize para asegurar que siempre se resetee, incluso si se cancela
+      finalize(() => {
+        this.loadingMenu = false;
+        this.menuLoadInProgress = false;
+      })
+    );
+  }
+
+  /**
+   * Método legacy para compatibilidad (ya no se usa directamente)
+   * @deprecated Usar loadDynamicMenuObservable en su lugar
    */
   async loadDynamicMenu(rol: string) {
-    try {
-      this.loadingMenu = true;
-      // Mapear rol del usuario al nombre del perfil en la BD
-      const perfilNombre = this.mapRolToPerfil(rol);
-      console.log(`🔍 [Navbar] Cargando menú para rol: ${rol} -> perfil: ${perfilNombre}`);
-      if (!perfilNombre) {
-        console.warn(`⚠️ [Navbar] No se encontró perfil para el rol: ${rol}`);
-        this.dynamicMenuItems = [];
-        return;
-      }
-
-      const response = await firstValueFrom(this.menuService.getMenuByPerfil(perfilNombre));
-      console.log(`📥 [Navbar] Respuesta del backend:`, response);
-      if (response.success && response.data) {
-        this.dynamicMenuItems = response.data;
-        console.log(`✅ [Navbar] Menú dinámico cargado: ${this.dynamicMenuItems.length} items`);
-        console.log(`📋 [Navbar] Items:`, this.dynamicMenuItems.map(i => ({ 
-          nombre: i.nombre, 
-          tipo: i.tipo, 
-          padre_id: i.padre_id,
-          ruta: i.ruta,
-          hijos: i.hijos?.length || 0
-        })));
-      } else {
-        console.warn('⚠️ [Navbar] No se pudo cargar el menú dinámico:', response);
-        this.dynamicMenuItems = [];
-      }
-    } catch (error) {
-      console.error('❌ [Navbar] Error cargando menú dinámico:', error);
-      this.dynamicMenuItems = [];
-    } finally {
-      this.loadingMenu = false;
-    }
+    // Este método ya no se usa directamente, pero se mantiene por compatibilidad
+    console.warn('⚠️ [Navbar] loadDynamicMenu() llamado directamente. Usar loadDynamicMenuObservable en su lugar.');
   }
 
   /**
