@@ -8,9 +8,11 @@ import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 import { ConsultaFormData } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
+import { ClinicaAtencionService, ClinicaAtencion } from '../../../services/clinica-atencion.service';
 
 @Component({
   selector: 'app-nueva-consulta',
@@ -56,6 +58,7 @@ import { Medico } from '../../../services/medico.service';
                   class="form-control" 
                   [(ngModel)]="consultaForm.paciente_id" 
                   name="paciente_id"
+                  (ngModelChange)="onPacienteChange($event)"
                   required>
                   <option value="0">Seleccionar paciente</option>
                   <option *ngFor="let paciente of pacientes" [value]="paciente.id">
@@ -95,7 +98,7 @@ import { Medico } from '../../../services/medico.service';
                       {{ selectedEspecialidadId && selectedEspecialidadId !== 0 ? 'Seleccionar médico' : 'Primero seleccione una especialidad' }}
                     </option>
                     <option *ngFor="let medico of medicosFiltrados" [value]="medico.id">
-                      Dr./Dra. {{medico.nombres}} {{medico.apellidos}}
+                      {{ medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{medico.nombres}} {{medico.apellidos}}
                     </option>
                   </select>
                 </div>
@@ -105,7 +108,7 @@ import { Medico } from '../../../services/medico.service';
               <div class="form-group" *ngIf="currentUser?.rol === 'medico'">
                 <label>Médico asignado</label>
                 <div class="medico-info">
-                  <span class="medico-nombre">Dr./Dra. {{currentUser.nombres}} {{currentUser.apellidos}}</span>
+                  <span class="medico-nombre">{{ currentUserMedicoTitulo() }} {{currentUser.nombres}} {{currentUser.apellidos}}</span>
                   <span class="medico-especialidad">{{currentUser.especialidad_nombre}}</span>
                 </div>
               </div>
@@ -134,6 +137,19 @@ import { Medico } from '../../../services/medico.service';
                   name="hora_pautada"
                   required>
               </div>
+
+              <div class="form-group">
+                <label for="duracion_estimada">Duración (minutos) *</label>
+                <input 
+                  type="number" 
+                  id="duracion_estimada" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.duracion_estimada" 
+                  name="duracion_estimada"
+                  min="15"
+                  max="120"
+                  required>
+              </div>
             </div>
 
             <div class="form-row">
@@ -143,12 +159,14 @@ import { Medico } from '../../../services/medico.service';
                   id="tipo_consulta" 
                   class="form-control" 
                   [(ngModel)]="consultaForm.tipo_consulta" 
-                  name="tipo_consulta">
-                  <option value="primera_vez">Primera Vez</option>
+                  name="tipo_consulta"
+                  [disabled]="esPrimeraConsultaPaciente">
+                  <option *ngIf="!pacienteYaTieneConsultas" value="primera_vez">Primera Vez</option>
                   <option value="control">Control</option>
                   <option value="seguimiento">Seguimiento</option>
                   <option value="urgencia">Urgencia</option>
                 </select>
+                <small *ngIf="esPrimeraConsultaPaciente" class="form-text text-muted">Es la primera consulta de este paciente; el tipo queda fijado en Primera Vez.</small>
               </div>
 
               <div class="form-group">
@@ -161,6 +179,20 @@ import { Medico } from '../../../services/medico.service';
                   <option value="normal">Normal</option>
                   <option value="alta">Alta</option>
                   <option value="urgente">Urgente</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="clinica_atencion_id">Clínica de atención</label>
+                <select 
+                  id="clinica_atencion_id" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.clinica_atencion_id" 
+                  name="clinica_atencion_id">
+                  <option [ngValue]="null">Seleccionar sede (opcional)</option>
+                  <option *ngFor="let c of clinicasAtencion" [ngValue]="c.id">{{ c.nombre_clinica }}</option>
                 </select>
               </div>
             </div>
@@ -238,7 +270,7 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .page-header h1 i {
-      color: var(--color-primary, #7A9CC6);
+      color: var(--color-primary);
     }
 
     .page-description {
@@ -301,7 +333,7 @@ import { Medico } from '../../../services/medico.service';
       color: #2c3e50;
       font-size: 1.25rem;
       font-weight: 600;
-      border-bottom: 2px solid #007bff;
+      border-bottom: 2px solid #f5576c;
       padding-bottom: 0.5rem;
     }
 
@@ -336,7 +368,7 @@ import { Medico } from '../../../services/medico.service';
 
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
+      border-color: #f5576c;
       box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 
@@ -374,7 +406,7 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .btn-primary {
-      background: #7A9CC6;
+      background: #f5576c;
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
       font-weight: 500;
@@ -389,14 +421,14 @@ import { Medico } from '../../../services/medico.service';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #7A9CC6;
+      border: 1px solid #f5576c;
       font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #7A9CC6;
+      background: #f5576c;
       color: white;
-      border-color: #7A9CC6;
+      border-color: #f5576c;
       transform: translateY(-1px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
@@ -502,20 +534,39 @@ export class NuevaConsultaComponent implements OnInit {
   medicos: Medico[] = [];
   medicosFiltrados: Medico[] = [];
   especialidades: Especialidad[] = [];
+  clinicasAtencion: ClinicaAtencion[] = [];
   selectedEspecialidadId: number = 0;
   isSubmitting = false;
-  pendingMedicoId: number | null = null; // Para médico preseleccionado desde queryParams
   currentUser: any = null;
+  pendingMedicoId: number | null = null; // Para médico preseleccionado desde queryParams
+
+  /** True si el paciente seleccionado no tiene consultas previas: tipo queda "Primera Vez" y el dropdown se deshabilita. */
+  get esPrimeraConsultaPaciente(): boolean {
+    const id = Number(this.consultaForm.paciente_id);
+    if (!id) return false;
+    const paciente = this.pacientes.find(p => Number(p.id) === id);
+    return !!paciente && !paciente.tiene_consulta;
+  }
+
+  /** True si el paciente seleccionado ya tiene consultas: la opción "Primera Vez" no se muestra. */
+  get pacienteYaTieneConsultas(): boolean {
+    const id = Number(this.consultaForm.paciente_id);
+    if (!id) return false;
+    const paciente = this.pacientes.find(p => Number(p.id) === id);
+    return !!paciente && !!paciente.tiene_consulta;
+  }
 
   constructor(
     private consultaService: ConsultaService,
+    private clinicaAtencionService: ClinicaAtencionService,
     private patientService: PatientService,
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -554,6 +605,16 @@ export class NuevaConsultaComponent implements OnInit {
     this.loadPacientes();
     this.loadMedicos();
     this.loadEspecialidades();
+    this.loadClinicasAtencion();
+  }
+
+  loadClinicasAtencion(): void {
+    this.clinicaAtencionService.list(true).subscribe({
+      next: (res) => {
+        this.clinicasAtencion = res.data || [];
+      },
+      error: (err) => this.errorHandler.logError(err, 'cargar clínicas de atención')
+    });
   }
 
   loadPacientes(): void {
@@ -567,6 +628,7 @@ export class NuevaConsultaComponent implements OnInit {
         if (this.consultaForm.paciente_id && this.consultaForm.paciente_id !== 0) {
           console.log('🔍 Verificando paciente preseleccionado después de cargar pacientes...');
           this.getPreselectedPatientName();
+          this.onPacienteChange(this.consultaForm.paciente_id);
         }
       },
       error: (error: any) => {
@@ -641,6 +703,23 @@ export class NuevaConsultaComponent implements OnInit {
     }
   }
 
+  currentUserMedicoTitulo(): string {
+    if (!this.currentUser?.medico_id) return 'Dr.';
+    const medico = this.medicos.find(m => m.id === this.currentUser!.medico_id);
+    return medico?.sexo === 'Femenino' ? 'Dra.' : 'Dr.';
+  }
+
+  onPacienteChange(pacienteId: number | string): void {
+    const id = typeof pacienteId === 'string' ? parseInt(pacienteId, 10) : pacienteId;
+    if (!id) return;
+    const paciente = this.pacientes.find(p => Number(p.id) === id);
+    if (paciente && !paciente.tiene_consulta) {
+      this.consultaForm.tipo_consulta = 'primera_vez';
+    } else if (paciente && paciente.tiene_consulta && this.consultaForm.tipo_consulta === 'primera_vez') {
+      this.consultaForm.tipo_consulta = 'control';
+    }
+  }
+
   getPreselectedPatientName(): string {
     console.log('🔍 Buscando paciente preseleccionado:');
     console.log('  - ID buscado:', this.consultaForm.paciente_id, 'tipo:', typeof this.consultaForm.paciente_id);
@@ -670,47 +749,44 @@ export class NuevaConsultaComponent implements OnInit {
 
     // Validaciones básicas
     if (!this.consultaForm.paciente_id || this.consultaForm.paciente_id === 0) {
-      alert('⚠️ Paciente requerido\n\nPor favor, seleccione un paciente de la lista antes de continuar.');
+      this.alertService.showWarning('Paciente requerido. Por favor, seleccione un paciente de la lista antes de continuar.');
       return;
     }
     // Validar selección de especialidad y médico si es administrador o secretaria
     if ((this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria')) {
       if (!this.selectedEspecialidadId || this.selectedEspecialidadId === 0) {
-        alert('⚠️ Especialidad requerida\n\nPor favor, seleccione una especialidad antes de continuar.');
+        this.alertService.showWarning('Especialidad requerida. Por favor, seleccione una especialidad antes de continuar.');
         return;
       }
       if (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0) {
-        alert('⚠️ Médico requerido\n\nPor favor, seleccione un médico de la lista antes de continuar.');
+        this.alertService.showWarning('Médico requerido. Por favor, seleccione un médico de la lista antes de continuar.');
         return;
       }
     }
     if (!this.consultaForm.motivo_consulta.trim()) {
-      alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta para continuar.');
+      this.alertService.showWarning('Motivo de consulta requerido. Por favor, ingrese el motivo de la consulta para continuar.');
       return;
     }
     if (!this.consultaForm.fecha_pautada) {
-      alert('⚠️ Fecha requerida\n\nPor favor, seleccione una fecha para la consulta.');
+      this.alertService.showWarning('Fecha requerida. Por favor, seleccione una fecha para la consulta.');
       return;
     }
     
-    // Validar que la fecha sea futura (manejo de zona horaria)
-    const fechaConsulta = new Date(this.consultaForm.fecha_pautada + 'T00:00:00.000Z'); // Forzar UTC
-    const fechaActual = new Date();
-    fechaActual.setUTCHours(0, 0, 0, 0); // Usar UTC para evitar problemas de zona horaria
-    
-    // Verificar que la fecha sea válida
+    // Validar que la fecha sea futura según zona horaria de Venezuela (America/Caracas)
+    const fechaConsulta = new Date(this.consultaForm.fecha_pautada + 'T12:00:00.000Z');
     if (isNaN(fechaConsulta.getTime())) {
-      alert('⚠️ Fecha inválida\n\nPor favor, seleccione una fecha válida.');
+      this.alertService.showWarning('Fecha inválida. Por favor, seleccione una fecha válida.');
       return;
     }
-    
-    if (fechaConsulta < fechaActual) {
-      alert('⚠️ Fecha inválida\n\nLa fecha de la consulta debe ser futura (posterior a hoy).');
+    const hoyVenezuela = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }); // YYYY-MM-DD
+    const fechaPautada = String(this.consultaForm.fecha_pautada ?? '').slice(0, 10);
+    if (fechaPautada < hoyVenezuela) {
+      this.alertService.showWarning('Fecha inválida. La fecha de la consulta debe ser futura (posterior a hoy).');
       return;
     }
     
     if (!this.consultaForm.hora_pautada) {
-      alert('⚠️ Hora requerida\n\nPor favor, seleccione una hora para la consulta.');
+      this.alertService.showWarning('Hora requerida. Por favor, seleccione una hora para la consulta.');
       return;
     }
 
@@ -719,19 +795,16 @@ export class NuevaConsultaComponent implements OnInit {
     this.consultaService.createConsulta(this.consultaForm).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('✅ Consulta creada exitosamente\n\nLa consulta ha sido programada y se ha enviado una notificación al paciente.');
+          this.alertService.show('La consulta ha sido programada y se ha enviado una notificación al paciente.', 'success', { navigateTo: '/admin/consultas' });
           this.resetForm();
-          // Redirigir a Gestión de Consultas
-          this.router.navigate(['/admin/consultas']);
         } else {
-          alert('❌ Error al crear la consulta\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
+          this.alertService.showError((response as any).error?.message || 'Error al crear la consulta. Por favor, intente nuevamente o contacte al administrador.');
         }
         this.isSubmitting = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'crear consulta');
-        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear consulta');
-        alert(errorMessage);
+        this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'crear consulta'));
         this.isSubmitting = false;
       }
     });
@@ -742,6 +815,7 @@ export class NuevaConsultaComponent implements OnInit {
     this.consultaForm = {
       paciente_id: 0,
       medico_id: this.currentUser?.rol === 'medico' ? this.currentUser.medico_id : 0,
+      clinica_atencion_id: null,
       motivo_consulta: '',
       tipo_consulta: 'primera_vez',
       fecha_pautada: '',

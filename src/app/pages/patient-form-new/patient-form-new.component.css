@@ -11,7 +11,7 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #7A9CC6;
+  border-bottom: 2px solid var(--color-primary);
 }
 
 .page-header h1 {
@@ -41,14 +41,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-bottom: 2px solid #7A9CC6;
+  border-bottom: 2px solid var(--color-primary);
   padding-bottom: 0.5rem;
 }
 
 .form-section h3 svg {
   width: 20px;
   height: 20px;
-  stroke: #7A9CC6;
+  stroke: var(--color-primary);
 }
 
 .form-grid {
@@ -83,7 +83,7 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #7A9CC6;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
 }
 
@@ -101,7 +101,7 @@
   background: #F5F5F5;
   border-radius: 8px;
   padding: 1rem;
-  border-left: 4px solid #7A9CC6;
+  border-left: 4px solid var(--color-primary);
 }
 
 .medico-header {
@@ -160,7 +160,7 @@
 .editor-toolbar {
   background: #F5F5F5;
   padding: 0.5rem;
-  border-bottom: 1px solid #7A9CC6;
+  border-bottom: 1px solid var(--color-primary);
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -168,10 +168,10 @@
 
 .toolbar-btn {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #7A9CC6;
+  border: 1px solid var(--color-primary);
   border-radius: 4px;
   background: white;
-  color: #7A9CC6;
+  color: var(--color-primary);
   cursor: pointer;
   font-family: 'Montserrat', sans-serif;
   font-size: 0.8rem;
@@ -180,13 +180,13 @@
 }
 
 .toolbar-btn:hover {
-  background: #7A9CC6;
+  background: var(--color-primary);
   color: white;
 }
 
 .toolbar-separator {
   width: 1px;
-  background: #7A9CC6;
+  background: var(--color-primary);
   margin: 0 0.25rem;
 }
 
@@ -265,7 +265,7 @@
 }
 
 .btn-primary {
-  background: #7A9CC6;
+  background: var(--color-primary);
   color: white;
 }
 
@@ -283,11 +283,11 @@
 .btn-secondary {
   background: #F5F5F5;
   color: #2C2C2C;
-  border: 1px solid #7A9CC6;
+  border: 1px solid var(--color-primary);
 }
 
 .btn-secondary:hover {
-  background: #7A9CC6;
+  background: var(--color-primary);
   color: white;
   transform: translateY(-1px);
 }

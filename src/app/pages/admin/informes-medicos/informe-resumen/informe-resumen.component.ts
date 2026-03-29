@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { InformeMedicoService } from '../../../../services/informe-medico.service';
 import { PatientService } from '../../../../services/patient.service';
 import { MedicoService } from '../../../../services/medico.service';
+import { AlertService } from '../../../../services/alert.service';
 
 @Component({
   selector: 'app-informe-resumen',
@@ -27,7 +28,8 @@ export class InformeResumenComponent implements OnInit {
     private router: Router,
     private informeMedicoService: InformeMedicoService,
     private patientService: PatientService,
-    private medicoService: MedicoService
+    private medicoService: MedicoService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -70,41 +72,40 @@ export class InformeResumenComponent implements OnInit {
   async enviarPorEmail(): Promise<void> {
     if (!this.informeId) return;
 
-    if (confirm('¿Está seguro de enviar este informe por email al paciente?')) {
-      this.enviando = true;
-      this.error = '';
+    const confirmado = await this.alertService.confirm('¿Está seguro de enviar este informe por email al paciente?', 'Enviar informe por email');
+    if (!confirmado) return;
 
-      try {
-        console.log('📧 Enviando informe por email...');
-        
-        const response = await this.informeMedicoService.enviarInformePorEmail(this.informeId).toPromise();
-        
-        if (response && response.success) {
-          alert('✅ Informe enviado por email exitosamente');
-          console.log('✅ Email enviado correctamente');
-          
-          // Actualizar el estado del informe a "enviado"
-          this.informe.estado = 'enviado';
-          console.log('📧 Estado del informe actualizado a "enviado"');
-          
-          // Actualizar el estado en la base de datos
-          try {
-            await this.actualizarEstadoEnBD();
-          } catch (error) {
-            console.warn('⚠️ No se pudo actualizar el estado en la BD:', error);
-          }
-        } else {
-          const msg = response?.message || 'Error enviando el informe por email';
-          alert(`❌ ${msg}`);
-          console.error('❌ Error en respuesta del servidor:', response);
+    this.enviando = true;
+    this.error = '';
+
+    try {
+      console.log('📧 Enviando informe por email...');
+
+      const response = await this.informeMedicoService.enviarInformePorEmail(this.informeId).toPromise();
+
+      if (response && response.success) {
+        this.alertService.showSuccess('Informe enviado por email exitosamente');
+        console.log('✅ Email enviado correctamente');
+
+        this.informe.estado = 'enviado';
+        console.log('📧 Estado del informe actualizado a "enviado"');
+
+        try {
+          await this.actualizarEstadoEnBD();
+        } catch (error) {
+          console.warn('⚠️ No se pudo actualizar el estado en la BD:', error);
         }
-      } catch (error) {
-        console.error('❌ Error enviando informe:', error);
-        const backendMsg = (error as any)?.error?.message || (error as any)?.message || 'Error enviando el informe por email. Intenta de nuevo.';
-        alert(`❌ ${backendMsg}`);
-      } finally {
-        this.enviando = false;
+      } else {
+        const msg = response?.message || 'Error enviando el informe por email';
+        this.alertService.showError(msg);
+        console.error('❌ Error en respuesta del servidor:', response);
       }
+    } catch (error) {
+      console.error('❌ Error enviando informe:', error);
+      const backendMsg = (error as any)?.error?.message || (error as any)?.message || 'Error enviando el informe por email. Intenta de nuevo.';
+      this.alertService.showError(backendMsg);
+    } finally {
+      this.enviando = false;
     }
   }
 

@@ -4,6 +4,7 @@ import { adminMedicoGuard } from './guards/admin-medico.guard';
 import { adminOnlyGuard } from './guards/admin-only.guard';
 import { FinanzasGuard } from './guards/finanzas.guard';
 import { roleRedirectGuard } from './guards/role-redirect.guard';
+import { medicoOnlyGuard } from './guards/medico-only.guard';
 
 export const routes: Routes = [
   {
@@ -29,11 +30,6 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'settings',
-    loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent),
-    canActivate: [authGuard]
-  },
-  {
     path: 'settings/home',
     loadComponent: () => import('./pages/settings/home-page/home-page.component').then(m => m.HomePageComponent),
     canActivate: [authGuard]
@@ -51,6 +47,11 @@ export const routes: Routes = [
   {
     path: 'patients/:id',
     loadComponent: () => import('./pages/patient-detail/patient-detail.component').then(m => m.PatientDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'patients/:id/antecedentes',
+    loadComponent: () => import('./pages/patient-antecedentes/patient-antecedentes.component').then(m => m.PatientAntecedentesComponent),
     canActivate: [authGuard]
   },
   {
@@ -74,8 +75,18 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'medicos/recipe',
+    loadComponent: () => import('./pages/medicos/receta-medico/receta-medico.component').then(m => m.RecetaMedicoComponent),
+    canActivate: [medicoOnlyGuard]
+  },
+  {
     path: 'admin/especialidades',
     loadComponent: () => import('./pages/admin/especialidades/especialidades.component').then(m => m.EspecialidadesComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/antecedentes',
+    loadComponent: () => import('./pages/admin/antecedentes/antecedentes.component').then(m => m.AntecedentesComponent),
     canActivate: [authGuard]
   },
   {
@@ -206,8 +217,18 @@ export const routes: Routes = [
     canActivate: [adminOnlyGuard]
   },
   {
+    path: 'admin/clinica-atencion',
+    loadComponent: () => import('./pages/admin/clinica-atencion/clinica-atencion.component').then(m => m.ClinicaAtencionComponent),
+    canActivate: [adminOnlyGuard]
+  },
+  {
     path: 'statistics',
     loadComponent: () => import('./pages/statistics/statistics.component').then(m => m.StatisticsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'chat',
+    loadComponent: () => import('./pages/chat/chat.component').then(m => m.ChatComponent),
     canActivate: [authGuard]
   },
   {

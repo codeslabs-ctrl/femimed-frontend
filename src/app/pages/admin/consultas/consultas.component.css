@@ -1,9 +1,9 @@
-/* Estilos completos para el componente de consultas */
+/* Gestión de Consultas - mismo criterio visual que dashboard */
 .consultas-page {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
   min-height: 100vh;
 }
 
@@ -12,10 +12,19 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.75rem 2rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .page-title {
@@ -25,20 +34,23 @@
   margin: 0;
 }
 
-.btn-primary {
-  background: #3b82f6;
+.btn-primary,
+.btn-new {
+  background: var(--gradient-primary-solid);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
-  background: #2563eb;
+.btn-primary:hover,
+.btn-new:hover {
+  filter: brightness(1.08);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.35);
 }
 
 .btn-secondary {
@@ -117,11 +129,12 @@
 }
 
 .filters-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.75rem;
   margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .filters-grid {
@@ -153,7 +166,7 @@
 
 .form-control:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -285,8 +298,8 @@
 }
 
 .estado-agendada {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
 }
 
 .estado-por_agendar {
@@ -329,8 +342,8 @@
 }
 
 .prioridad-normal {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
 }
 
 .prioridad-alta {
@@ -387,12 +400,12 @@
 }
 
 .btn-view {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
 }
 
 .btn-view:hover {
-  background: #bfdbfe;
+  background: rgba(240, 147, 251, 0.18);
 }
 
 .btn-edit {
@@ -480,9 +493,9 @@
 }
 
 .pagination-btn.active {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .empty-state {
@@ -535,7 +548,7 @@
   width: 2rem;
   height: 2rem;
   border: 2px solid #e5e7eb;
-  border-top: 2px solid #3b82f6;
+  border-top: 2px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

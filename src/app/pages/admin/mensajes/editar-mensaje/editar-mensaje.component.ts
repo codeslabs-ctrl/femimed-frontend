@@ -161,7 +161,6 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
                         </th>
                         <th>Nombre</th>
                         <th>Email</th>
-                        <th>Teléfono</th>
                         <th>Cédula</th>
                         <th>Edad</th>
                         <th>Sexo</th>
@@ -180,7 +179,6 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
                           <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
                         </td>
                         <td>{{ paciente.email }}</td>
-                        <td>{{ paciente.telefono || '-' }}</td>
                         <td>{{ paciente.cedula || '-' }}</td>
                         <td>{{ paciente.edad || '-' }}</td>
                         <td>{{ paciente.sexo || '-' }}</td>
@@ -441,7 +439,7 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
     .form-textarea:focus,
     .form-select:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
@@ -486,7 +484,7 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
       width: 1.25rem;
       height: 1.25rem;
       cursor: pointer;
-      accent-color: #3b82f6;
+      accent-color: #f5576c;
     }
 
     .canal-checkbox span {
@@ -572,7 +570,7 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
       width: 1rem;
       height: 1rem;
       border: 2px solid #e2e8f0;
-      border-top: 2px solid #3b82f6;
+      border-top: 2px solid #f5576c;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-right: 0.5rem;
@@ -611,7 +609,7 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
       width: 1rem;
       height: 1rem;
       border: 2px solid #e2e8f0;
-      border-top: 2px solid #3b82f6;
+      border-top: 2px solid #f5576c;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-right: 0.5rem;
@@ -707,12 +705,12 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
     }
 
     .btn-primary {
-      background-color: #3b82f6;
+      background-color: #f5576c;
       color: white;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background-color: #2563eb;
+      background-color: #e64f62;
     }
 
     .btn-primary:disabled {

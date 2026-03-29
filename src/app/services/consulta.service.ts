@@ -77,6 +77,11 @@ export class ConsultaService {
     return this.http.put<ApiResponse<Consulta>>(`${this.baseUrl}/${id}/cancelar`, { motivo_cancelacion: motivo });
   }
 
+  // Permiso del usuario actual para finalizar consultas (según Gestión de Perfiles)
+  getPermisoFinalizar(): Observable<ApiResponse<{ puedeFinalizar: boolean }>> {
+    return this.http.get<ApiResponse<{ puedeFinalizar: boolean }>>(`${this.baseUrl}/permiso-finalizar`);
+  }
+
   // Finalizar consulta
   finalizarConsulta(id: number, datos: { diagnostico_preliminar?: string; observaciones?: string }): Observable<ApiResponse<Consulta>> {
     return this.http.put<ApiResponse<Consulta>>(`${this.baseUrl}/${id}/finalizar`, datos);

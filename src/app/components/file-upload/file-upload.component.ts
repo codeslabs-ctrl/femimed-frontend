@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArchivoService } from '../../services/archivo.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { AlertService } from '../../services/alert.service';
 import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
 
 @Component({
@@ -177,8 +178,8 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
     }
 
     .btn-download:hover {
-      background: #dbeafe;
-      border-color: #3b82f6;
+      background: rgba(245, 87, 108, 0.12);
+      border-color: #f5576c;
     }
 
     .btn-delete:hover {
@@ -234,7 +235,7 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
 
     .description-input:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
@@ -245,7 +246,7 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
     }
 
     .btn-upload {
-      background: #3b82f6;
+      background: #f5576c;
       color: white;
       border: none;
       padding: 0.75rem 1.5rem;
@@ -256,7 +257,7 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
     }
 
     .btn-upload:hover:not(:disabled) {
-      background: #2563eb;
+      background: #e64f62;
     }
 
     .btn-upload:disabled {
@@ -400,7 +401,8 @@ export class FileUploadComponent implements OnInit {
 
   constructor(
     private archivoService: ArchivoService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -530,7 +532,8 @@ export class FileUploadComponent implements OnInit {
   }
 
   deleteFile(archivo: ArchivoAnexo) {
-    if (confirm(`¿Estás seguro de que quieres eliminar el archivo "${archivo.nombre_original}"?`)) {
+    this.alertService.confirm(`¿Estás seguro de que quieres eliminar el archivo "${archivo.nombre_original}"?`, 'Eliminar archivo').then((ok) => {
+      if (!ok) return;
       this.archivoService.deleteArchivo(archivo.id!).subscribe({
         next: (response) => {
           if (response.success) {
@@ -543,7 +546,7 @@ export class FileUploadComponent implements OnInit {
           this.errorMessage = 'Error al eliminar el archivo';
         }
       });
-    }
+    });
   }
 
   getFileIcon(mimeType: string): string {

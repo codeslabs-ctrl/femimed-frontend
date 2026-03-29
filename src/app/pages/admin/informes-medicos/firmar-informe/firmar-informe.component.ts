@@ -175,7 +175,7 @@ export class FirmarInformeComponent implements OnInit {
         <title>Vista Previa - Firma Digital</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-          .header { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+          .header { border-bottom: 2px solid #f5576c; padding-bottom: 10px; margin-bottom: 20px; }
           .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
           .firma-section { background: #e8f5e8; padding: 20px; border-radius: 5px; border-left: 4px solid #28a745; }
           .certificado-info { background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; }

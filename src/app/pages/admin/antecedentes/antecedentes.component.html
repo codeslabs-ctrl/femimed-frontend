@@ -1,0 +1,125 @@
+<div class="antecedentes-page">
+  <div class="page-header">
+    <h1>
+      <i class="fas fa-list-alt"></i>
+      Antecedentes (Historia Clínica)
+    </h1>
+    <button class="btn btn-new" (click)="openAddModal()">
+      ➕ Nuevo ítem
+    </button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" [(ngModel)]="filterTipo" (ngModelChange)="onFilterChange()">
+          <option value="">Todos</option>
+          <option *ngFor="let opt of tipoOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Buscar por nombre</label>
+        <input type="text" class="form-input" [(ngModel)]="searchName" (input)="onSearchChange()" placeholder="Nombre">
+      </div>
+    </div>
+    <div class="filters-actions">
+      <button class="btn btn-clear" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="table-container" *ngIf="!loading">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Orden</th>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>Detalle</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredItems">
+          <td>{{ item.orden }}</td>
+          <td>{{ getTipoLabel(item.tipo!) }}</td>
+          <td class="item-name">{{ item.nombre }}</td>
+          <td>{{ getDetalleLabel(item.requiere_detalle!) }}</td>
+          <td>{{ item.activo ? 'Sí' : 'No' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="action-btn edit-btn" (click)="openEditModal(item)" title="Editar">Editar</button>
+              <button class="action-btn delete-btn" (click)="deleteItem(item)" title="Eliminar">Eliminar</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="filteredItems.length === 0" class="no-data">
+      <p>No hay ítems de antecedentes. Agregue uno o ejecute el seed en la base de datos.</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <p>Cargando antecedentes...</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">{{ isEditing ? 'Editar antecedente' : 'Nuevo antecedente' }}</h2>
+      <button class="modal-close" (click)="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <form (ngSubmit)="onSubmit()" #antecedenteForm="ngForm">
+        <div class="form-group">
+          <label class="form-label">Tipo *</label>
+          <select class="form-input" [(ngModel)]="antecedenteData.tipo" name="tipo" required>
+            <option *ngFor="let opt of tipoOptions" [value]="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input type="text" class="form-input" [(ngModel)]="antecedenteData.nombre" name="nombre" required maxlength="200" placeholder="Ej. Hipertensión arterial">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Si el paciente marca Sí, pedir</label>
+          <select class="form-input" [(ngModel)]="antecedenteData.requiere_detalle" name="requiere_detalle">
+            <option *ngFor="let opt of detalleOptions" [value]="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Orden</label>
+          <input type="number" class="form-input" [(ngModel)]="antecedenteData.orden" name="orden" min="0">
+        </div>
+        <div class="form-group form-group-inline">
+          <label class="form-label">
+            <input type="checkbox" [(ngModel)]="antecedenteData.activo" name="activo"> Activo
+          </label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-clear" (click)="closeModal()">Cancelar</button>
+      <button type="button" class="btn btn-new" (click)="onSubmit()" [disabled]="saving || !antecedenteData.nombre?.trim()">
+        {{ saving ? 'Guardando...' : (isEditing ? 'Guardar' : 'Crear') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-confirm-modal
+  *ngIf="showConfirmModal"
+  [show]="showConfirmModal"
+  title="Eliminar antecedente"
+  [message]="'¿Eliminar \'' + (itemToDelete?.nombre || '') + '\'? Los historiales ya guardados no se modifican.'"
+  confirmText="Eliminar"
+  cancelText="Cancelar"
+  type="danger"
+  (confirm)="onConfirmDelete()"
+  (cancel)="onCancelDelete()">
+</app-confirm-modal>

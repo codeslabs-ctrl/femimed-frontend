@@ -1,0 +1,80 @@
+<div class="receta-page">
+  <header class="receta-header">
+    <h1>Récipe médico</h1>
+    <p class="receta-sub">Genere un PDF de <strong>Récipe</strong>, <strong>Indicaciones</strong> o <strong>Ambos</strong> (récipe e indicaciones en un solo texto) con su firma y datos profesionales.</p>
+  </header>
+
+  <div class="receta-card">
+    <div class="field-row">
+      <label class="field-label">Tipo de documento</label>
+      <div class="tipo-radios">
+        <label class="radio-pill" [class.active]="tipo === 'recipe'">
+          <input type="radio" name="tipo" [(ngModel)]="tipo" value="recipe" />
+          Récipe
+        </label>
+        <label class="radio-pill" [class.active]="tipo === 'indicaciones'">
+          <input type="radio" name="tipo" [(ngModel)]="tipo" value="indicaciones" />
+          Indicaciones
+        </label>
+        <label class="radio-pill" [class.active]="tipo === 'ambos'">
+          <input type="radio" name="tipo" [(ngModel)]="tipo" value="ambos" (change)="onTipoCambiado()" />
+          Ambos
+        </label>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label class="field-label" for="fecha">Fecha en el documento</label>
+      <input id="fecha" type="date" class="input-control" [(ngModel)]="fechaEmision" />
+    </div>
+
+    <div class="field-row">
+      <label class="field-label" for="paciente">Paciente (opcional)</label>
+      <div class="paciente-estado" *ngIf="loadingPacientes">Cargando pacientes…</div>
+      <select
+        *ngIf="!loadingPacientes"
+        id="paciente"
+        class="input-control select-paciente"
+        [(ngModel)]="pacienteId"
+        name="pacienteReceta"
+      >
+        <option [ngValue]="null">— Sin paciente —</option>
+        <option *ngFor="let p of pacientes" [ngValue]="p.id">{{ etiquetaPaciente(p) }}</option>
+      </select>
+      <p class="paciente-ayuda" *ngIf="!loadingPacientes && pacientes.length === 0">
+        No hay pacientes asociados a su usuario. Puede generar el récipe sin paciente o revise más tarde.
+      </p>
+    </div>
+
+    <div class="field-row">
+      <label class="field-label" for="contenido">Contenido</label>
+      <textarea
+        id="contenido"
+        class="textarea-control"
+        rows="14"
+        [(ngModel)]="contenido"
+        [attr.placeholder]="tipo === 'ambos' ? 'Use las líneas Récipe: e Indicaciones: como guía; no se imprimen en el PDF.' : 'Medicamentos, dosis, indicaciones...'"
+      ></textarea>
+    </div>
+
+    <div class="field-row" *ngIf="!loadingClinicas && clinicas.length">
+      <span class="field-label">Pie de página — clínicas (máx. 2)</span>
+      <div class="pies-grid">
+        <label *ngFor="let c of clinicas" class="pie-check">
+          <input
+            type="checkbox"
+            [checked]="isPieChecked(c.id)"
+            (change)="togglePie(c.id)"
+          />
+          <span>{{ c.nombre_clinica }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" (click)="descargarPdf()" [disabled]="generando">
+        {{ generando ? 'Generando…' : 'Descargar PDF' }}
+      </button>
+    </div>
+  </div>
+</div>

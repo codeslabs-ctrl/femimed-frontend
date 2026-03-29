@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
 import { tap, map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { User, LoginResponse } from '../models/user.model';
@@ -12,8 +12,8 @@ import { environment } from '../../environments/environment';
 })
 export class AuthService {
   private readonly API_URL = `${environment.apiUrl}`;
-  private readonly TOKEN_KEY = 'femimed_token';
-  private readonly USER_KEY = 'femimed_user';
+  private readonly TOKEN_KEY = 'demomed_token';
+  private readonly USER_KEY = 'demomed_user';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -81,6 +81,13 @@ export class AuthService {
                   this.currentUserSubject.next(user);
                   return { user, token } as LoginResponse;
                 }
+              }),
+              catchError((err) => {
+                console.warn('No se pudieron cargar los datos del médico; la sesión continúa con datos básicos del usuario.', err);
+                localStorage.setItem(this.TOKEN_KEY, token);
+                localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+                this.currentUserSubject.next(user);
+                return of({ user, token } as LoginResponse);
               })
             );
           } else {

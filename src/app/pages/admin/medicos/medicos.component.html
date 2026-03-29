@@ -55,7 +55,7 @@
       <tbody>
         <tr *ngFor="let medico of filteredMedicos">
           <td>{{ medico.id }}</td>
-          <td class="medico-name">{{ medico.nombres }} {{ medico.apellidos }}</td>
+          <td class="medico-name">{{ medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{ medico.nombres }} {{ medico.apellidos }}</td>
           <td class="medico-email">{{ medico.email }}</td>
           <td>{{ medico.telefono }}</td>
           <td>
@@ -139,6 +139,15 @@
             [(ngModel)]="medicoData.apellidos" 
             name="apellidos"
             required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sexo</label>
+          <select class="form-input" [(ngModel)]="medicoData.sexo" name="sexo">
+            <option [ngValue]="null">Seleccionar</option>
+            <option value="Masculino">Masculino (Dr.)</option>
+            <option value="Femenino">Femenino (Dra.)</option>
+          </select>
         </div>
 
         <div class="form-group">

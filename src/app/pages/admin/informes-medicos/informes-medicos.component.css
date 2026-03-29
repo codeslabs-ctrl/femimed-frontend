@@ -293,7 +293,7 @@
 }
 
 .btn-new {
-  background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+  background: var(--gradient-primary-solid);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -308,7 +308,7 @@
 
 .btn-new:hover:not(:disabled) {
   background: linear-gradient(135deg, #8BA8D1 0%, #6A8AAA 100%);
-  box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
   transform: translateY(-1px);
 }
 

@@ -94,7 +94,7 @@ import { CommonModule } from '@angular/common';
     }
 
     .confirm-header-info h3 {
-      color: #2563eb;
+      color: #e64f62;
     }
 
     .confirm-body {
@@ -170,12 +170,12 @@ import { CommonModule } from '@angular/common';
     }
 
     .btn-confirm-info {
-      background: #2563eb;
+      background: #e64f62;
       color: white;
     }
 
     .btn-confirm-info:hover {
-      background: #1d4ed8;
+      background: var(--color-primary-dark);
     }
 
     @media (max-width: 640px) {

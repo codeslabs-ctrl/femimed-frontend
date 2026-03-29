@@ -6,6 +6,7 @@ import { MedicoService, Medico } from '../../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../../services/especialidad.service';
 import { FirmaService } from '../../../../services/firma.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
+import { AlertService } from '../../../../services/alert.service';
 import { APP_CONFIG } from '../../../../config/app.config';
 
 @Component({
@@ -24,22 +25,28 @@ export class EditarMedicoComponent implements OnInit {
     email: '',
     telefono: '',
     especialidad_id: 0,
+    sexo: null,
     mpps: '',
-    cm: ''
+    cm: '',
+    titulacion: '',
+    contacto_redes: ''
   };
 
   especialidades: Especialidad[] = [];
   saving = false;
   loading = true;
-  showSnackbar = false;
-  snackbarMessage = '';
-  snackbarType: 'success' | 'error' = 'success';
   
   // Variables para firma digital
   firmaFile: File | null = null;
   firmaPreview: string | null = null;
   uploadingFirma = false;
   firmaActualUrl: string | null = null;
+
+  // Variables para sello húmedo
+  selloFile: File | null = null;
+  selloPreview: string | null = null;
+  uploadingSello = false;
+  selloActualUrl: string | null = null;
   
   // Variables para validación de email
   emailExists = false;
@@ -57,7 +64,8 @@ export class EditarMedicoComponent implements OnInit {
     private firmaService: FirmaService,
     private router: Router,
     private route: ActivatedRoute,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -78,12 +86,17 @@ export class EditarMedicoComponent implements OnInit {
             } else {
               this.firmaActualUrl = null;
             }
+            if (this.medicoData.sello_humedo) {
+              this.selloActualUrl = this.getSelloUrl(this.medicoData.sello_humedo);
+            } else {
+              this.selloActualUrl = null;
+            }
             this.loading = false;
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, 'cargar datos del médico');
-          this.showSnackbarMessage('Error cargando datos del médico', 'error');
+          this.alertService.show('Error cargando datos del médico', 'error');
           this.loading = false;
         }
       });
@@ -102,6 +115,7 @@ export class EditarMedicoComponent implements OnInit {
     
     // Si ya es una URL completa (http:// o https://), retornarla tal cual
     if (firmaPath.startsWith('http://') || firmaPath.startsWith('https://')) {
+      console.log('🔍 [EditarMedico] URL ya es completa:', firmaPath);
       return firmaPath;
     }
     
@@ -133,7 +147,21 @@ export class EditarMedicoComponent implements OnInit {
       fullUrl
     });
     
-    return fullUrl;
+    try {
+      if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) return null;
+      return fullUrl;
+    } catch (error) {
+      console.error('❌ [EditarMedico] Error construyendo URL:', error);
+      return null;
+    }
+  }
+
+  /** URL de la imagen del sello húmedo (misma carpeta que la firma en el backend) */
+  getSelloUrl(selloPath: string | null | undefined): string | null {
+    if (!selloPath || !this.medicoData.id) return null;
+    if (selloPath.startsWith('http://') || selloPath.startsWith('https://')) return selloPath;
+    const apiBaseUrl = APP_CONFIG.API_BASE_URL;
+    return `${apiBaseUrl}/firmas/${this.medicoData.id}/sello/imagen`;
   }
 
   loadEspecialidades() {
@@ -145,7 +173,7 @@ export class EditarMedicoComponent implements OnInit {
       },
       error: (error: any) => {
         this.errorHandler.logError(error, 'cargar especialidades');
-        this.showSnackbarMessage('Error cargando especialidades', 'error');
+        this.alertService.show('Error cargando especialidades', 'error');
       }
     });
   }
@@ -153,18 +181,18 @@ export class EditarMedicoComponent implements OnInit {
   onSubmit() {
     // Verificar validaciones adicionales
     if (this.emailExists && this.emailChecked) {
-      this.showSnackbarMessage('❌ Error: El email ya está registrado en el sistema.', 'error');
+      this.alertService.show('El email ya está registrado en el sistema.', 'error');
       return;
     }
     
     if (this.cedulaExists && this.cedulaChecked) {
-      this.showSnackbarMessage('❌ Error: La cédula ya está registrada en el sistema.', 'error');
+      this.alertService.show('La cédula ya está registrada en el sistema.', 'error');
       return;
     }
     
     if (this.validateForm()) {
       this.saving = true;
-      this.hideSnackbar();
+      this.alertService.close();
       
       console.log('Datos del médico a actualizar:', this.medicoData);
       
@@ -177,25 +205,22 @@ export class EditarMedicoComponent implements OnInit {
         telefono: this.medicoData.telefono!,
         especialidad_id: Number(this.medicoData.especialidad_id),
         mpps: this.medicoData.mpps || undefined,
-        cm: this.medicoData.cm || undefined
+        cm: this.medicoData.cm || undefined,
+        titulacion: this.medicoData.titulacion || undefined,
+        contacto_redes: this.medicoData.contacto_redes || undefined
       };
       
       this.medicoService.updateMedico(this.medicoData.id!, medicoDataToSend).subscribe({
         next: (response) => {
           if (response.success) {
-            // Si hay firma digital seleccionada, subirla después de actualizar el médico
-            if (this.firmaFile) {
-              this.uploadFirmaAfterUpdate();
+            if (this.firmaFile || this.selloFile) {
+              this.uploadFirmaYSelloAfterUpdate();
             } else {
-              this.showSnackbarMessage(
-                `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente.`,
-                'success'
+              this.alertService.show(
+                `Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente.`,
+                'success',
+                { navigateTo: '/admin/medicos' }
               );
-              
-              // Redirigir después de 2 segundos
-              setTimeout(() => {
-                this.router.navigate(['/admin/medicos']);
-              }, 2000);
             }
           }
           this.saving = false;
@@ -203,14 +228,12 @@ export class EditarMedicoComponent implements OnInit {
         error: (error) => {
           this.errorHandler.logError(error, 'actualizar médico');
           
-          let errorMessage = '❌ Error al actualizar el médico. Por favor, intente nuevamente.';
-          
+          let errorMessage = 'Error al actualizar el médico. Por favor, intente nuevamente.';
           if (error.error && error.error.error && error.error.error.message) {
-            errorMessage = `❌ ${error.error.error.message}`;
+            errorMessage = error.error.error.message;
           }
-          
           this.saving = false;
-          this.showSnackbarMessage(errorMessage, 'error');
+          this.alertService.show(errorMessage, 'error');
         }
       });
     }
@@ -218,23 +241,23 @@ export class EditarMedicoComponent implements OnInit {
 
   validateForm(): boolean {
     if (!this.medicoData.nombres?.trim()) {
-      this.showSnackbarMessage('❌ El nombre es requerido', 'error');
+      this.alertService.show('El nombre es requerido', 'error');
       return false;
     }
     if (!this.medicoData.apellidos?.trim()) {
-      this.showSnackbarMessage('❌ Los apellidos son requeridos', 'error');
+      this.alertService.show('Los apellidos son requeridos', 'error');
       return false;
     }
     if (!this.medicoData.email?.trim()) {
-      this.showSnackbarMessage('❌ El email es requerido', 'error');
+      this.alertService.show('El email es requerido', 'error');
       return false;
     }
     if (!this.medicoData.telefono?.trim()) {
-      this.showSnackbarMessage('❌ El teléfono es requerido', 'error');
+      this.alertService.show('El teléfono es requerido', 'error');
       return false;
     }
     if (!this.medicoData.especialidad_id || this.medicoData.especialidad_id === 0) {
-      this.showSnackbarMessage('❌ La especialidad es requerida', 'error');
+      this.alertService.show('La especialidad es requerida', 'error');
       return false;
     }
     return true;
@@ -246,13 +269,11 @@ export class EditarMedicoComponent implements OnInit {
     if (file) {
       // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
-        this.showSnackbarMessage('❌ Solo se permiten archivos de imagen', 'error');
+        this.alertService.show('Solo se permiten archivos de imagen', 'error');
         return;
       }
-      
-      // Validar tamaño (2MB max)
       if (file.size > 2 * 1024 * 1024) {
-        this.showSnackbarMessage('❌ El archivo no puede ser mayor a 2MB', 'error');
+        this.alertService.show('El archivo no puede ser mayor a 2MB', 'error');
         return;
       }
       
@@ -280,21 +301,21 @@ export class EditarMedicoComponent implements OnInit {
           this.medicoData.firma_digital = response.data.firma_digital;
           // Actualizar URL de la firma actual
           this.firmaActualUrl = this.getFirmaUrl(response.data.firma_digital);
-          this.showSnackbarMessage('✅ Firma digital subida exitosamente', 'success');
+          this.alertService.show('Firma digital subida exitosamente', 'success');
           this.firmaFile = null;
           this.firmaPreview = null;
         } else {
-          this.showSnackbarMessage('❌ Error al subir firma digital', 'error');
+          this.alertService.show('Error al subir firma digital', 'error');
         }
         this.uploadingFirma = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'subir firma digital');
-        let errorMessage = '❌ Error al subir firma digital';
+        let errorMessage = 'Error al subir firma digital';
         if (error.error && error.error.error && error.error.error.message) {
-          errorMessage = `❌ ${error.error.error.message}`;
+          errorMessage = error.error.error.message;
         }
-        this.showSnackbarMessage(errorMessage, 'error');
+        this.alertService.show(errorMessage, 'error');
         this.uploadingFirma = false;
       }
     });
@@ -305,72 +326,116 @@ export class EditarMedicoComponent implements OnInit {
     this.firmaPreview = null;
   }
 
-  uploadFirmaAfterUpdate() {
-    if (!this.firmaFile || !this.medicoData.id) {
-      return;
+  onSelloSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        this.alertService.show('Solo se permiten archivos de imagen', 'error');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        this.alertService.show('El archivo no puede ser mayor a 2MB', 'error');
+        return;
+      }
+      this.selloFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => { this.selloPreview = e.target?.result as string; };
+      reader.readAsDataURL(file);
     }
-    
-    this.uploadingFirma = true;
-    
-    this.firmaService.subirFirma(this.medicoData.id, this.firmaFile).subscribe({
+  }
+
+  uploadSello() {
+    if (!this.selloFile || !this.medicoData.id) return;
+    this.uploadingSello = true;
+    this.firmaService.subirSello(this.medicoData.id, this.selloFile).subscribe({
       next: (response) => {
-        if (response.success && response.data) {
-          this.medicoData.firma_digital = response.data.firma_digital;
-          // Actualizar URL de la firma actual
-          this.firmaActualUrl = this.getFirmaUrl(response.data.firma_digital);
-          this.showSnackbarMessage(
-            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente con firma digital.`,
-            'success'
-          );
-          this.firmaFile = null;
-          this.firmaPreview = null;
+        if (response.success && response.data?.sello_humedo) {
+          this.medicoData.sello_humedo = response.data.sello_humedo;
+          this.selloActualUrl = this.getSelloUrl(response.data.sello_humedo);
+          this.alertService.show('Sello húmedo subido exitosamente', 'success');
+          this.selloFile = null;
+          this.selloPreview = null;
         } else {
-          this.showSnackbarMessage(
-            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente. Error al subir firma digital.`,
-            'success'
-          );
+          this.alertService.show('Error al subir sello húmedo', 'error');
         }
-        
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/admin/medicos']);
-        }, 2000);
-        
-        this.uploadingFirma = false;
+        this.uploadingSello = false;
       },
       error: (error) => {
-        this.errorHandler.logError(error, 'subir firma digital después de actualizar');
-        this.showSnackbarMessage(
-          `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente. Error al subir firma digital.`,
-          'success'
-        );
-        
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/admin/medicos']);
-        }, 2000);
-        
-        this.uploadingFirma = false;
+        this.errorHandler.logError(error, 'subir sello húmedo');
+        const msg = error?.error?.error?.message || error?.error?.message || 'Error al subir sello húmedo';
+        this.alertService.show(msg, 'error');
+        this.uploadingSello = false;
       }
     });
   }
 
+  removeSello() {
+    this.selloFile = null;
+    this.selloPreview = null;
+  }
+
+  uploadFirmaYSelloAfterUpdate() {
+    if (!this.medicoData.id) return;
+    const doNavigate = () => {
+      this.alertService.show(
+        `Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente.`,
+        'success',
+        { navigateTo: '/admin/medicos' }
+      );
+    };
+    const uploadFirma = (): void => {
+      if (!this.firmaFile) {
+        uploadSello();
+        return;
+      }
+      this.uploadingFirma = true;
+      this.firmaService.subirFirma(this.medicoData.id!, this.firmaFile).subscribe({
+        next: (r) => {
+          if (r.success && r.data?.firma_digital) {
+            this.medicoData.firma_digital = r.data.firma_digital;
+            this.firmaActualUrl = this.getFirmaUrl(r.data.firma_digital);
+          }
+          this.firmaFile = null;
+          this.firmaPreview = null;
+          this.uploadingFirma = false;
+          uploadSello();
+        },
+        error: () => {
+          this.uploadingFirma = false;
+          uploadSello();
+        }
+      });
+    };
+    const uploadSello = (): void => {
+      if (!this.selloFile) {
+        doNavigate();
+        return;
+      }
+      this.uploadingSello = true;
+      this.firmaService.subirSello(this.medicoData.id!, this.selloFile).subscribe({
+        next: (r) => {
+          if (r.success && r.data?.sello_humedo) {
+            this.medicoData.sello_humedo = r.data.sello_humedo;
+            this.selloActualUrl = this.getSelloUrl(r.data.sello_humedo);
+          }
+          this.selloFile = null;
+          this.selloPreview = null;
+          this.uploadingSello = false;
+          doNavigate();
+        },
+        error: (err) => {
+          const msg = err?.error?.error?.message || err?.error?.message || 'No se pudo subir el sello.';
+          this.alertService.show(msg, 'error');
+          this.uploadingSello = false;
+          doNavigate();
+        }
+      });
+    };
+    uploadFirma();
+  }
+
   volver() {
     this.router.navigate(['/admin/medicos']);
-  }
-
-  showSnackbarMessage(message: string, type: 'success' | 'error') {
-    this.snackbarMessage = message;
-    this.snackbarType = type;
-    this.showSnackbar = true;
-    
-    setTimeout(() => {
-      this.hideSnackbar();
-    }, 5000);
-  }
-
-  hideSnackbar() {
-    this.showSnackbar = false;
   }
 
   // Validación de email

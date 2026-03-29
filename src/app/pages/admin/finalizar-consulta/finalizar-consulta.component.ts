@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ServiciosService, Servicio, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaService } from '../../../services/consulta.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 
 export interface ServicioSeleccionado {
   servicio_id: number;
@@ -40,7 +41,8 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
     private router: Router,
     private serviciosService: ServiciosService,
     private consultaService: ConsultaService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -214,40 +216,45 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
     (servicio as any)[field] = value;
   }
 
+  /** Símbolo de moneda para mostrar en resumen y totales */
+  getCurrencySymbol(moneda: string): string {
+    return moneda === 'VES' ? 'Bs. ' : '$';
+  }
+
+  /** Formatea un número como monto con separador de miles (.) y decimal (,). Ej: 1234.5 → "1.234,50" */
+  private formatMontoDisplay(value: number | string): string {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (value == null || isNaN(n) || n === 0) return '';
+    const fixed = n.toFixed(2);
+    const [intPart, decPart] = fixed.split('.');
+    const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${withThousands},${decPart}`;
+  }
+
   getMontoFormateado(servicioId: number): string {
     const servicio = this.getServicioSeleccionado(servicioId);
-    if (!servicio || servicio.monto_pagado === 0) return '';
-    // Formatear con coma como separador decimal
-    return servicio.monto_pagado.toString().replace('.', ',');
+    if (!servicio) return '';
+    const val = servicio.monto_pagado;
+    if (val == null || Number(val) === 0) return '';
+    return this.formatMontoDisplay(val);
+  }
+
+  /** Parsea el input: solo dígitos, interpretados como centavos (ej. 4553025 → 45530,25). El valor mostrado se formatea como 45.530,25 */
+  private parseMontoInput(value: string): number {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits === '') return 0;
+    const n = parseInt(digits, 10) / 100;
+    return isNaN(n) || n < 0 ? 0 : n;
   }
 
   onMontoChange(servicioId: number, value: string): void {
-    // Remover caracteres no numéricos excepto coma y punto
-    let cleanValue = value.replace(/[^\d,.-]/g, '');
-    
-    // Permitir solo una coma o un punto como separador decimal
-    const parts = cleanValue.split(/[,.]/);
-    if (parts.length > 2) {
-      // Si hay más de un separador, mantener solo el primero
-      cleanValue = parts[0] + (parts.length > 1 ? ',' + parts.slice(1).join('') : '');
-    }
-    
-    // Convertir coma a punto para parseFloat
-    const numericValue = parseFloat(cleanValue.replace(',', '.'));
-    
-    if (!isNaN(numericValue) && numericValue >= 0) {
-      this.updateServicioSeleccionado(servicioId, 'monto_pagado', numericValue);
-      this.calcularTotales();
-    } else if (cleanValue === '' || cleanValue === '-') {
-      // Permitir campo vacío mientras se escribe
-      this.updateServicioSeleccionado(servicioId, 'monto_pagado', 0);
-    }
+    const numericValue = this.parseMontoInput(value);
+    this.updateServicioSeleccionado(servicioId, 'monto_pagado', numericValue);
+    this.calcularTotales();
   }
 
   onMontoBlur(servicioId: number, event: Event): void {
     const servicio = this.getServicioSeleccionado(servicioId);
-    
-    // Asegurar que el valor sea válido al perder el foco
     if (isNaN(servicio.monto_pagado) || servicio.monto_pagado < 0) {
       servicio.monto_pagado = servicio.monto_base || 0;
       this.calcularTotales();
@@ -287,11 +294,10 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
   }
 
   validarMontos(): boolean {
-    return this.serviciosSeleccionados.every(servicio => 
-      servicio.monto_pagado > 0 && 
-      servicio.monto_pagado !== null && 
-      !isNaN(servicio.monto_pagado)
-    );
+    return this.serviciosSeleccionados.every(servicio => {
+      const m = servicio.monto_pagado;
+      return m != null && !isNaN(m) && m >= 0;
+    });
   }
 
   canFinalizar(): boolean {
@@ -341,17 +347,12 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
         });
       } else {
         this.errorHandler.logError(response, 'finalizar consulta');
-        alert('Error al finalizar la consulta. Por favor, intente nuevamente.');
+        this.alertService.showError('Error al finalizar la consulta. Por favor, intente nuevamente.');
       }
     } catch (error: any) {
       this.errorHandler.logError(error, 'finalizar consulta');
-      
-      let errorMessage = 'Error al finalizar la consulta. Por favor, intente nuevamente.';
-      if (error.error && error.error.error) {
-        errorMessage = `Error: ${error.error.error}`;
-      }
       const safeErrorMessage = this.errorHandler.getSafeErrorMessage(error, 'finalizar consulta');
-      alert(safeErrorMessage);
+      this.alertService.showError(safeErrorMessage);
     } finally {
       this.isSubmitting = false;
     }

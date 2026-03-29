@@ -52,14 +52,14 @@
               <span class="checkmark"></span>
               <div class="servicio-details">
                 <div class="servicio-nombre">{{ servicio.nombre_servicio }}</div>
-                <div class="servicio-precio">Precio base: ${{ servicio.monto_base | number:'1.2-2':'es' }} {{ servicio.moneda }}</div>
+                <div class="servicio-precio">Precio base: {{ getCurrencySymbol(servicio.moneda) }}{{ servicio.monto_base | number:'1.2-2':'es' }}</div>
               </div>
             </label>
           </div>
           
           <div class="servicio-form" *ngIf="isServicioSeleccionado(servicio.id)">
             <div class="precio-base-info">
-              <small>Precio base: ${{ getServicioSeleccionado(servicio.id).monto_base | number:'1.2-2':'es' }} {{ getServicioSeleccionado(servicio.id).moneda }}</small>
+              <small>Precio base: {{ getCurrencySymbol(getServicioSeleccionado(servicio.id).moneda) }}{{ getServicioSeleccionado(servicio.id).monto_base | number:'1.2-2':'es' }}</small>
             </div>
             <div class="form-row">
               <div class="form-group">
@@ -122,7 +122,7 @@
         </div>
         <div class="resumen-row" *ngFor="let servicio of serviciosSeleccionados">
           <div class="servicio-nombre">{{ servicio.servicio_nombre }}</div>
-          <div class="monto">${{ servicio.monto_pagado | number:'1.2-2':'es' }}</div>
+          <div class="monto">{{ getCurrencySymbol(servicio.moneda) }}{{ servicio.monto_pagado | number:'1.2-2':'es' }}</div>
           <div class="moneda">{{ servicio.moneda }}</div>
           <div class="acciones">
             <button 
@@ -137,13 +137,13 @@
       
       <div class="totales">
         <div class="total-ves" *ngIf="totalVES > 0">
-          <strong>Total VES: ${{ totalVES | number:'1.2-2':'es' }}</strong>
+          <strong>Total VES: Bs. {{ totalVES | number:'1.2-2':'es' }}</strong>
         </div>
         <div class="total-usd" *ngIf="totalUSD > 0">
           <strong>Total USD: ${{ totalUSD | number:'1.2-2':'es' }}</strong>
         </div>
         <div class="total-general" *ngIf="totalVES > 0 || totalUSD > 0">
-          <strong>Total General: ${{ (totalVES + totalUSD) | number:'1.2-2':'es' }}</strong>
+          <strong>Total General: (ver totales por moneda arriba)</strong>
         </div>
       </div>
     </div>

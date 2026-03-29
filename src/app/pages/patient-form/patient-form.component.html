@@ -50,16 +50,16 @@
             [class.duplicate-error]="cedulaExists && cedulaChecked"
             [(ngModel)]="patient.cedula"
             name="cedula"
-            pattern="^[VEJPG][0-9]{7,8}$"
-            placeholder="Ej: V12345678, E1234567"
+            pattern="^[VEJPG][0-9]{3,8}$"
+            placeholder="Ej: V123, E1234567"
             (blur)="validateCedula()"
             #cedula="ngModel">
-          <div class="error-message" *ngIf="cedula.invalid && cedula.touched">
-            <span *ngIf="cedula.errors?.['pattern']">Formato inválido. Usa: V12345678, E1234567, J12345678, P12345678, G12345678</span>
+          <div class="error-message" *ngIf="cedula.invalid && cedula.touched && !cedulaExists">
+            <span *ngIf="cedula.errors?.['pattern']">Formato inválido: letra V, E, J, P o G y al menos 3 dígitos (ej. V123).</span>
             <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
           </div>
-          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
-            <span>Esta cédula ya está registrada</span>
+          <div class="error-message field-duplicate-error" *ngIf="cedulaExists && cedulaChecked">
+            <span>La cédula ya está siendo usada por otro paciente.</span>
           </div>
         </div>
         <div class="form-group">
@@ -114,29 +114,50 @@
             placeholder="ejemplo@correo.com"
             (blur)="validateEmail()"
             #email="ngModel">
-          <div class="error-message" *ngIf="email.invalid && email.touched">
+          <div class="error-message" *ngIf="email.invalid && email.touched && !emailExists">
             <span *ngIf="email.errors?.['required']">El email es requerido</span>
             <span *ngIf="email.errors?.['email']">Formato de email inválido</span>
-            <span *ngIf="emailExists && emailChecked">Este email ya está registrado</span>
+          </div>
+          <div class="error-message field-duplicate-error" *ngIf="emailExists && emailChecked">
+            <span>El correo electrónico ya está siendo usado por otro paciente.</span>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-duplicate-error]="telefonoExists && telefonoChecked">
           <label class="form-label">Teléfono *</label>
           <input 
             type="tel" 
             class="form-input" 
+            [class.duplicate-error]="telefonoExists && telefonoChecked"
             [(ngModel)]="patient.telefono"
             name="telefono"
             required
             placeholder="Ej: 0412-1234567"
+            (blur)="validateTelefono()"
             #telefono="ngModel">
-          <div class="error-message" *ngIf="telefono.invalid && telefono.touched">
+          <div class="error-message" *ngIf="telefono.invalid && telefono.touched && !telefonoExists">
             El teléfono es requerido
           </div>
+          <div class="error-message field-duplicate-error" *ngIf="telefonoExists && telefonoChecked">
+            <span>El teléfono ya está siendo usado por otro paciente.</span>
+          </div>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Remitido por</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.remitido_por"
+            name="remitido_por"
+            placeholder="Persona o institución que remitió al paciente (opcional)">
         </div>
       </div>
     </div>
 
+    <div class="form-actions" *ngIf="isEdit && patientId">
+      <a [routerLink]="['/patients', patientId, 'antecedentes']" class="btn btn-outline">
+        📋 Antecedentes del paciente
+      </a>
+    </div>
     <div class="form-actions">
       <button 
         type="button" 
@@ -147,18 +168,33 @@
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="loading || emailExists || cedulaExists">
+        [disabled]="loading || emailExists || cedulaExists || telefonoExists">
         <span *ngIf="loading" class="spinner"></span>
         {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
       </button>
     </div>
   </form>
 
-  <div class="loading" *ngIf="loading && !isEdit">
+  <div class="loading" *ngIf="(loading || loadingPatientData) && !isEdit">
     <div class="spinner"></div>
-    <p>Cargando datos del paciente...</p>
+    <p>{{ loadingPatientData ? 'Cargando datos del paciente...' : 'Creando paciente...' }}</p>
   </div>
 
-  <!-- Nota: Los archivos anexos y datos médicos se manejan en la sección "Historia Médica" -->
-  <!-- Este formulario solo maneja datos básicos del paciente -->
+  <!-- Panel de éxito al crear paciente (se muestra tras cargar los datos generales) -->
+  <div class="success-actions-panel" *ngIf="showSuccessActions && patientCreated && !isEdit && patientId && !loadingPatientData">
+    <h3>✅ Paciente registrado exitosamente</h3>
+    <p class="success-patient-name">{{ patient.nombres }} {{ patient.apellidos }}</p>
+    <p class="success-hint">¿Qué desea hacer ahora?</p>
+    <div class="success-actions">
+      <a [routerLink]="['/admin/consultas/nueva']" [queryParams]="{ paciente_id: patientId }" class="btn btn-primary">
+        📅 Agendar consulta médica
+      </a>
+      <a [routerLink]="['/patients', patientId, 'antecedentes']" class="btn btn-outline-primary">
+        📋 Antecedentes del paciente
+      </a>
+      <button type="button" class="btn btn-secondary" (click)="goToList()">
+        Ir a lista de pacientes
+      </button>
+    </div>
+  </div>
 </div>

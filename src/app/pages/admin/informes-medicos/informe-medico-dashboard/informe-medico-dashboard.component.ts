@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { InformeMedicoService } from '../../../../services/informe-medico.service';
+import { AlertService } from '../../../../services/alert.service';
 import { InformeMedico } from '../../../../models/informe-medico.model';
 
 @Component({
   selector: 'app-informe-medico-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './informe-medico-dashboard.component.html',
   styleUrls: ['./informe-medico-dashboard.component.css']
 })
@@ -18,8 +19,10 @@ export class InformeMedicoDashboardComponent implements OnInit {
 
   constructor(
     private informeMedicoService: InformeMedicoService,
+    private alertService: AlertService,
     private router: Router
   ) {}
+
 
   ngOnInit(): void {
     this.cargarInformes();
@@ -72,6 +75,31 @@ export class InformeMedicoDashboardComponent implements OnInit {
     if (informe.id) {
       this.router.navigate(['/admin/informes-medicos', informe.id, 'editar']);
     }
+  }
+
+  puedeEliminar(informe: InformeMedico): boolean {
+    const estado = (informe.estado ?? '').toString().toLowerCase().trim();
+    return estado === 'borrador';
+  }
+
+  eliminarInforme(informe: InformeMedico): void {
+    if (!informe.id) return;
+    const nombre = informe.titulo || informe.numero_informe || 'este informe';
+    this.alertService.confirm(
+      `¿Está seguro de que desea eliminar el informe "${nombre}"? Esta acción no se puede deshacer.`,
+      'Eliminar informe'
+    ).then((aceptar) => {
+      if (!aceptar) return;
+      this.informeMedicoService.eliminarInforme(informe.id!).subscribe({
+        next: () => {
+          this.alertService.showSuccess('Informe eliminado correctamente.');
+          this.cargarInformes();
+        },
+        error: (err) => {
+          this.alertService.showError(err?.error?.message || 'No se pudo eliminar el informe.');
+        }
+      });
+    });
   }
 
   getEstadoTexto(estado: string): string {

@@ -12,6 +12,7 @@ export interface InformeMedico {
   fecha_creacion: string;
   fecha_actualizacion: string;
   clinica_alias: string;
+  clinica_atencion_id?: number | null;
   observaciones?: string;
   numero_secuencial?: number;
   // Relaciones
@@ -28,6 +29,7 @@ export interface InformeMedico {
     nombres: string;
     apellidos: string;
     cedula: string;
+    sexo?: string | null;
     especialidad_id?: number;
     especialidades?: {
       id: number;
@@ -141,6 +143,7 @@ export interface CrearInformeRequest {
   template_id?: number;
   estado?: 'borrador' | 'finalizado' | 'firmado' | 'enviado';
   fecha_emision?: string;
+  clinica_atencion_id?: number | null;
   observaciones?: string;
 }
 
@@ -149,6 +152,7 @@ export interface ActualizarInformeRequest {
   tipo_informe?: string;
   contenido?: string;
   estado?: 'borrador' | 'finalizado' | 'firmado' | 'enviado';
+  clinica_atencion_id?: number | null;
   observaciones?: string;
 }
 

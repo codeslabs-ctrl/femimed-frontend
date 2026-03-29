@@ -8,7 +8,9 @@ export interface Patient {
   email: string;
   telefono: string;
   plan?: string;
+  remitido_por?: string;
   medico_id?: number;
+  antecedentes_otros?: string; // Otros antecedentes (texto libre) del paciente
   motivo_consulta?: string; // Opcional - solo para edición
   diagnostico?: string; // Opcional - solo para edición
   conclusiones?: string; // Opcional - solo para edición
@@ -16,6 +18,7 @@ export interface Patient {
   fecha_actualizacion: string;
   historico_id?: number; // ID del historial médico asociado
   activo: boolean; // Estado activo/inactivo del paciente
+  tiene_consulta?: boolean; // true si tiene al menos una consulta (para mostrar Historial vs Agendar una Consulta)
 }
 
 export interface ApiResponse<T> {

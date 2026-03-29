@@ -8,6 +8,8 @@ import { MedicoService } from '../../../services/medico.service';
 import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
+import { SnackbarService } from '../../../services/snackbar.service';
 import { ServiciosService, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
 import { Medico } from '../../../services/medico.service';
@@ -16,6 +18,7 @@ import { Medico } from '../../../services/medico.service';
   selector: 'app-consultas',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styleUrls: ['./consultas.component.css'],
   template: `
     <div class="consultas-page">
       <!-- Header -->
@@ -137,7 +140,7 @@ import { Medico } from '../../../services/medico.service';
                 </td>
                 <td>
                   <div class="medico-info">
-                    <div class="medico-nombre">{{ consulta.medico_nombre }}</div>
+                    <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
                     <div class="especialidad">{{ consulta.especialidad_nombre }}</div>
                   </div>
                 </td>
@@ -203,7 +206,7 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Cancelar</span>
                     </button>
                     <button 
-                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
+                      *ngIf="isEstadoCompletada(consulta) && canFinalizarConsulta()"
                       class="action-btn btn-complete" 
                       (click)="finalizarConsulta(consulta)" 
                       title="Finalizar">
@@ -301,7 +304,7 @@ import { Medico } from '../../../services/medico.service';
                 Cancelar
               </button>
               <button 
-                *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
+                *ngIf="isEstadoCompletada(consulta) && canFinalizarConsulta()"
                 class="action-btn success-btn" 
                 (click)="finalizarConsulta(consulta)" 
                 title="Finalizar consulta">
@@ -369,7 +372,7 @@ import { Medico } from '../../../services/medico.service';
                 <div class="detail-grid">
                   <div class="detail-item">
                     <label>Médico</label>
-                    <span>{{ selectedConsulta.medico_nombre }}</span>
+                    <span>{{ selectedConsulta.medico_nombre }} {{ selectedConsulta.medico_apellidos }}</span>
                   </div>
                   <div class="detail-item">
                     <label>Especialidad</label>
@@ -596,7 +599,7 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .btn-primary {
-      background: #7A9CC6;
+      background: #f5576c;
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
       font-weight: 500;
@@ -611,14 +614,14 @@ import { Medico } from '../../../services/medico.service';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #7A9CC6;
+      border: 1px solid #f5576c;
       font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #7A9CC6;
+      background: #f5576c;
       color: white;
-      border-color: #7A9CC6;
+      border-color: #f5576c;
     }
 
     .btn-success {
@@ -730,7 +733,7 @@ import { Medico } from '../../../services/medico.service';
 
     .form-control:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
@@ -870,8 +873,8 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .estado-agendada {
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(245, 87, 108, 0.12);
+      color: var(--color-primary-dark);
     }
 
     .estado-por_agendar {
@@ -942,8 +945,8 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .prioridad-normal {
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(245, 87, 108, 0.12);
+      color: var(--color-primary-dark);
     }
 
     .prioridad-alta {
@@ -1020,12 +1023,12 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .btn-view {
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(245, 87, 108, 0.12);
+      color: var(--color-primary-dark);
     }
 
     .btn-view:hover {
-      background: #bfdbfe;
+      background: rgba(240, 147, 251, 0.18);
     }
 
     .btn-edit {
@@ -1114,9 +1117,9 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .pagination-btn.active {
-      background: #3b82f6;
+      background: #f5576c;
       color: white;
-      border-color: #3b82f6;
+      border-color: #f5576c;
     }
 
     /* Estado vacío */
@@ -1170,7 +1173,7 @@ import { Medico } from '../../../services/medico.service';
       width: 2rem;
       height: 2rem;
       border: 2px solid #e5e7eb;
-      border-top: 2px solid #3b82f6;
+      border-top: 2px solid #f5576c;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -1597,6 +1600,8 @@ export class ConsultasComponent implements OnInit {
 
   // Propiedades para autenticación
   currentUser: any = null;
+  /** Permiso para finalizar consultas (según Gestión de Perfiles) */
+  puedeFinalizarConsulta = false;
 
   constructor(
     private consultaService: ConsultaService,
@@ -1607,7 +1612,9 @@ export class ConsultasComponent implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService,
+    private snackbarService: SnackbarService
   ) {}
 
   // Propiedades para modales
@@ -1628,11 +1635,28 @@ export class ConsultasComponent implements OnInit {
     // Cargar usuario actual
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      this.loadPermisoFinalizar();
     });
-    
+    this.loadPermisoFinalizar();
     this.loadConsultas();
     this.loadMedicos();
     this.loadEspecialidades();
+  }
+
+  /** Carga el permiso para finalizar consultas (Dashboard y Gestión de Consultas). Si el API falla, se permite a administrador, secretaria y médico. */
+  loadPermisoFinalizar(): void {
+    this.consultaService.getPermisoFinalizar().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.puedeFinalizarConsulta = res.data.puedeFinalizar;
+        } else {
+          this.puedeFinalizarConsulta = this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'medico';
+        }
+      },
+      error: () => {
+        this.puedeFinalizarConsulta = this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'medico';
+      }
+    });
   }
 
   loadConsultas(): void {
@@ -1684,8 +1708,10 @@ export class ConsultasComponent implements OnInit {
         error: (error) => {
           this.errorHandler.logError(error, 'cargar consultas');
           this.loading = false;
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar consultas');
-          alert(errorMessage);
+          // No mostrar modal de error: usar snackbar (toast) que se cierra solo y no bloquea
+          if (error?.status !== 0) {
+            this.snackbarService.showError(this.errorHandler.getSafeErrorMessage(error, 'cargar consultas'), 6000);
+          }
         }
       });
   }
@@ -1803,7 +1829,7 @@ export class ConsultasComponent implements OnInit {
   editarConsulta(consulta: ConsultaWithDetails): void {
     // Verificar si la consulta está expirada
     if (this.isConsultaExpirada(consulta)) {
-      alert('⚠️ Consulta expirada\n\nNo se puede editar una consulta que ya pasó. Use la opción "Reagendar" para cambiar la fecha y hora.');
+      this.alertService.showWarning('No se puede editar una consulta que ya pasó. Use la opción "Reagendar" para cambiar la fecha y hora.');
       return;
     }
     
@@ -1837,8 +1863,13 @@ export class ConsultasComponent implements OnInit {
     this.router.navigate(['/admin/consultas', consulta.id, 'finalizar']);
   }
 
+  /** True si la consulta está en estado Completada (solo entonces se muestra el botón Finalizar). */
+  isEstadoCompletada(consulta: ConsultaWithDetails): boolean {
+    return (consulta?.estado_consulta || '').toLowerCase() === 'completada';
+  }
+
   canFinalizarConsulta(): boolean {
-    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+    return this.puedeFinalizarConsulta;
   }
 
   canReagendarConsulta(): boolean {
@@ -1929,12 +1960,11 @@ export class ConsultasComponent implements OnInit {
         console.log('✅ Consulta reagendada exitosamente:', response);
         this.closeReagendarModal();
         this.loadConsultas();
-        alert('✅ Consulta reagendada exitosamente\n\nLa consulta ha sido reagendada y se ha enviado una notificación al paciente con la nueva fecha y hora.');
+        this.alertService.showSuccess('La consulta ha sido reagendada y se ha enviado una notificación al paciente con la nueva fecha y hora.');
       },
       error: (error) => {
         this.errorHandler.logError(error, 'reagendar consulta');
-        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'reagendar consulta');
-        alert(errorMessage);
+        this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'reagendar consulta'));
       }
     });
   }

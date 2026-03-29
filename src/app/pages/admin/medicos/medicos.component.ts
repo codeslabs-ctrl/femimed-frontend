@@ -17,6 +17,7 @@ export interface Medico {
   telefono: string;
   especialidad_id: number;
   especialidad_nombre?: string;
+  sexo?: string | null;
 }
 
 @Component({
@@ -54,7 +55,8 @@ export class MedicosComponent implements OnInit {
     cedula: '',
     email: '',
     telefono: '',
-    especialidad_id: 0
+    especialidad_id: 0,
+    sexo: null
   };
 
   constructor(
@@ -168,7 +170,8 @@ export class MedicosComponent implements OnInit {
       cedula: '',
       email: '',
       telefono: '',
-      especialidad_id: 0
+      especialidad_id: 0,
+      sexo: null
     };
   }
 

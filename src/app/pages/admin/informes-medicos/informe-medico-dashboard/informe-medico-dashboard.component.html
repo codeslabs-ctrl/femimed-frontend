@@ -1,14 +1,11 @@
 <div class="informes-page">
-  <!-- Page Header -->
+  <!-- Page Header - misma estructura que Gestión de Pacientes -->
   <div class="page-header">
-    <h1>
-      <i class="fas fa-file-medical"></i>
-      Informes Médicos
-    </h1>
-    <button class="btn-new" (click)="crearInforme()">
+    <h1><i class="fas fa-file-medical"></i> Informes Médicos</h1>
+    <a routerLink="/admin/informes-medicos/nuevo" class="btn-new">
       <i class="fas fa-plus"></i>
       Nuevo Informe
-    </button>
+    </a>
   </div>
 
   <!-- Loading State -->
@@ -29,15 +26,19 @@
     </button>
   </div>
 
-  <!-- Empty State -->
+  <!-- Empty State - mismo estilo que Gestión de Pacientes -->
   <div *ngIf="!loading && !error && informes.length === 0" class="empty-state">
-    <i class="fas fa-file-medical"></i>
-    <h3>No hay informes médicos</h3>
-    <p>Comienza creando tu primer informe médico</p>
-    <button class="btn-primary" (click)="crearInforme()">
-      <i class="fas fa-plus"></i>
-      Crear Primer Informe
-    </button>
+    <div class="empty-state-content">
+      <div class="empty-state-icon"><i class="fas fa-file-medical"></i></div>
+      <div class="empty-state-title">No hay informes médicos</div>
+      <div class="empty-state-description">
+        No se encontraron informes médicos. Comienza creando tu primer informe.
+      </div>
+      <a routerLink="/admin/informes-medicos/nuevo" class="btn-new">
+        <i class="fas fa-plus"></i>
+        Crear Primer Informe
+      </a>
+    </div>
   </div>
 
   <!-- Informes Table -->
@@ -66,7 +67,7 @@
               <div class="cedula">{{ informe.pacientes?.cedula }}</div>
             </div>
           </td>
-          <td>Dr. {{ informe.medicos?.nombres }} {{ informe.medicos?.apellidos }}</td>
+          <td>{{ informe.medicos?.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{ informe.medicos?.nombres }} {{ informe.medicos?.apellidos }}</td>
           <td>
             <span class="estado-badge" [ngClass]="informe.estado">
               {{ getEstadoTexto(informe.estado) }}
@@ -92,6 +93,16 @@
                   <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                 </svg>
                 Editar
+              </button>
+              <button 
+                class="action-btn delete-btn" 
+                (click)="eliminarInforme(informe)"
+                [disabled]="!puedeEliminar(informe)"
+                [title]="puedeEliminar(informe) ? 'Eliminar informe' : 'Solo se pueden eliminar informes en borrador'">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+                Eliminar
               </button>
             </div>
           </td>

@@ -201,7 +201,7 @@ export class ReportesInformesComponent implements OnInit {
     return [
       { estado: 'Firmados', cantidad: this.estadisticas?.informes_firmados || 0, color: '#10b981' },
       { estado: 'Pendientes', cantidad: this.estadisticas?.informes_sin_firma || 0, color: '#f59e0b' },
-      { estado: 'Enviados', cantidad: 25, color: '#3b82f6' },
+      { estado: 'Enviados', cantidad: 25, color: '#f5576c' },
       { estado: 'Entregados', cantidad: 20, color: '#8b5cf6' }
     ];
   }

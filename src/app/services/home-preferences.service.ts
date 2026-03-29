@@ -1,147 +1,83 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { catchError, map, of, tap } from 'rxjs';
-import { APP_CONFIG } from '../config/app.config';
-import { User } from '../models/user.model';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { User } from '../models/user.model';
 
-export type HomeRoute =
-  | '/dashboard'
-  | '/patients'
-  | '/admin/consultas'
-  | '/admin/informes-medicos'
-  | '/admin/finanzas';
-
-export interface HomeOption {
-  label: string;
-  route: HomeRoute;
-}
-
-interface StoredPreferencesByUserId {
-  [userId: string]: {
-    homeRoute?: HomeRoute;
-    updatedAt?: string;
-  };
-}
+type PreferencesResponse = { success: boolean; data?: { preferences?: Record<string, any> }; error?: { message?: string } };
+type UpdatePreferenceResponse = { success: boolean; data?: any; error?: { message?: string } };
 
 @Injectable({ providedIn: 'root' })
 export class HomePreferencesService {
-  private readonly STORAGE_KEY = APP_CONFIG.STORAGE_KEYS.USER_PREFERENCES;
   private readonly API_URL = `${environment.apiUrl}`;
+
+  // Cache simple por usuario (evita pedir en cada guard)
+  private cache: Record<number, string | null> = {};
+
+  private allowedRoutesByRole: Record<string, Array<{ label: string; route: string }>> = {
+    finanzas: [{ label: 'Panel de Finanzas', route: '/admin/finanzas' }],
+    medico: [
+      { label: 'Dashboard', route: '/dashboard' },
+      { label: 'Gestión de Pacientes', route: '/patients' },
+      { label: 'Gestión de Consultas', route: '/admin/consultas' },
+      { label: 'Informes Médicos', route: '/admin/informes-medicos' },
+      { label: 'Panel de Finanzas', route: '/admin/finanzas' }
+    ],
+    secretaria: [
+      { label: 'Dashboard', route: '/dashboard' },
+      { label: 'Gestión de Pacientes', route: '/patients' },
+      { label: 'Gestión de Consultas', route: '/admin/consultas' },
+      { label: 'Informes Médicos', route: '/admin/informes-medicos' }
+    ],
+    administrador: [
+      { label: 'Dashboard', route: '/dashboard' },
+      { label: 'Gestión de Pacientes', route: '/patients' },
+      { label: 'Gestión de Consultas', route: '/admin/consultas' },
+      { label: 'Informes Médicos', route: '/admin/informes-medicos' },
+      { label: 'Mensajes', route: '/admin/mensajes' },
+      { label: 'Estadísticas', route: '/statistics' }
+    ]
+  };
 
   constructor(private http: HttpClient) {}
 
-  getAllowedHomeOptions(user: User | null): HomeOption[] {
-    if (!user?.rol) return [{ label: 'Dashboard', route: '/dashboard' }];
-
-    switch (user.rol) {
-      case 'finanzas':
-        return [{ label: 'Panel de Finanzas', route: '/admin/finanzas' }];
-      case 'medico':
-      case 'secretaria':
-      case 'administrador':
-        return [
-          { label: 'Dashboard', route: '/dashboard' },
-          { label: 'Gestión de Consultas', route: '/admin/consultas' },
-          { label: 'Gestión de Pacientes', route: '/patients' },
-          { label: 'Informes Médicos', route: '/admin/informes-medicos' }
-        ];
-      default:
-        return [{ label: 'Dashboard', route: '/dashboard' }];
-    }
+  getAllowedHomesForRole(role: string | undefined | null): Array<{ label: string; route: string }> {
+    if (!role) return [{ label: 'Dashboard', route: '/dashboard' }];
+    return this.allowedRoutesByRole[role] || [{ label: 'Dashboard', route: '/dashboard' }];
   }
 
-  canChooseHome(user: User | null): boolean {
-    return this.getAllowedHomeOptions(user).length > 1;
+  getDefaultHomeForRole(role: string | undefined | null): string {
+    if (role === 'finanzas') return '/admin/finanzas';
+    return '/dashboard';
   }
 
-  getPreferredHomeRoute(user: User | null): HomeRoute | null {
-    if (!user?.id) return null;
-    const store = this.readStore();
-    return store[String(user.id)]?.homeRoute || null;
-  }
+  getPreferredHomeRoute(user: User | null): Observable<string> {
+    if (!user?.id) return of(this.getDefaultHomeForRole(user?.rol));
 
-  setPreferredHomeRoute(user: User, route: HomeRoute): void {
-    const allowed = this.getAllowedHomeOptions(user).map(o => o.route);
-    if (!allowed.includes(route)) {
-      // No guardar rutas a las que el usuario no tiene acceso.
-      return;
-    }
+    const cached = this.cache[user.id];
+    if (cached) return of(cached);
 
-    const store = this.readStore();
-    store[String(user.id)] = {
-      ...store[String(user.id)],
-      homeRoute: route,
-      updatedAt: new Date().toISOString()
-    };
-    this.writeStore(store);
-  }
-
-  /**
-   * Carga preferencias desde backend y actualiza el cache local.
-   * Si falla, no rompe el flujo: simplemente no actualiza nada.
-   */
-  syncFromServer(user: User | null) {
-    if (!user?.id) return of(null);
-    const token = localStorage.getItem('femimed_token');
-    if (!token) return of(null);
-
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    return this.http.get<any>(`${this.API_URL}/users/me/preferences`, { headers }).pipe(
-      map(resp => (resp?.success ? resp?.data?.preferences : null) as Record<string, any> | null),
-      tap((prefs) => {
-        if (!prefs) return;
-        const home = prefs['pagina_principal'];
-        if (typeof home === 'string') {
-          // Solo guardar si es una ruta permitida para el rol.
-          this.setPreferredHomeRoute(user, home as HomeRoute);
-        }
+    return this.http.get<PreferencesResponse>(`${this.API_URL}/users/me/preferences`).pipe(
+      map(resp => {
+        const saved = resp?.data?.preferences?.['pagina_principal'];
+        const route = typeof saved === 'string' ? saved : null;
+        const allowed = this.getAllowedHomesForRole(user.rol).map(x => x.route);
+        if (route && allowed.includes(route)) return route;
+        return this.getDefaultHomeForRole(user.rol);
       }),
-      map(() => true),
-      catchError(() => of(null))
+      tap(route => {
+        this.cache[user.id] = route;
+      }),
+      catchError(() => of(this.getDefaultHomeForRole(user.rol)))
     );
   }
 
-  /**
-   * Guarda la home en backend (BD) y actualiza cache local.
-   */
-  saveHomeRouteToServer(user: User, route: HomeRoute) {
-    const token = localStorage.getItem('femimed_token');
-    if (!token) return of(null);
-
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    return this.http.put<any>(`${this.API_URL}/users/me/preferences`, { key: 'pagina_principal', value: route }, { headers }).pipe(
-      tap((resp) => {
-        if (resp?.success) {
-          this.setPreferredHomeRoute(user, route);
-        }
-      }),
-      map(() => true),
-      catchError(() => of(null))
+  setPreferredHomeRoute(route: string): Observable<boolean> {
+    return this.http.put<UpdatePreferenceResponse>(`${this.API_URL}/users/me/preferences`, { key: 'pagina_principal', value: route }).pipe(
+      map(resp => !!resp?.success),
+      catchError(() => of(false))
     );
-  }
-
-  resolveHomeRoute(user: User | null): HomeRoute {
-    const allowed = this.getAllowedHomeOptions(user);
-    const preferred = this.getPreferredHomeRoute(user);
-    if (preferred && allowed.some(o => o.route === preferred)) return preferred;
-    return allowed[0]?.route || '/dashboard';
-  }
-
-  private readStore(): StoredPreferencesByUserId {
-    try {
-      const raw = localStorage.getItem(this.STORAGE_KEY);
-      if (!raw) return {};
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== 'object') return {};
-      return parsed as StoredPreferencesByUserId;
-    } catch {
-      return {};
-    }
-  }
-
-  private writeStore(store: StoredPreferencesByUserId): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(store));
   }
 }
 

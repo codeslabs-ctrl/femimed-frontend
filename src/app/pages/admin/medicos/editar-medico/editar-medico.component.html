@@ -39,6 +39,18 @@
             [disabled]="saving"
             placeholder="Ingrese los apellidos">
         </div>
+        <div class="form-group">
+          <label class="form-label">Sexo</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="medicoData.sexo"
+            name="sexo"
+            [disabled]="saving">
+            <option [ngValue]="null">Seleccionar</option>
+            <option value="Masculino">Masculino (Dr.)</option>
+            <option value="Femenino">Femenino (Dra.)</option>
+          </select>
+        </div>
         <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
           <label class="form-label">Cédula</label>
           <input 
@@ -117,6 +129,28 @@
               {{ especialidad.nombre_especialidad }}
             </option>
           </select>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Titulación / especialidades</label>
+          <textarea
+            class="form-input"
+            [(ngModel)]="medicoData.titulacion"
+            name="titulacion"
+            rows="2"
+            [disabled]="saving"
+            placeholder="Ej: MÉDICO CIRUJANO - UCV RADIONCÓLOGO & MÉDICO NUCLEAR"></textarea>
+          <small class="form-text text-muted">Opcional. Para récipe e informes.</small>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Contacto redes</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="medicoData.contacto_redes"
+            name="contacto_redes"
+            [disabled]="saving"
+            placeholder="Ej: @usuario | WhatsApp +58 414-101.26.40">
+          <small class="form-text text-muted">Opcional. WhatsApp, Instagram, etc. para récipe e informes.</small>
         </div>
       </div>
     </div>
@@ -197,6 +231,77 @@
               </div>
             </div>
 
+            <!-- Sección Sello húmedo (misma carpeta que la firma en el backend) -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="card border-primary">
+                  <div class="card-header bg-primary text-white">
+                    <h6 class="card-title mb-0">
+                      <i class="fas fa-stamp me-2"></i>
+                      Sello húmedo
+                    </h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6 mb-3" *ngIf="selloActualUrl">
+                        <label class="form-label">Sello actual:</label>
+                        <div class="firma-actual">
+                          <img
+                            [src]="selloActualUrl"
+                            alt="Sello actual"
+                            class="firma-preview"
+                            (error)="selloActualUrl = null">
+                        </div>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="selloFile" class="form-label">
+                          <i class="fas fa-upload me-1"></i>
+                          {{ medicoData.sello_humedo ? 'Cambiar sello' : 'Subir sello húmedo' }}
+                        </label>
+                        <input
+                          type="file"
+                          class="form-control"
+                          id="selloFile"
+                          accept="image/*"
+                          (change)="onSelloSelected($event)"
+                          [disabled]="saving || uploadingSello">
+                        <small class="form-text text-muted">
+                          Misma carpeta que la firma. PNG, JPG, GIF, WEBP (máx. 2MB)
+                        </small>
+                      </div>
+                    </div>
+                    <div class="row" *ngIf="selloPreview">
+                      <div class="col-12">
+                        <label class="form-label">Vista previa:</label>
+                        <div class="firma-preview-container">
+                          <img [src]="selloPreview" alt="Vista previa sello" class="firma-preview">
+                          <div class="firma-actions">
+                            <button
+                              type="button"
+                              class="btn btn-success btn-sm"
+                              (click)="uploadSello()"
+                              [disabled]="uploadingSello">
+                              <i class="fas fa-upload me-1" *ngIf="!uploadingSello"></i>
+                              <i class="fas fa-spinner fa-spin me-1" *ngIf="uploadingSello"></i>
+                              {{ uploadingSello ? 'Subiendo...' : 'Subir sello' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              (click)="removeSello()"
+                              [disabled]="uploadingSello">
+                              <i class="fas fa-times me-1"></i>
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
     <div class="form-actions">
       <button 
         type="button" 
@@ -214,23 +319,4 @@
       </button>
     </div>
   </form>
-</div>
-
-<!-- Snackbar para mensajes -->
-<div 
-  class="snackbar" 
-  [class.show]="showSnackbar" 
-  [class.success]="snackbarType === 'success'"
-  [class.error]="snackbarType === 'error'">
-  <div class="snackbar-content">
-    <i class="fas fa-check-circle me-2" *ngIf="snackbarType === 'success'"></i>
-    <i class="fas fa-exclamation-circle me-2" *ngIf="snackbarType === 'error'"></i>
-    {{ snackbarMessage }}
-  </div>
-  <button 
-    type="button" 
-    class="btn-close" 
-    (click)="hideSnackbar()">
-    <i class="fas fa-times"></i>
-  </button>
 </div>

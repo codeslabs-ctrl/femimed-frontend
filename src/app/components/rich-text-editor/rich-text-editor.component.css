@@ -176,7 +176,7 @@
 }
 
 .editor-container .ql-editor a:hover {
-  color: #1d4ed8;
+  color: var(--color-primary-dark);
 }
 
 .editor-container .ql-editor img {

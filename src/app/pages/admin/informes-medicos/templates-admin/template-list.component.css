@@ -253,8 +253,8 @@
 }
 
 .tipo-consulta {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
 }
 
 .tipo-examen {
@@ -348,12 +348,12 @@
 }
 
 .view-btn {
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .view-btn:hover {
-  background-color: #2563eb;
+  background-color: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }

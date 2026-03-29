@@ -6,7 +6,8 @@ import { environment } from '../../environments/environment';
 export interface FirmaResponse {
   success: boolean;
   data?: {
-    firma_digital: string;
+    firma_digital?: string;
+    sello_humedo?: string;
   };
   error?: {
     message: string;
@@ -36,10 +37,17 @@ export class FirmaService {
 
   /**
    * Obtener la ruta de la firma digital de un médico
-   * @param medicoId ID del médico
-   * @returns Observable con la respuesta
    */
   obtenerFirma(medicoId: number): Observable<FirmaResponse> {
     return this.http.get<FirmaResponse>(`${this.apiUrl}/${medicoId}`);
+  }
+
+  /**
+   * Subir sello húmedo de un médico (se guarda en la misma carpeta que la firma)
+   */
+  subirSello(medicoId: number, selloFile: File): Observable<FirmaResponse> {
+    const formData = new FormData();
+    formData.append('sello', selloFile);
+    return this.http.post<FirmaResponse>(`${this.apiUrl}/${medicoId}/sello/subir`, formData);
   }
 }

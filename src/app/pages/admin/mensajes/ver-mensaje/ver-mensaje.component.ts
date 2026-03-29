@@ -116,7 +116,7 @@ import { CommonModule } from '@angular/common';
       align-items: center;
       padding: 20px 24px;
       border-bottom: 1px solid #e5e7eb;
-      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
       border-radius: 12px 12px 0 0;
     }
@@ -199,8 +199,8 @@ import { CommonModule } from '@angular/common';
     }
 
     .tipo-general {
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(245, 87, 108, 0.12);
+      color: var(--color-primary-dark);
     }
 
     .tipo-urgente {

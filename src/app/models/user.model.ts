@@ -7,6 +7,7 @@ export interface User {
   nombres?: string;
   apellidos?: string;
   especialidad?: string;
+  sexo?: string;
   first_login?: boolean;
   password_changed_at?: string;
 }

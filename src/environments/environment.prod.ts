@@ -4,6 +4,8 @@ export const environment = {
   // En este servidor, el vhost femimed.codes-labs.com proxyea /api -> http://localhost:3000/api
   // (no existe api.femimed.codes-labs.com).
   apiUrl: 'https://femimed.codes-labs.com/api/v1',
+  chatMenuEnabled: false,
+  chatApiUrl: '',
   appName: 'FemiMed Dashboard',
   version: '1.0.0',
   pagination: {

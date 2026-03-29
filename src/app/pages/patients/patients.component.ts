@@ -6,6 +6,7 @@ import { PatientService } from '../../services/patient.service';
 import { HistoricoService } from '../../services/historico.service';
 import { AuthService } from '../../services/auth.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { AlertService } from '../../services/alert.service';
 import { User } from '../../models/user.model';
 import { Patient, PatientFilters } from '../../models/patient.model';
 import { APP_CONFIG } from '../../config/app.config';
@@ -44,6 +45,17 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
               (input)="onCedulaSearchChange()"
               placeholder="V-12345678">
           </div>
+          <div class="form-group form-group-patologia">
+            <label class="form-label">Buscar por patología / dolencia</label>
+            <input 
+              type="text" 
+              class="form-input" 
+              [(ngModel)]="searchPatologia"
+              (input)="onPatologiaSearchChange()"
+              placeholder="Ej: cáncer de colon, diabetes, hipertensión">
+          </div>
+        </div>
+        <div class="filters-grid filters-grid-other" *ngIf="showOtherFilters">
           <div class="form-group">
             <label class="form-label">Sexo</label>
             <select class="form-input" [(ngModel)]="filters.sexo" (change)="applyFilters()">
@@ -72,7 +84,10 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
           </div>
         </div>
         <div class="filters-actions">
-          <button class="btn btn-clear" (click)="clearFilters()">
+          <button type="button" class="btn btn-other-filters" (click)="showOtherFilters = !showOtherFilters">
+            {{ showOtherFilters ? '▲ Ocultar otros filtros' : '▼ Otros filtros' }}
+          </button>
+          <button type="button" class="btn btn-clear" (click)="clearFilters()">
             🗑️ Limpiar Filtros
           </button>
         </div>
@@ -133,15 +148,18 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                   </a>
                   <button 
                     *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador' || currentUser?.rol === 'admin'"
-                    class="action-btn history-btn" 
-                    [class.has-history]="tieneHistoriaMedica(patient)"
-                    (click)="gestionarHistoriaMedica(patient)" 
-                    [title]="getHistoriaTooltip(patient)">
+                    [class.action-btn]="true"
+                    [class.history-btn]="patient.tiene_consulta"
+                    [class.agendar-btn]="!patient.tiene_consulta"
+                    [class.has-history]="patient.tiene_consulta"
+                    (click)="patient.tiene_consulta ? gestionarHistoriaMedica(patient) : irANuevaConsulta(patient)" 
+                    [title]="patient.tiene_consulta ? getHistoriaTooltip(patient) : 'Ir a Nueva Consulta con este paciente preseleccionado'">
                     <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                     </svg>
-                    {{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}
-                    <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
+                    <span *ngIf="patient.tiene_consulta">{{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}</span>
+                    <span *ngIf="!patient.tiene_consulta">Agendar una Consulta</span>
+                    <span *ngIf="patient.tiene_consulta" class="history-indicator">✓</span>
                   </button>
                   <button 
                     class="action-btn" 
@@ -220,15 +238,18 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
               </a>
               <button 
                 *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador' || currentUser?.rol === 'admin'"
-                class="action-btn history-btn" 
-                [class.has-history]="tieneHistoriaMedica(patient)"
-                (click)="gestionarHistoriaMedica(patient)" 
-                [title]="getHistoriaTooltip(patient)">
+                [class.action-btn]="true"
+                [class.history-btn]="patient.tiene_consulta"
+                [class.agendar-btn]="!patient.tiene_consulta"
+                [class.has-history]="patient.tiene_consulta"
+                (click)="patient.tiene_consulta ? gestionarHistoriaMedica(patient) : irANuevaConsulta(patient)" 
+                [title]="patient.tiene_consulta ? getHistoriaTooltip(patient) : 'Ir a Nueva Consulta con este paciente preseleccionado'">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                 </svg>
-                {{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}
-                <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
+                <span *ngIf="patient.tiene_consulta">{{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}</span>
+                <span *ngIf="!patient.tiene_consulta">Agendar una Consulta</span>
+                <span *ngIf="patient.tiene_consulta" class="history-indicator">✓</span>
               </button>
               <button 
                 class="action-btn" 
@@ -303,6 +324,9 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     .patients-page {
       max-width: 1400px;
       margin: 0 auto;
+      padding: 2rem;
+      background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+      min-height: 100vh;
     }
 
     .page-header {
@@ -310,21 +334,28 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
+      padding: 1.75rem 2rem;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .page-header h1 {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      color: #1e293b;
+      color: #0f172a;
       margin: 0;
+      letter-spacing: -0.02em;
     }
 
     .filters-section {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 1.75rem;
       margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .filters-grid {
@@ -334,16 +365,35 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       margin-bottom: 1rem;
     }
 
+    .filters-grid-other {
+      margin-top: 0.5rem;
+    }
     .filters-actions {
       display: flex;
       gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn-other-filters {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+      background: #fff;
+      color: #495057;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-other-filters:hover {
+      background: #f8f9fa;
+      border-color: #adb5bd;
     }
 
     .patients-table {
-      background: white;
-      border-radius: 0.75rem;
-      overflow: hidden;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      border-radius: 16px;
+      overflow-x: auto;
+      overflow-y: visible;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .table {
@@ -354,13 +404,13 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     .table th {
       background-color: #f8fafc;
       font-weight: 600;
-      color: #374151;
-      padding: 0.75rem 0.5rem;
+      color: #334155;
+      padding: 0.875rem 0.75rem;
       text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
 
     .table td {
@@ -369,6 +419,12 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       vertical-align: middle;
       font-size: 0.8rem;
       line-height: 1.4;
+    }
+
+    .table th:last-child,
+    .table td:last-child {
+      min-width: 280px;
+      vertical-align: top;
     }
 
     .table tbody tr:nth-child(even) {
@@ -394,7 +450,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
 
     .sex-badge.female {
       background-color: #E8F0F8;
-      color: #5A7A9A;
+      color: #e64f62;
     }
 
     .cedula-badge {
@@ -410,10 +466,11 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
 
     .action-buttons {
       display: flex;
-      gap: 0.25rem;
-      flex-wrap: nowrap;
-      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      justify-content: flex-start;
       align-items: center;
+      max-width: 420px;
     }
 
     .action-btn {
@@ -440,12 +497,12 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     }
 
     .view-btn {
-      background-color: #3b82f6;
+      background-color: #f5576c;
       color: white;
     }
 
     .view-btn:hover {
-      background-color: #2563eb;
+      background-color: #e64f62;
       transform: translateY(-1px);
       box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
@@ -489,6 +546,17 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       border-left: 4px solid #34d399;
     }
 
+    .agendar-btn {
+      background: #f5576c;
+      color: white;
+    }
+
+    .agendar-btn:hover {
+      background: #e64f62;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+
     .history-indicator {
       position: absolute;
       top: -2px;
@@ -520,8 +588,9 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       min-height: 400px;
       padding: 3rem;
       background: #f8fafc;
-      border-radius: 1rem;
+      border-radius: 16px;
       margin: 2rem;
+      border: 1px dashed #e2e8f0;
     }
 
     .empty-state-icon {
@@ -647,9 +716,10 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
 
     /* Estilos para las tarjetas móviles */
     .patient-card {
-      background: white;
-      border-radius: 0.75rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       margin-bottom: 1rem;
       overflow: hidden;
     }
@@ -810,6 +880,9 @@ export class PatientsComponent implements OnInit {
   pagination: any = null;
   searchName = '';
   searchCedula = '';
+  searchPatologia = '';
+  private patologiaSearchTimeout: any = null;
+  showOtherFilters = false;
   filters: PatientFilters = {};
   pageSizeOptions = APP_CONFIG.PAGINATION.PAGE_SIZE_OPTIONS;
   currentUser: User | null = null;
@@ -818,12 +891,15 @@ export class PatientsComponent implements OnInit {
   showConfirmModal: boolean = false;
   patientToDelete: Patient | null = null;
 
+  error: string | null = null;
+
   constructor(
     private patientService: PatientService,
     private historicoService: HistoricoService,
     private authService: AuthService,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -836,9 +912,16 @@ export class PatientsComponent implements OnInit {
 
   loadPatients() {
     this.loading = true;
-    
+    this.error = null;
+
     if (!this.currentUser) {
       this.loading = false;
+      return;
+    }
+
+    // Si hay búsqueda por patología activa, usar esa en lugar del listado normal
+    if (this.searchPatologia.trim()) {
+      this.runPatologiaSearch();
       return;
     }
 
@@ -896,9 +979,6 @@ export class PatientsComponent implements OnInit {
           if (response.success) {
             this.patients = response.data;
             this.pagination = null;
-            // Mantener consistencia con loadPatients(): hidratar historico_id para que el botón
-            // "Editar/Crear Historia" refleje el estado real incluso al filtrar.
-            this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
           }
         },
         error: (error) => {
@@ -917,8 +997,6 @@ export class PatientsComponent implements OnInit {
           if (response.success) {
             this.patients = response.data;
             this.pagination = null;
-            // Igual que en loadPatients(): cargar historico_id para mantener el estado del botón de historia.
-            this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
           }
         },
         error: (error) => {
@@ -930,6 +1008,54 @@ export class PatientsComponent implements OnInit {
     }
   }
 
+  onPatologiaSearchChange() {
+    if (this.patologiaSearchTimeout) clearTimeout(this.patologiaSearchTimeout);
+    const term = this.searchPatologia.trim();
+    if (!term) {
+      this.loadPatients();
+      return;
+    }
+    this.patologiaSearchTimeout = setTimeout(() => this.runPatologiaSearch(), 400);
+  }
+
+  /**
+   * Ejecuta la búsqueda por patología/dolencia (usa searchPatologia).
+   * Acepta response.data como array o response.data.patients por si el backend devuelve formato distinto.
+   */
+  private runPatologiaSearch() {
+    const term = this.searchPatologia.trim();
+    if (!term) return;
+    this.loading = true;
+    this.error = null;
+    // No filtrar por medico_id: la búsqueda por patología devuelve todos los pacientes que coincidan
+    this.patientService.searchPatientsByPatologia(term, undefined).subscribe({
+      next: (response) => {
+        let list: unknown = null;
+        if (response && (response as any).success !== false) {
+          const data = (response as any).data;
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && Array.isArray((data as any).patients)) {
+            list = (data as any).patients;
+          }
+        }
+        this.patients = Array.isArray(list) ? list : [];
+        this.pagination = null;
+        if (this.patients.length > 0) {
+          this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorHandler.logError(error, 'buscar pacientes por patología');
+        this.patients = [];
+        this.pagination = null;
+        this.error = this.errorHandler.getSafeErrorMessage(error, 'buscar por patología');
+        this.loading = false;
+      }
+    });
+  }
+
   applyFilters() {
     this.currentPage = 1;
     this.loadPatients();
@@ -939,6 +1065,8 @@ export class PatientsComponent implements OnInit {
     this.filters = {};
     this.searchName = '';
     this.searchCedula = '';
+    this.searchPatologia = '';
+    if (this.patologiaSearchTimeout) clearTimeout(this.patologiaSearchTimeout);
     this.currentPage = 1;
     this.loadPatients();
   }
@@ -966,7 +1094,7 @@ export class PatientsComponent implements OnInit {
         error: (error) => {
           this.errorHandler.logError(error, 'verificar estado del paciente');
           const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'verificar estado del paciente');
-          alert(errorMessage);
+          this.alertService.showError(errorMessage);
         }
       });
     }
@@ -975,27 +1103,25 @@ export class PatientsComponent implements OnInit {
   togglePatientStatus(patient: Patient) {
     const newStatus = !patient.activo;
     const action = newStatus ? 'activar' : 'desactivar';
-    
-    if (confirm(`¿Estás seguro de que quieres ${action} a ${patient.nombres} ${patient.apellidos}?`)) {
+    this.alertService.confirm(`¿Estás seguro de que quieres ${action} a ${patient.nombres} ${patient.apellidos}?`, `¿${action} paciente?`).then((ok) => {
+      if (!ok) return;
       this.patientService.togglePatientStatus(patient.id!, newStatus).subscribe({
         next: (response) => {
           if (response.success) {
             patient.activo = newStatus;
             this.errorHandler.logInfo(`Paciente ${action}do exitosamente`, response);
-            alert(`✅ Paciente ${action}do exitosamente`);
-            this.loadPatients(); // Recargar la lista
+            this.alertService.showSuccess(`Paciente ${action}do exitosamente`);
+            this.loadPatients();
           } else {
-            const errorMessage = this.errorHandler.getSafeErrorMessage(response, `${action} paciente`);
-            alert(errorMessage);
+            this.alertService.showError(this.errorHandler.getSafeErrorMessage(response, `${action} paciente`));
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, `${action} paciente`);
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, `${action} paciente`);
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, `${action} paciente`));
         }
       });
-    }
+    });
   }
 
   onConfirmDelete() {
@@ -1004,18 +1130,16 @@ export class PatientsComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.errorHandler.logInfo('Paciente eliminado exitosamente', response);
-            alert('✅ Paciente eliminado exitosamente');
+            this.alertService.showSuccess('Paciente eliminado exitosamente');
             this.loadPatients();
             this.closeConfirmModal();
           } else {
-            const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'eliminar paciente');
-            alert(errorMessage);
+            this.alertService.showError(this.errorHandler.getSafeErrorMessage(response, 'eliminar paciente'));
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, 'eliminar paciente');
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar paciente');
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'eliminar paciente'));
         }
       });
     }
@@ -1070,7 +1194,13 @@ export class PatientsComponent implements OnInit {
 
   // Método para gestionar la historia médica
   gestionarHistoriaMedica(patient: Patient): void {
-    // Navegar al componente de historia médica
     this.router.navigate(['/patients', patient.id, 'historia-medica']);
+  }
+
+  // Navegar a Nueva Consulta con el paciente preseleccionado
+  irANuevaConsulta(patient: Patient): void {
+    this.router.navigate(['/admin/consultas/nueva'], {
+      queryParams: { paciente_id: patient.id }
+    });
   }
 }

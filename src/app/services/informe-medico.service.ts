@@ -260,7 +260,7 @@ export class InformeMedicoService {
   obtenerEstadoColor(estado: string): string {
     const colores: { [key: string]: string } = {
       'borrador': '#6b7280',
-      'finalizado': '#3b82f6',
+      'finalizado': '#f5576c',
       'firmado': '#10b981',
       'enviado': '#8b5cf6'
     };

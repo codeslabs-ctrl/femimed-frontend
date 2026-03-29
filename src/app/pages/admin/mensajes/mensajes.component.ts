@@ -301,6 +301,7 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                               </th>
                               <th>Nombre</th>
                               <th>Email</th>
+                              <th>Teléfono</th>
                               <th>Cédula</th>
                               <th>Edad</th>
                               <th>Sexo</th>
@@ -318,7 +319,8 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                               <td>
                           <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
                               </td>
-                              <td>{{ paciente.email }}</td>
+                              <td>{{ paciente.email || '-' }}</td>
+                              <td>{{ paciente.telefono || '-' }}</td>
                               <td>{{ paciente.cedula || '-' }}</td>
                               <td>{{ paciente.edad || '-' }}</td>
                               <td>{{ paciente.sexo || '-' }}</td>
@@ -852,7 +854,7 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
     }
 
     .btn-new {
-      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
     }
 
@@ -1046,7 +1048,7 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
       width: 1rem;
       height: 1rem;
       border: 2px solid #e2e8f0;
-      border-top: 2px solid #3b82f6;
+      border-top: 2px solid #f5576c;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-right: 0.5rem;

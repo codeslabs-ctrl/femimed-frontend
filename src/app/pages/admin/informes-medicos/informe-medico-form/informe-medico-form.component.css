@@ -105,6 +105,137 @@
   padding: 1.5rem;
 }
 
+.section-description {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* Panel Incluir en el informe */
+.seccion-incluir .section-header {
+  background: #eff6ff;
+  border-bottom-color: rgba(240, 147, 251, 0.18);
+}
+
+.incluir-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-bottom: 1rem;
+}
+
+.incluir-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+}
+
+.incluir-check input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+}
+
+.incluir-check.disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.incluir-check.disabled input {
+  cursor: not-allowed;
+}
+
+.check-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.incluir-antecedentes-add {
+  margin-top: 0.25rem;
+}
+
+/* Controles del paciente (checkboxes o dropdown) */
+.incluir-controles {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+.incluir-controles-label {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.incluir-controles-label .check-hint {
+  margin-left: 0.25rem;
+}
+.incluir-controles .controles-checks {
+  margin-top: 0.5rem;
+}
+.incluir-controles-dropdown {
+  margin-top: 0.5rem;
+}
+.controles-add-row {
+  margin-bottom: 0.75rem;
+}
+.controles-add-row .controles-select {
+  max-width: 100%;
+  width: 100%;
+}
+.controles-incluidos-list {
+  margin-top: 0.5rem;
+}
+.controles-incluidos-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+}
+.controles-incluidos-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.controles-incluidos-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  background: #eff6ff;
+  border: 1px solid rgba(240, 147, 251, 0.18);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+.btn-quitar-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  background: #dc2626;
+  color: white;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+.btn-quitar-control:hover {
+  background: #b91c1c;
+}
+
+.incluir-actions {
+  margin-top: 0.5rem;
+}
+
 /* Form Grid */
 .form-grid {
   display: grid;
@@ -365,7 +496,7 @@
   margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1976d2;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -399,7 +530,7 @@
 }
 
 .patient-info h4 i {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .doctor-info h4 i {

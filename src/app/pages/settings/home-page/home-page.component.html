@@ -1,0 +1,23 @@
+<div class="settings-page">
+  <div class="header">
+    <div class="title">Preferencias</div>
+    <div class="subtitle">Selecciona tu página principal al iniciar sesión.</div>
+  </div>
+
+  <div class="card">
+    <label class="label">Página principal</label>
+    <select class="select" [(ngModel)]="selectedRoute">
+      <option *ngFor="let o of options" [value]="o.route">{{ o.label }}</option>
+    </select>
+
+    <button class="btn" (click)="save()" [disabled]="isSaving">
+      {{ isSaving ? 'Guardando...' : 'Guardar' }}
+    </button>
+
+    <div class="msg" *ngIf="message">{{ message }}</div>
+  </div>
+
+  <a class="back" routerLink="/dashboard">Volver al dashboard</a>
+</div>
+
+

@@ -1,6 +1,9 @@
 .patient-form-page {
   max-width: 800px;
   margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+  min-height: 100vh;
 }
 
 .page-header {
@@ -8,13 +11,19 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  padding: 1.75rem 2rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .page-header h1 {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .mode-indicator {
@@ -36,10 +45,11 @@
 }
 
 .patient-form {
-  background: white;
-  border-radius: 0.75rem;
+  background: #ffffff;
+  border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .form-section {
@@ -115,14 +125,14 @@
 }
 
 .action-buttons .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary-solid);
   color: white;
   border: none;
 }
 
 .action-buttons .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.35);
 }
 
 .form-grid {
@@ -153,7 +163,7 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -370,7 +380,7 @@
 
 .archivo-icono {
   font-size: 2rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 
@@ -404,8 +414,8 @@
 }
 
 .archivo-tipo {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
   padding: 0.25rem 0.5rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
@@ -442,7 +452,7 @@
 }
 
 .btn-download {
-  background: #3b82f6;
+  background: var(--color-primary);
 }
 
 .btn-edit {
@@ -454,7 +464,7 @@
 }
 
 .btn-download:hover {
-  background: #2563eb;
+  background: var(--color-primary-dark);
   transform: translateY(-1px);
 }
 
@@ -496,6 +506,110 @@
 
 .info-message strong {
   color: #0c4a6e;
+}
+
+/* Alert elegante (igual que en Gestión de Médicos) */
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: alertFadeIn 0.2s ease;
+}
+
+@keyframes alertFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.alert-box {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem 2.25rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: alertSlideIn 0.3s ease;
+}
+
+@keyframes alertSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.alert-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+
+.alert-box.alert-success .alert-icon {
+  color: #059669;
+}
+
+.alert-box.alert-error .alert-icon {
+  color: #dc2626;
+}
+
+.alert-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+}
+
+.alert-message {
+  font-size: 0.9375rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1.5rem 0;
+}
+
+.alert-btn {
+  display: inline-block;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: white;
+  background: var(--gradient-primary-solid);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.alert-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.alert-box.alert-success .alert-btn {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+.alert-box.alert-success .alert-btn:hover {
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+
+.alert-box.alert-error .alert-btn {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.alert-box.alert-error .alert-btn:hover {
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
 @media (max-width: 768px) {

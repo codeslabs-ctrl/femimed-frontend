@@ -182,7 +182,7 @@ export class EnviarInformeComponent implements OnInit {
         <title>Vista Previa - Envío de Informe</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-          .header { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+          .header { border-bottom: 2px solid #f5576c; padding-bottom: 10px; margin-bottom: 20px; }
           .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
           .envio-section { background: #e3f2fd; padding: 20px; border-radius: 5px; border-left: 4px solid #2196f3; }
           .metodo-envio { background: #f3e5f5; padding: 15px; border-radius: 5px; border-left: 4px solid #9c27b0; }

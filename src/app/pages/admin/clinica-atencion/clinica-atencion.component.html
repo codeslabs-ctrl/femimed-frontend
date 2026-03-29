@@ -1,0 +1,100 @@
+<div class="clinica-atencion-page">
+  <div class="page-header">
+    <h1>
+      <i class="fas fa-building"></i>
+      Clínicas de atención
+    </h1>
+    <p class="page-description">Sedes o puntos de atención para consultas e informes (nombre, dirección, logo).</p>
+    <button class="btn btn-new" (click)="openAdd()">
+      ➕ Nueva clínica de atención
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <p>Cargando...</p>
+  </div>
+
+  <div *ngIf="!loading" class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Logo (ruta)</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of list">
+          <td>{{ c.id }}</td>
+          <td>{{ c.nombre_clinica }}</td>
+          <td>{{ c.direccion_clinica || '—' }}</td>
+          <td>{{ c.logo_path || '—' }}</td>
+          <td>{{ c.activo ? 'Sí' : 'No' }}</td>
+          <td>
+            <button class="btn btn-sm btn-edit" (click)="openEdit(c)">Editar</button>
+            <button class="btn btn-sm btn-delete" (click)="requestDelete(c)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="list.length === 0" class="no-data">
+      <p>No hay clínicas de atención. Cree una para usarla en consultas e informes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear/editar -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditing ? 'Editar clínica de atención' : 'Nueva clínica de atención' }}</h2>
+      <button type="button" class="modal-close" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <div class="form-group">
+        <label>Nombre clínica *</label>
+        <input type="text" class="form-input" [(ngModel)]="item.nombre_clinica" placeholder="Ej. Consultorio Principal">
+      </div>
+      <div class="form-group">
+        <label>Dirección</label>
+        <textarea class="form-input" rows="3" [(ngModel)]="item.direccion_clinica" placeholder="Dirección de la sede"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Ruta del logo</label>
+        <input type="text" class="form-input" [(ngModel)]="item.logo_path" placeholder="Ej. ./assets/logos/clinica/logo.png">
+      </div>
+      <div class="form-group" *ngIf="isEditing">
+        <label>
+          <input type="checkbox" [(ngModel)]="item.activo"> Activo
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving || !(item.nombre_clinica ?? '').trim()">
+        {{ saving ? 'Guardando...' : (isEditing ? 'Guardar' : 'Crear') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmar eliminar -->
+<div class="modal-overlay" *ngIf="confirmDelete" (click)="cancelDelete()">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Eliminar clínica de atención</h2>
+      <button type="button" class="modal-close" (click)="cancelDelete()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>¿Está seguro de eliminar <strong>{{ confirmDeleteNombre }}</strong>?</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="cancelDelete()">Cancelar</button>
+      <button type="button" class="btn btn-danger" (click)="confirmDeleteOk()">Eliminar</button>
+    </div>
+  </div>
+</div>

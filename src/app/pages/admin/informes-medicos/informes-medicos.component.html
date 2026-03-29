@@ -238,9 +238,10 @@
                         <i class="fas fa-paper-plane"></i>
                       </button>
                       
-                      <!-- Eliminar -->
+                      <!-- Eliminar (visible siempre; deshabilitado si no está en borrador) -->
                       <button class="btn btn-sm delete-btn" (click)="eliminarInforme(informe)" 
-                              *ngIf="puedeEliminar(informe)" title="Eliminar informe">
+                              [disabled]="!puedeEliminar(informe)" 
+                              [title]="puedeEliminar(informe) ? 'Eliminar informe' : 'Solo se pueden eliminar informes en borrador'">
                         <i class="fas fa-trash"></i>
                       </button>
                       

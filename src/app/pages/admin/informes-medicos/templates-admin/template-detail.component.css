@@ -190,8 +190,8 @@
 }
 
 .tipo-consulta {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
 }
 
 .tipo-examen {

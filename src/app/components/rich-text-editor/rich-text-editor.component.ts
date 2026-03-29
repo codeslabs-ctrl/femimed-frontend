@@ -73,16 +73,11 @@ export class RichTextEditorComponent implements OnInit, OnDestroy, OnChanges {
       const normalizedCurrent = currentValue.trim().replace(/<p><br><\/p>/g, '').replace(/<p><\/p>/g, '');
       
       if (normalizedNew !== normalizedCurrent) {
-        console.log('🔄 RichTextEditor: Actualizando contenido, length:', newValue.length);
-        // Usar setContents en lugar de innerHTML para mejor compatibilidad con Quill
-        try {
-          const delta = this.quill.clipboard.convert({ html: newValue });
-          this.quill.setContents(delta, 'silent');
-        } catch (error) {
-          // Fallback a innerHTML si setContents falla
-          console.warn('⚠️ Error usando setContents, usando innerHTML:', error);
-          this.quill.root.innerHTML = newValue;
+        // Para contenido largo, limpiar antes de asignar (igual que setValue) para que Quill no mezcle/trunque
+        if (newValue.length > 1500) {
+          this.quill.root.innerHTML = '';
         }
+        this.quill.root.innerHTML = newValue;
       }
     }
   }
@@ -116,10 +111,12 @@ export class RichTextEditorComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
   
+  /** Reemplaza todo el contenido. Primero limpia para que Quill no mezcle/trunque al asignar mucho HTML. */
   public setValue(value: string) {
-    if (this.quill && value !== this.quill.root.innerHTML) {
-      this.quill.root.innerHTML = value;
-    }
+    if (!this.quill) return;
+    const html = value ?? '';
+    this.quill.root.innerHTML = '';
+    this.quill.root.innerHTML = html;
   }
   
   public getValue(): string {

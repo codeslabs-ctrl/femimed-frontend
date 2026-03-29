@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
 import { AuthService } from '../../services/auth.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { AlertService } from '../../services/alert.service';
 import { Patient } from '../../models/patient.model';
 import { User } from '../../models/user.model';
 
@@ -23,14 +24,16 @@ export class PatientFormComponent implements OnInit {
     edad: 0,
     sexo: 'Femenino',
     email: '',
-    telefono: ''
+    telefono: '',
+    remitido_por: ''
   };
   isEdit = false;
   loading = false;
   patientId: number | null = null;
   showSuccessActions = false;
   patientCreated = false;
-  
+  loadingPatientData = false;
+
   // Variables para validación de email
   emailExists = false;
   emailChecked = false;
@@ -40,6 +43,11 @@ export class PatientFormComponent implements OnInit {
   cedulaExists = false;
   cedulaChecked = false;
   cedulaValidationTimeout: any;
+
+  // Variables para validación de teléfono
+  telefonoExists = false;
+  telefonoChecked = false;
+  telefonoValidationTimeout: any;
   
   // Variables para lógica de médico
   currentMedicoId: number | null = null;
@@ -50,7 +58,8 @@ export class PatientFormComponent implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -80,15 +89,15 @@ export class PatientFormComponent implements OnInit {
             this.patient = response.data;
           } else {
             const errorMessage = (response as any).error?.message || 'Error cargando paciente';
-            alert(`❌ Error cargando paciente:\n\n${errorMessage}\n\nPor favor, recarga la página e intente nuevamente.`);
+            this.alertService.show(`${errorMessage} Por favor, recarga la página e intente nuevamente.`, 'error');
           }
           this.loading = false;
         },
         error: (error) => {
           this.errorHandler.logError(error, 'cargar paciente');
           this.loading = false;
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar paciente');
-          alert(errorMessage);
+          const bodyMessage = error?.error?.error?.message ?? error?.error?.message;
+          this.alertService.show(bodyMessage || this.errorHandler.getSafeErrorMessage(error, 'cargar paciente'), 'error');
         }
       });
     }
@@ -97,15 +106,17 @@ export class PatientFormComponent implements OnInit {
   onSubmit(form: any) {
     // Verificar validaciones adicionales
     if (this.emailExists && this.emailChecked) {
-      alert('❌ Error: El email ya está registrado en el sistema.');
+      this.alertService.show('El email ya está registrado en el sistema.', 'error');
       return;
     }
-    
     if (this.cedulaExists && this.cedulaChecked) {
-      alert('❌ Error: La cédula ya está registrada en el sistema.');
+      this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
       return;
     }
-    
+    if (this.telefonoExists && this.telefonoChecked) {
+      this.alertService.show('El teléfono ya está siendo usado por otro paciente.', 'error');
+      return;
+    }
     if (form.valid) {
       if (this.isEdit) {
         this.updatePatient();
@@ -113,7 +124,7 @@ export class PatientFormComponent implements OnInit {
         this.createPatient();
       }
     } else {
-      alert('Por favor, complete todos los campos requeridos correctamente.');
+      this.alertService.show('Por favor, complete todos los campos requeridos correctamente.', 'error');
     }
   }
 
@@ -129,6 +140,7 @@ export class PatientFormComponent implements OnInit {
       sexo: this.patient.sexo!,
       email: this.patient.email!,
       telefono: this.patient.telefono!,
+      remitido_por: this.patient.remitido_por ?? undefined,
       activo: true // Los pacientes nuevos siempre se crean como activos
     };
 
@@ -139,48 +151,64 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           console.log('✅ Respuesta del servidor:', response);
           if (response.success) {
-            this.patientCreated = true;
-            this.showSuccessActions = true;
-            // Obtener el ID del paciente recién creado
-            // La respuesta viene como: { success: true, data: { message: '...', id: 123, ... } }
             const newPatientId = (response.data as any)?.id;
             console.log('🔍 ID del paciente obtenido:', newPatientId);
-            // Guardar el ID para usarlo en la navegación
             if (newPatientId) {
               this.patientId = newPatientId;
+              this.loading = false;
+              this.loadingPatientData = true;
+              this.patientService.getPatientById(newPatientId).subscribe({
+                next: (loadRes) => {
+                  this.loadingPatientData = false;
+                  if (loadRes.success && loadRes.data) {
+                    this.patient = loadRes.data;
+                    this.patientCreated = true;
+                    this.showSuccessActions = true;
+                  } else {
+                    this.patientCreated = true;
+                    this.showSuccessActions = true;
+                  }
+                },
+                error: () => {
+                  this.loadingPatientData = false;
+                  this.patientCreated = true;
+                  this.showSuccessActions = true;
+                }
+              });
+            } else {
+              this.patientCreated = true;
+              this.showSuccessActions = true;
+              this.loading = false;
             }
-            this.askForConsulta(newPatientId);
           } else {
             const errorMessage = (response as any).error?.message || 'Error creando paciente';
-            alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
+            this.alertService.show(`${errorMessage} Por favor, intente nuevamente.`, 'error');
+            this.loading = false;
           }
-          this.loading = false;
         },
         error: (error) => {
           this.errorHandler.logError(error, 'crear paciente');
           this.loading = false;
-          
-          // Manejar errores específicos del backend
-          let errorMessage = 'Error de conexión creando paciente';
-          
-          if (error?.error?.message) {
-            errorMessage = error.error.message;
-          } else if (error?.message) {
-            errorMessage = error.message;
-          }
-          
-          // Mostrar mensaje específico para duplicados
+          // Ver en consola el cuerpo completo del 400 para depurar
+          console.warn('Crear paciente - respuesta de error del servidor:', error?.error);
+          const bodyMessage = error?.error?.error?.message ?? error?.error?.message ?? error?.message;
+          const errorMessage = typeof bodyMessage === 'string' ? bodyMessage : 'Error de conexión creando paciente';
           if (errorMessage.includes('email ya está registrado') || errorMessage.includes('Email ya está registrado')) {
             this.emailExists = true;
             this.emailChecked = true;
-            alert('❌ Error: El email ya está registrado en el sistema.');
+            this.alertService.show('El email ya está registrado en el sistema.', 'error');
           } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
             this.cedulaExists = true;
             this.cedulaChecked = true;
-            alert('❌ Error: La cédula ya está registrada en el sistema.');
+            this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
+          } else if (errorMessage.includes('teléfono') && (errorMessage.includes('ya está') || errorMessage.includes('registrado'))) {
+            this.telefonoExists = true;
+            this.telefonoChecked = true;
+            this.alertService.show('El teléfono ya está siendo usado por otro paciente.', 'error');
+          } else if (/Transaction failed|violates not-null|historico_pacientes|consulta_id|relation\s+"/i.test(errorMessage || '')) {
+            this.alertService.show('No se pudo completar el registro del paciente. Por favor, intente de nuevo.', 'error');
           } else {
-            const safeErrorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear paciente');
-            alert(safeErrorMessage);
+            this.alertService.show(errorMessage || this.errorHandler.getSafeErrorMessage(error, 'crear paciente'), 'error');
           }
         }
       });
@@ -197,7 +225,8 @@ export class PatientFormComponent implements OnInit {
       edad: this.patient.edad!,
       sexo: this.patient.sexo!,
       email: this.patient.email!,
-      telefono: this.patient.telefono!
+      telefono: this.patient.telefono!,
+      remitido_por: this.patient.remitido_por ?? undefined
     };
 
     console.log('🔍 Datos a actualizar:', updateData);
@@ -208,13 +237,10 @@ export class PatientFormComponent implements OnInit {
           this.loading = false;
           
           if (response.success) {
-            alert('✅ Paciente actualizado exitosamente');
-            this.router.navigate(['/patients']);
+            this.alertService.show('Paciente actualizado exitosamente.', 'success', { navigateTo: '/patients' });
           } else {
-            // Error en la respuesta pero no es excepción HTTP
             const errorMessage = (response as any).error?.message || 'Error actualizando paciente';
-            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, verifica los datos e intenta nuevamente.`);
-            // NO redirigir, mantener al usuario en la página para que corrija
+            this.alertService.show(`${errorMessage} Por favor, verifica los datos e intenta nuevamente.`, 'error');
           }
         },
         error: (error) => {
@@ -230,36 +256,34 @@ export class PatientFormComponent implements OnInit {
             const isValidationError = this.isValidationErrorMessage(errorMessage);
             
             if (isValidationError) {
-              // Es un error de validación que devolvió 401/403 incorrectamente
-              console.log('⚠️ Error parece ser de validación, no de autenticación');
               const validationMessage = this.extractValidationMessage(errorMessage);
-              alert(`❌ Error de validación:\n\n${validationMessage}\n\nPor favor, corrige los datos e intenta nuevamente.`);
-              // NO redirigir, mantener al usuario en la página
+              this.alertService.show(`${validationMessage} Por favor, corrige los datos e intenta nuevamente.`, 'error');
             } else {
-              // Es un error de autenticación real, el interceptor ya debería haberlo manejado
-              // Pero si llegamos aquí, mostrar mensaje y dejar que el interceptor maneje el logout
-              console.log('🔐 Error de autenticación detectado en componente');
-              alert('❌ Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
-              // El interceptor se encargará de redirigir al login
+              this.alertService.show('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'error');
             }
           } else if (status === 400 || status === 422) {
-            // Error de validación explícito
-            const validationMessage = this.extractValidationMessage(error?.error?.message || error?.message || '');
-            alert(`❌ Error de validación:\n\n${validationMessage}\n\nPor favor, corrige los datos e intenta nuevamente.`);
-            // NO redirigir, mantener al usuario en la página
+            const msg = (error?.error?.error?.message ?? error?.error?.message ?? error?.message ?? '') as string;
+            if (msg.includes('teléfono') && (msg.includes('ya está') || msg.includes('registrado'))) {
+              this.telefonoExists = true;
+              this.telefonoChecked = true;
+            }
+            if (msg.includes('email') && (msg.includes('ya está') || msg.includes('registrado'))) {
+              this.emailExists = true;
+              this.emailChecked = true;
+            }
+            if (msg.includes('cédula') && (msg.includes('ya está') || msg.includes('registrada'))) {
+              this.cedulaExists = true;
+              this.cedulaChecked = true;
+            }
+            const validationMessage = this.extractValidationMessage(msg);
+            this.alertService.show(`${validationMessage} Por favor, corrige los datos e intenta nuevamente.`, 'error');
           } else if (status >= 500) {
-            // Error del servidor
-            alert('❌ Error del servidor. Por favor, intenta nuevamente en unos momentos.\n\nSi el problema persiste, contacta al administrador del sistema.');
-            // NO redirigir, mantener al usuario en la página
+            this.alertService.show('Error del servidor. Por favor, intenta nuevamente en unos momentos. Si el problema persiste, contacta al administrador.', 'error');
           } else if (status === 0) {
-            // Error de red
-            alert('❌ Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.');
-            // NO redirigir, mantener al usuario en la página
+            this.alertService.show('Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.', 'error');
           } else {
-            // Otro tipo de error
-            const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar paciente');
-            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, intenta nuevamente.`);
-            // NO redirigir, mantener al usuario en la página
+            const errMsg = error?.error?.error?.message ?? this.errorHandler.getSafeErrorMessage(error, 'actualizar paciente');
+            this.alertService.show(`${errMsg} Por favor, intenta nuevamente.`, 'error');
           }
         }
       });
@@ -304,8 +328,10 @@ export class PatientFormComponent implements OnInit {
     
     // Mensajes comunes y sus traducciones más claras
     const messageMap: Record<string, string> = {
-      'email': 'El email ya está registrado en el sistema.',
-      'cedula': 'La cédula ya está registrada en el sistema.',
+      'email': 'El correo electrónico ya está siendo usado por otro paciente.',
+      'cedula': 'La cédula ya está siendo usada por otro paciente.',
+      'teléfono': 'El teléfono ya está siendo usado por otro paciente.',
+      'telefono': 'El teléfono ya está siendo usado por otro paciente.',
       'duplicate': 'Ya existe un registro con estos datos.',
       'ya existe': 'Ya existe un registro con estos datos.',
       'requerido': 'Por favor, completa todos los campos requeridos.',
@@ -329,49 +355,38 @@ export class PatientFormComponent implements OnInit {
 
   askForConsulta(patientId?: number | null) {
     const patientName = `${this.patient.nombres} ${this.patient.apellidos}`.trim();
-    const message = `✅ Paciente registrado exitosamente.\n\n` +
-                   `Paciente: ${patientName || 'Nuevo paciente'}\n\n` +
-                   `¿Desea agendar una consulta médica ahora?\n\n` +
-                   `• Aceptar: Será redirigido al formulario de nueva consulta\n` +
-                   `• Cancelar: Volverá a la lista de pacientes`;
-    
-    console.log('🔍 Llamando a askForConsulta con patientId:', patientId);
-    console.log('🔍 this.patientId:', this.patientId);
-    
-    const userWantsConsulta = confirm(message);
-    console.log('🔍 Usuario quiere consulta:', userWantsConsulta);
-    
-    if (userWantsConsulta) {
-      // Redirigir a nueva consulta con el paciente pre-seleccionado
-      const idToUse = patientId || this.patientId;
-      console.log('🔍 ID a usar para nueva consulta:', idToUse);
-      
-      if (idToUse) {
-        console.log('📍 Redirigiendo a /admin/consultas/nueva con paciente_id:', idToUse);
-        this.router.navigate(['/admin/consultas/nueva'], { 
-          queryParams: { paciente_id: idToUse } 
-        }).then(() => {
-          console.log('✅ Navegación completada a nueva consulta');
-        }).catch((error) => {
-          console.error('❌ Error en navegación:', error);
-        });
+    const message = `Paciente registrado exitosamente.\n\nPaciente: ${patientName || 'Nuevo paciente'}\n\n¿Desea agendar una consulta médica ahora?\n\n• Aceptar: Será redirigido al formulario de nueva consulta\n• Cancelar: Volverá a la lista de pacientes`;
+    this.alertService.confirm(message, '¿Agendar consulta?').then((userWantsConsulta) => {
+      if (userWantsConsulta) {
+        const idToUse = patientId || this.patientId;
+        if (idToUse) {
+          this.router.navigate(['/admin/consultas/nueva'], { queryParams: { paciente_id: idToUse } });
+        } else {
+          this.router.navigate(['/admin/consultas/nueva']);
+        }
       } else {
-        console.log('⚠️ No hay ID, redirigiendo a nueva consulta sin pre-seleccionar');
-        this.router.navigate(['/admin/consultas/nueva']).then(() => {
-          console.log('✅ Navegación completada a nueva consulta (sin ID)');
-        }).catch((error) => {
-          console.error('❌ Error en navegación:', error);
-        });
+        this.askForAntecedentes(patientId || this.patientId);
       }
-    } else {
-      // Redirigir a la lista de pacientes
-      console.log('📍 Redirigiendo a /patients (lista de pacientes)');
-      this.router.navigate(['/patients']).then(() => {
-        console.log('✅ Navegación completada a lista de pacientes');
-      }).catch((error) => {
-        console.error('❌ Error en navegación:', error);
-      });
+    });
+  }
+
+  askForAntecedentes(patientId?: number | null) {
+    if (!patientId) {
+      this.router.navigate(['/patients']);
+      return;
     }
+    const message = '¿Desea cargar los antecedentes del paciente ahora?\n\n• Aceptar: Irá a la pantalla de antecedentes (médicos, quirúrgicos, hábitos, otros)\n• Cancelar: Volverá a la lista de pacientes';
+    this.alertService.confirm(message, '¿Cargar antecedentes?').then((wantsAntecedentes) => {
+      if (wantsAntecedentes) {
+        this.router.navigate(['/patients', patientId, 'antecedentes']);
+      } else {
+        this.router.navigate(['/patients']);
+      }
+    });
+  }
+
+  goToList() {
+    this.router.navigate(['/patients']);
   }
 
   onCancel() {
@@ -430,7 +445,7 @@ export class PatientFormComponent implements OnInit {
   validateCedula() {
     if (this.patient.cedula && this.patient.cedula.length > 0) {
       // Validar formato de cédula venezolana
-      const cedulaPattern = /^[VEJPG][0-9]{7,8}$/;
+      const cedulaPattern = /^[VEJPG][0-9]{3,8}$/;
       if (!cedulaPattern.test(this.patient.cedula)) {
         // Marcar como inválida si no cumple el formato
         console.log('Formato de cédula inválido');
@@ -467,6 +482,34 @@ export class PatientFormComponent implements OnInit {
     } else {
       this.cedulaExists = false;
       this.cedulaChecked = false;
+    }
+  }
+
+  // Validación de teléfono (duplicado)
+  validateTelefono() {
+    const telefono = this.patient.telefono ? String(this.patient.telefono).replace(/\D/g, '').trim() : '';
+    if (telefono.length >= 10) {
+      clearTimeout(this.telefonoValidationTimeout);
+      this.telefonoValidationTimeout = setTimeout(() => {
+        this.patientService.searchPatientsByTelefono(this.patient.telefono!).subscribe({
+          next: (response) => {
+            if (this.isEdit && this.patientId) {
+              const otherPatients = response.data.filter(p => p.id !== this.patientId);
+              this.telefonoExists = otherPatients.length > 0;
+            } else {
+              this.telefonoExists = response.data.length > 0;
+            }
+            this.telefonoChecked = true;
+          },
+          error: () => {
+            this.telefonoExists = false;
+            this.telefonoChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.telefonoExists = false;
+      this.telefonoChecked = telefono.length === 0 ? false : true;
     }
   }
 

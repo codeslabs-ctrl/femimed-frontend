@@ -1,16 +1,50 @@
 <nav class="navbar">
   <div class="navbar-brand">
     <a routerLink="/dashboard" class="brand-link">
-      <img src="assets/logos/clinica/logo.svg" alt="FemiMed Logo" class="brand-logo">
+      <img src="assets/logos/clinica/logo.png" alt="FemiMed" class="brand-logo">
     </a>
   </div>
-  
+
+  <!-- Accesos inmediatos (pestañas: ancho según contenido, centrado en la barra) -->
+  <div class="navbar-quick-actions" *ngIf="currentUser">
+    <div class="navbar-quick-tabs">
+      <a routerLink="/admin/consultas/nueva" class="navbar-quick-btn" title="Agendar nueva consulta">
+        <span class="navbar-quick-icon">➕</span>
+        <span class="navbar-quick-label">Nueva Consulta</span>
+      </a>
+      <a routerLink="/patients/new" class="navbar-quick-btn" title="Registrar nuevo paciente">
+        <span class="navbar-quick-icon">➕</span>
+        <span class="navbar-quick-label">Nuevo Paciente</span>
+      </a>
+      <a routerLink="/admin/informes-medicos/nuevo" class="navbar-quick-btn" title="Crear nuevo informe médico">
+        <span class="navbar-quick-icon">➕</span>
+        <span class="navbar-quick-label">Nuevo Informe Médico</span>
+      </a>
+      <a
+        *ngIf="currentUser?.rol === 'medico'"
+        routerLink="/medicos/recipe"
+        class="navbar-quick-btn"
+        title="Récipe médico o indicaciones (PDF)"
+      >
+        <span class="navbar-quick-icon">📄</span>
+        <span class="navbar-quick-label">Récipe Médico</span>
+      </a>
+    </div>
+  </div>
   
   <div class="navbar-user" *ngIf="currentUser">
     <div class="user-info">
       <span class="user-name">{{ getDoctorFullName() }}</span>
       <span class="user-role">{{ currentUser.rol }}</span>
     </div>
+
+    <!-- Botón Chat (visible solo si chatMenuEnabled está en 1 / true) -->
+    <a *ngIf="chatMenuEnabled" routerLink="/chat" class="navbar-chat-btn" title="Abrir asistente de chat">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="chat-icon">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+      </svg>
+      <span class="chat-label">Chat</span>
+    </a>
     
     <!-- Menú de Configuración (Settings) -->
     <div class="settings-menu">
@@ -21,11 +55,22 @@
       </div>
       
       <div class="settings-dropdown" *ngIf="showSettingsMenu">
+        <!-- Indicador de carga del menú -->
+        <div class="menu-loading-indicator" *ngIf="loadingMenu">
+          <div class="spinner"></div>
+          <span>Cargando menú...</span>
+        </div>
+        
+        <!-- Mensaje de error -->
+        <div class="menu-error-message" *ngIf="menuError && !loadingMenu">
+          <span>⚠️ Error al cargar el menú. Por favor, recarga la página.</span>
+        </div>
+        
         <!-- Menú dinámico para roles no-admin (médico, secretaria, finanzas) -->
-        <div *ngIf="currentUser && currentUser.rol !== 'administrador'">
-          <div class="settings-section" *ngIf="getDirectMenuItems().length > 0">
+        <div *ngIf="currentUser && currentUser.rol !== 'administrador' && !loadingMenu && !menuError">
+          <div class="settings-section" *ngIf="directMenuItems.length > 0">
             <div class="settings-section-title">{{ currentUser.rol === 'medico' ? 'Médico' : currentUser.rol === 'secretaria' ? 'Secretaría' : currentUser.rol === 'finanzas' ? 'Finanzas' : '' }}</div>
-            <a *ngFor="let item of getDirectMenuItems()" 
+            <a *ngFor="let item of directMenuItems" 
                (click)="navigateToRoute(item.route); closeSettingsMenu()"
                class="settings-item"
                [attr.href]="item.route">
@@ -38,12 +83,12 @@
         </div>
         
         <!-- Separador para roles no-admin -->
-        <div class="settings-divider" *ngIf="currentUser && currentUser.rol !== 'administrador' && getDirectMenuItems().length > 0"></div>
+        <div class="settings-divider" *ngIf="currentUser && currentUser.rol !== 'administrador' && directMenuItems.length > 0"></div>
         
         <!-- Opciones de Administración con grupos expandibles (solo para administradores) -->
-        <div *ngIf="currentUser && currentUser.rol === 'administrador'">
+        <div *ngIf="currentUser && currentUser.rol === 'administrador' && !loadingMenu && !menuError">
           <!-- Menú dinámico -->
-          <div class="menu-group" *ngFor="let group of getMenuGroups()">
+          <div class="menu-group" *ngFor="let group of menuGroups">
             <div class="menu-group-header" (click)="toggleGroup(group.title, $event)">
               <div class="menu-group-title">
                 <svg class="menu-group-icon" viewBox="0 0 24 24" fill="currentColor" *ngIf="group.icon">
@@ -69,31 +114,31 @@
           </div>
           
           <!-- Fallback al menú hardcodeado si no hay menú dinámico -->
-          <ng-container *ngIf="getMenuGroups().length === 0">
+          <ng-container *ngIf="menuGroups.length === 0">
             <div class="menu-group" *ngFor="let group of adminMenuGroups">
-            <div class="menu-group-header" (click)="toggleGroup(group.title, $event)">
-              <div class="menu-group-title">
-                <svg class="menu-group-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path [attr.d]="group.icon"/>
+              <div class="menu-group-header" (click)="toggleGroup(group.title, $event)">
+                <div class="menu-group-title">
+                  <svg class="menu-group-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path [attr.d]="group.icon"/>
+                  </svg>
+                  <span>{{ group.title }}</span>
+                </div>
+                <svg class="menu-group-arrow" [class.expanded]="isGroupExpanded(group.title)" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
                 </svg>
-                <span>{{ group.title }}</span>
               </div>
-              <svg class="menu-group-arrow" [class.expanded]="isGroupExpanded(group.title)" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-              </svg>
+              <div class="menu-group-items" [class.expanded]="isGroupExpanded(group.title)">
+                <a *ngFor="let item of group.items" 
+                   [routerLink]="item.route" 
+                   class="settings-item" 
+                   (click)="closeSettingsMenu()">
+                  <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path [attr.d]="item.icon"/>
+                  </svg>
+                  <span>{{ item.label }}</span>
+                </a>
+              </div>
             </div>
-            <div class="menu-group-items" [class.expanded]="isGroupExpanded(group.title)">
-              <a *ngFor="let item of group.items" 
-                 [routerLink]="item.route" 
-                 class="settings-item" 
-                 (click)="closeSettingsMenu()">
-                <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path [attr.d]="item.icon"/>
-                </svg>
-                <span>{{ item.label }}</span>
-              </a>
-            </div>
-          </div>
           </ng-container>
         </div>
         
@@ -103,14 +148,18 @@
         <!-- Opciones de Usuario -->
         <div class="settings-section">
           <div class="settings-section-title">Usuario</div>
-
-          <a routerLink="/settings" class="settings-item" (click)="closeSettingsMenu()">
+          <a *ngIf="chatMenuEnabled" routerLink="/chat" class="settings-item" (click)="closeSettingsMenu()">
             <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
             </svg>
-            <span>{{ currentUser.rol === 'administrador' ? 'Preferencias' : 'Configuración' }}</span>
+            <span>Asistente (chat)</span>
           </a>
-
+          <a routerLink="/settings/home" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 17h-2v-2h2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A1.99 1.99 0 0 0 15 9a2 2 0 0 0-4 0H9a4 4 0 0 1 8 0c0 .88-.36 1.68-.93 2.25z"/>
+            </svg>
+            <span>Preferencias</span>
+          </a>
           <button class="settings-item danger" (click)="logout()">
             <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>

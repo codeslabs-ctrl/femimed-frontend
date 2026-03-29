@@ -74,7 +74,7 @@
           [(ngModel)]="filtros.fecha_hasta"
         />
       </div>
-      <div class="form-group">
+      <div class="form-group" *ngIf="currentUser?.rol !== 'medico'">
         <label for="medico_id">Médico</label>
         <select id="medico_id" class="form-control" [(ngModel)]="filtros.medico_id">
           <option value="">Todos los médicos</option>
@@ -82,6 +82,9 @@
             {{ medico.nombres }} {{ medico.apellidos }}
           </option>
         </select>
+      </div>
+      <div class="form-group" *ngIf="currentUser?.rol === 'medico'" style="align-self: center;">
+        <span class="badge-info">Mostrando solo sus consultas</span>
       </div>
       <div class="form-group">
         <label for="estado_pago">Estado de Pago</label>
@@ -265,14 +268,14 @@
         class="btn btn-sm btn-outline" 
         [disabled]="!paginacion.tiene_anterior"
         (click)="irAPrimeraPagina()"
-        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        style="background: #f5576c; color: white; border: 1px solid #f5576c; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
         <i class="fas fa-angle-double-left"></i> Primera
       </button>
       <button 
         class="btn btn-sm btn-outline" 
         [disabled]="!paginacion.tiene_anterior"
         (click)="irAPaginaAnterior()"
-        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        style="background: #f5576c; color: white; border: 1px solid #f5576c; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
         <i class="fas fa-angle-left"></i> Anterior
       </button>
       
@@ -292,14 +295,14 @@
         class="btn btn-sm btn-outline" 
         [disabled]="!paginacion.tiene_siguiente"
         (click)="irAPaginaSiguiente()"
-        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        style="background: #f5576c; color: white; border: 1px solid #f5576c; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
         Siguiente <i class="fas fa-angle-right"></i>
       </button>
       <button 
         class="btn btn-sm btn-outline" 
         [disabled]="!paginacion.tiene_siguiente"
         (click)="irAUltimaPagina()"
-        style="background: #007bff; color: white; border: 1px solid #007bff; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+        style="background: #f5576c; color: white; border: 1px solid #f5576c; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
         Última <i class="fas fa-angle-double-right"></i>
       </button>
     </div>

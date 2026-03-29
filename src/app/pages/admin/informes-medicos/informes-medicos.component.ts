@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformeMedicoService } from '../../../services/informe-medico.service';
+import { AlertService } from '../../../services/alert.service';
 import { InformeMedico, FiltrosInformes, EstadisticasInformes } from '../../../models/informe-medico.model';
 
 @Component({
@@ -44,6 +45,7 @@ export class InformesMedicosComponent implements OnInit {
 
   constructor(
     private informeMedicoService: InformeMedicoService,
+    private alertService: AlertService,
     private router: Router
   ) { }
 
@@ -114,19 +116,24 @@ export class InformesMedicosComponent implements OnInit {
   }
 
   eliminarInforme(informe: InformeMedico): void {
-    if (confirm(`¿Está seguro de que desea eliminar el informe "${informe.titulo}"?`)) {
+    const nombre = informe.titulo || informe.numero_informe || 'este informe';
+    this.alertService.confirm(
+      `¿Está seguro de que desea eliminar el informe "${nombre}"? Esta acción no se puede deshacer.`,
+      'Eliminar informe'
+    ).then((aceptar) => {
+      if (!aceptar) return;
       this.informeMedicoService.eliminarInforme(informe.id!).subscribe({
         next: () => {
-          alert('Informe eliminado exitosamente');
+          this.alertService.showSuccess('Informe eliminado correctamente.');
           this.cargarInformes();
           this.cargarEstadisticas();
         },
         error: (error) => {
           console.error('Error eliminando informe:', error);
-          alert('Error eliminando el informe');
+          this.alertService.showError(error?.error?.message || 'Error eliminando el informe.');
         }
       });
-    }
+    });
   }
 
   firmarInforme(informe: InformeMedico): void {
@@ -221,7 +228,8 @@ export class InformesMedicosComponent implements OnInit {
   }
 
   puedeEliminar(informe: InformeMedico): boolean {
-    return informe.estado === 'borrador';
+    const estado = (informe.estado ?? '').toString().toLowerCase().trim();
+    return estado === 'borrador';
   }
 
   obtenerAccionesDisponibles(informe: InformeMedico): string[] {

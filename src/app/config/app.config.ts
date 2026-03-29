@@ -47,8 +47,8 @@ export const APP_CONFIG = {
 
   // Storage Keys
   STORAGE_KEYS: {
-    USER_PREFERENCES: 'femimed_user_preferences',
-    FILTERS: 'femimed_patient_filters',
-    THEME: 'femimed_theme'
+    USER_PREFERENCES: 'demomed_user_preferences',
+    FILTERS: 'demomed_patient_filters',
+    THEME: 'demomed_theme'
   }
 };

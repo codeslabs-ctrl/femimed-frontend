@@ -89,7 +89,7 @@ import { SnackbarService, SnackbarMessage } from '../../services/snackbar.servic
     }
 
     .snackbar-info {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      background: linear-gradient(135deg, #f5576c, #e64f62);
       color: white;
     }
 

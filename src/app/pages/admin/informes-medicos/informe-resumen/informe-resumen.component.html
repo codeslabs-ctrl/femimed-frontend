@@ -111,7 +111,7 @@
         <div class="info-grid">
           <div class="info-item">
             <label>Nombre:</label>
-            <span class="info-value">Dr. {{ medico.nombres }} {{ medico.apellidos }}</span>
+            <span class="info-value">{{ medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{ medico.nombres }} {{ medico.apellidos }}</span>
           </div>
           <div class="info-item">
             <label>Especialidad:</label>

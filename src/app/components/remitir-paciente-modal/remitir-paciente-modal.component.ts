@@ -220,7 +220,7 @@ import { User } from '../../models/user.model';
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -275,7 +275,7 @@ import { User } from '../../models/user.model';
 
     .form-input:focus {
       outline: none;
-      border-color: #7A9CC6;
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
     }
 
@@ -330,7 +330,7 @@ import { User } from '../../models/user.model';
     }
 
     .btn-primary {
-      background: #7A9CC6;
+      background: #f5576c;
       color: white;
     }
 

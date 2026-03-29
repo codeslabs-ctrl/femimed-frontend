@@ -373,7 +373,7 @@ import { Especialidad } from '../../services/especialidad.service';
 
     .form-control:focus {
       outline: none;
-      border-color: #7A9CC6;
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
     }
 
@@ -509,15 +509,12 @@ export class ConsultaFormComponent implements OnInit, OnChanges {
         fecha_recordatorio: this.consulta.fecha_recordatorio?.split('T')[0],
         metodo_recordatorio: this.consulta.metodo_recordatorio
       };
-      
       // Establecer la especialidad del médico seleccionado
       if (this.consulta.medico_especialidad_id) {
         this.selectedEspecialidadId = this.consulta.medico_especialidad_id;
         this.onEspecialidadChange();
       }
-      
       // Por ahora, no cargar médicos remitentes
-      // TODO: Implementar cuando el endpoint de remisiones esté funcionando
       this.medicosRemitentes = [];
     } else {
       this.isEdit = false;
@@ -564,8 +561,6 @@ export class ConsultaFormComponent implements OnInit, OnChanges {
   }
 
   onPacienteChange() {
-    // Por ahora, no cargar médicos remitentes al cambiar paciente
-    // TODO: Implementar cuando el endpoint de remisiones esté funcionando
     this.medicosRemitentes = [];
   }
 

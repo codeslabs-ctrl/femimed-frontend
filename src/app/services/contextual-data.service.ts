@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -20,6 +20,7 @@ export interface DatosMedico {
   nombres: string;
   apellidos: string;
   especialidad: string;
+  sexo?: string | null;
   cedula_profesional: string;
   telefono: string;
   email: string;
@@ -27,7 +28,12 @@ export interface DatosMedico {
 
 export interface UltimoInforme {
   id: number;
+  titulo?: string;
   motivo_consulta: string;
+  /** historico_pacientes.examenes_paraclinicos */
+  examenes_paraclinicos: string;
+  /** historico_pacientes.examenes_medico (examen físico) */
+  examenes_medico: string;
   diagnostico: string;
   tratamiento: string;
   conclusiones: string;
@@ -64,10 +70,15 @@ export class ContextualDataService {
    * Obtiene datos contextuales completos para un informe médico
    * @param pacienteId ID del paciente
    * @param medicoId ID del médico
+   * @param maxControles Opcional: número máximo de controles a devolver (para selector en informe)
    * @returns Observable con respuesta del backend
    */
-  obtenerDatosContextuales(pacienteId: number, medicoId: number): Observable<{success: boolean, data: DatosContextuales}> {
-    return this.http.get<{success: boolean, data: DatosContextuales}>(`${this.apiUrl}/${pacienteId}/${medicoId}`);
+  obtenerDatosContextuales(pacienteId: number, medicoId: number, maxControles?: number): Observable<{success: boolean, data: DatosContextuales}> {
+    let params = new HttpParams();
+    if (maxControles != null && maxControles > 0) {
+      params = params.set('maxControles', String(maxControles));
+    }
+    return this.http.get<{success: boolean, data: DatosContextuales}>(`${this.apiUrl}/${pacienteId}/${medicoId}`, { params });
   }
 
   /**
@@ -94,11 +105,12 @@ export class ContextualDataService {
    * Obtiene datos contextuales con manejo de errores
    * @param pacienteId ID del paciente
    * @param medicoId ID del médico
+   * @param maxControles Opcional: número máximo de controles (ej. 36 para selector en informe)
    * @returns Promise con datos contextuales o null si hay error
    */
-  async obtenerDatosContextualesSeguro(pacienteId: number, medicoId: number): Promise<DatosContextuales | null> {
+  async obtenerDatosContextualesSeguro(pacienteId: number, medicoId: number, maxControles?: number): Promise<DatosContextuales | null> {
     try {
-      const response = await this.obtenerDatosContextuales(pacienteId, medicoId).toPromise();
+      const response = await this.obtenerDatosContextuales(pacienteId, medicoId, maxControles).toPromise();
       console.log('🔍 Respuesta del backend:', response);
       
       // El backend devuelve {success: true, data: datosContextuales}
@@ -160,7 +172,8 @@ export class ContextualDataService {
    * @returns String formateado con información del médico
    */
   formatearDatosMedico(medico: DatosMedico): string {
-    return `Dr. ${medico.nombres} ${medico.apellidos} - ${medico.especialidad}`;
+    const titulo = medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.';
+    return `${titulo} ${medico.nombres} ${medico.apellidos} - ${medico.especialidad}`;
   }
 
   /**

@@ -40,36 +40,6 @@
         </div>
         <div class="section-content">
           <div class="form-grid">
-            <!-- Título -->
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-heading"></i> Título del Informe *
-              </label>
-              <input type="text" class="form-input" formControlName="titulo" 
-                     placeholder="Ingrese el título del informe médico">
-              <div *ngIf="titulo && titulo.invalid && titulo.touched" class="error-message">
-                {{ obtenerErrorCampo('titulo') }}
-              </div>
-            </div>
-
-            <!-- Tipo de Informe -->
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-tags"></i> Tipo de Informe *
-              </label>
-              <select class="form-input" formControlName="tipo_informe">
-                <option value="">Seleccionar tipo</option>
-                <option *ngFor="let tipo of tiposInforme" [value]="tipo.valor">
-                  {{ tipo.texto }}
-                </option>
-              </select>
-              <div *ngIf="tipo_informe && tipo_informe.invalid && tipo_informe.touched" class="error-message">
-                {{ obtenerErrorCampo('tipo_informe') }}
-              </div>
-            </div>
-          </div>
-
-          <div class="form-grid">
             <!-- Paciente -->
             <div class="form-group">
               <label class="form-label">
@@ -157,6 +127,80 @@
                 {{ obtenerErrorCampo('fecha_emision') }}
               </div>
             </div>
+
+            <!-- Clínica de atención -->
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-building"></i> Clínica de atención *
+              </label>
+              <select class="form-input" formControlName="clinica_atencion_id">
+                <option [ngValue]="null">Seleccionar sede</option>
+                <option *ngFor="let c of clinicasAtencion" [ngValue]="c.id">{{ c.nombre_clinica }}</option>
+              </select>
+              <div *ngIf="clinica_atencion_id && clinica_atencion_id.invalid && clinica_atencion_id.touched" class="error-message">
+                {{ obtenerErrorCampo('clinica_atencion_id') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incluir en el informe (solo cuando hay paciente y médico) -->
+      <div *ngIf="(paciente_id?.value && medico_id?.value) && datosContextuales" class="form-section seccion-incluir">
+        <div class="section-header">
+          <h3>
+            <i class="fas fa-check-double"></i>
+            Incluir en el informe
+          </h3>
+          <p class="section-description">Marque las secciones que desea anadir al contenido del informe y pulse el boton.</p>
+        </div>
+        <div class="section-content">
+          <div class="incluir-checks">
+            <label class="incluir-check" *ngIf="tieneAntecedentes">
+              <input type="checkbox" [(ngModel)]="incluirAntecedentes" [ngModelOptions]="{standalone: true}">
+              <span>Antecedentes del paciente</span>
+            </label>
+            <div class="incluir-antecedentes-add" *ngIf="!tieneAntecedentes && paciente_id?.value">
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="irAAnadirAntecedentes()">
+                <i class="fas fa-plus"></i> Añadir antecedentes del paciente
+              </button>
+            </div>
+            <!-- Controles del paciente: checkboxes si hay 5 o menos, dropdown + lista si hay más -->
+            <div class="incluir-controles" *ngIf="paciente_id?.value && medico_id?.value && tieneHistorialConsultas">
+              <div class="incluir-controles-label" *ngIf="usarCheckboxesControles">
+                <i class="fas fa-calendar-check"></i> Controles del paciente
+              </div>
+              <div class="incluir-checks controles-checks" *ngIf="usarCheckboxesControles">
+                <label class="incluir-check" *ngFor="let c of datosContextuales?.historialConsultas">
+                  <input type="checkbox" [checked]="isControlSeleccionado(c.id)" (change)="toggleControlId(c.id)">
+                  <span>{{ etiquetaControl(c) }}</span>
+                </label>
+              </div>
+              <ng-container *ngIf="!usarCheckboxesControles">
+                <div class="controles-add-row">
+                  <select class="form-input controles-select" [(ngModel)]="controlIdParaAnadir" (change)="onAnadirControlFromDropdown()" [ngModelOptions]="{standalone: true}">
+                    <option [ngValue]="null">Seleccionar control para añadir...</option>
+                    <option *ngFor="let c of controlesDisponiblesParaDropdown" [ngValue]="c.id">
+                      {{ etiquetaControl(c) }}
+                    </option>
+                  </select>
+                </div>
+              <div class="controles-incluidos-list" *ngIf="controlesIncluidos.length">
+                <p class="controles-incluidos-title">Incluidos en el informe:</p>
+                <div class="controles-incluidos-items">
+                  <span class="controles-incluidos-item" *ngFor="let c of controlesIncluidos">
+                    {{ etiquetaControl(c) }}
+                    <button type="button" class="btn-quitar-control" (click)="quitarControlIncluido(c.id)" title="Quitar">×</button>
+                  </span>
+                </div>
+              </div>
+              </ng-container>
+            </div>
+          </div>
+          <div class="incluir-actions">
+            <button type="button" class="btn btn-secondary" (click)="anadirSeccionesSeleccionadas()" [disabled]="!haySeccionSeleccionada()">
+              <i class="fas fa-plus-circle"></i> Reemplazar contenido con secciones seleccionadas
+            </button>
           </div>
         </div>
       </div>
@@ -175,6 +219,7 @@
                 <i class="fas fa-edit"></i> Contenido del Informe *
               </label>
               <app-rich-text-editor
+                #editorContenido
                 [placeholder]="'Escriba el contenido del informe médico aquí...'"
                 [height]="300"
                 [value]="contenidoValue"
@@ -184,6 +229,11 @@
                 <div *ngIf="contenido && contenido.invalid && contenido.touched" class="error-message">
                   {{ obtenerErrorCampo('contenido') }}
                 </div>
+              </div>
+              <div class="contenido-actions" style="margin-top: 0.75rem;">
+                <button type="button" class="btn btn-secondary" (click)="generarInformeNarrativo()" [disabled]="!controlesIncluidos.length || !datosContextuales?.paciente" title="Genera un informe en prosa (un bloque por control)">
+                  <i class="fas fa-align-left"></i> Generar informe narrativo
+                </button>
               </div>
             </div>
         </div>
@@ -349,7 +399,7 @@
       <!-- Botones de Acción -->
       <div class="form-actions">
         <div class="action-buttons">
-          <button type="submit" class="btn btn-primary" [disabled]="guardando || informeForm.invalid">
+          <button type="submit" class="btn btn-primary" [disabled]="guardando">
             <i class="fas fa-save" *ngIf="!guardando"></i>
             <span class="spinner" *ngIf="guardando"></span>
             {{ guardando ? 'Guardando...' : (esEdicion ? 'Actualizar Informe' : 'Crear Informe') }}

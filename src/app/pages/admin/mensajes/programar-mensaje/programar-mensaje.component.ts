@@ -116,7 +116,7 @@ import { FormsModule } from '@angular/forms';
       align-items: center;
       padding: 20px 24px;
       border-bottom: 1px solid #e5e7eb;
-      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
       border-radius: 12px 12px 0 0;
     }
@@ -199,12 +199,12 @@ import { FormsModule } from '@angular/forms';
 
     .form-control:focus {
       outline: none;
-      border-color: #7A9CC6;
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.1);
     }
 
     .fecha-preview {
-      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
       padding: 16px;
       border-radius: 8px;
@@ -273,7 +273,7 @@ import { FormsModule } from '@angular/forms';
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
       border: none;
     }

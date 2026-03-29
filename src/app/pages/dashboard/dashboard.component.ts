@@ -17,28 +17,17 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, FinalizarConsultaModalComponent],
+  styleUrls: ['./dashboard.component.css'],
   template: `
     <div class="dashboard">
-      <div class="dashboard-header">
-        <p *ngIf="currentUser?.rol === 'administrador'">Panel de administración - Todos los pacientes</p>
-        <p *ngIf="currentUser?.rol === 'medico'">Mis pacientes y consultas médicas</p>
-        <p *ngIf="currentUser?.rol === 'secretaria'">Gestión de consultas y pacientes - Secretaría</p>
-        <p *ngIf="!currentUser">Gestion de pacientes y consultas médicas</p>
-        <p class="doctor-info" *ngIf="currentUser">
-          <span *ngIf="currentUser.rol === 'administrador'">
-            👑 {{ getDoctorFullName() || currentUser.username || 'Administrador' }}
-            <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
-          </span>
-          <span *ngIf="currentUser.rol === 'medico'">
-            👨‍⚕️ {{ getDoctorFullName() || currentUser.username || 'Médico' }}
-            <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
-          </span>
-          <span *ngIf="currentUser.rol === 'secretaria'">
-            📋 Secretaría
-          </span>
-        </p>
-        <p class="info-note" *ngIf="currentUser?.rol === 'medico' && !currentUser?.medico_id">
-          ⚠️ ID de médico no disponible - mostrando todos los pacientes
+      <!-- Pantalla de bienvenida -->
+      <div class="welcome-banner" *ngIf="currentUser">
+        <h1 class="welcome-title">Bienvenido{{ currentUser.rol === 'secretaria' ? 'a' : '' }} {{ getWelcomeDisplayName() }}</h1>
+        <p class="welcome-especialidad" *ngIf="currentUser.especialidad">{{ currentUser.especialidad }}</p>
+        <p class="welcome-subtitle">
+          <span *ngIf="consultasDelDia.length > 0">Hoy {{ currentUser.rol === 'secretaria' ? 'hay' : 'tienes' }} {{ consultasDelDia.length }} {{ consultasDelDia.length === 1 ? 'consulta programada' : 'consultas programadas' }}</span>
+          <span *ngIf="consultasDelDia.length === 0 && !loadingConsultas">Hoy no {{ currentUser.rol === 'secretaria' ? 'hay' : 'tienes' }} consultas programadas</span>
+          <span *ngIf="loadingConsultas">Cargando agenda del día...</span>
         </p>
       </div>
 
@@ -89,8 +78,192 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         </div>
       </div>
 
-      <!-- Sección de Consultas del Día -->
-      <div class="consultas-section">
+      <!-- Consultas con pestañas (médico / administrador) -->
+      <div class="consultas-section consultas-tabs-wrapper" *ngIf="showConsultasTabs()">
+        <div class="consultas-tab-headers" role="tablist">
+          <button type="button" class="consultas-tab tab-hoy" role="tab" [class.active]="consultasTab === 'hoy'" [attr.aria-selected]="consultasTab === 'hoy'" (click)="setConsultasTab('hoy')">
+            <span class="consultas-tab-icon-wrap" aria-hidden="true">
+              <svg class="consultas-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>
+            </span>
+            <span class="consultas-tab-label">Consultas del día</span>
+            <span class="count-badge tab-badge" *ngIf="consultasDelDia.length > 0">{{ consultasDelDia.length }}</span>
+          </button>
+          <button type="button" class="consultas-tab tab-atrasadas" role="tab" [class.active]="consultasTab === 'atrasadas'" [attr.aria-selected]="consultasTab === 'atrasadas'" (click)="setConsultasTab('atrasadas')">
+            <span class="consultas-tab-icon-wrap" aria-hidden="true">
+              <svg class="consultas-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            </span>
+            <span class="consultas-tab-label">Consultas anteriores sin atender</span>
+            <span class="count-badge tab-badge" *ngIf="consultasPendientes.length > 0">{{ consultasPendientes.length }}</span>
+          </button>
+          <button type="button" class="consultas-tab tab-futuras" role="tab" [class.active]="consultasTab === 'futuras'" [attr.aria-selected]="consultasTab === 'futuras'" (click)="setConsultasTab('futuras')">
+            <span class="consultas-tab-icon-wrap" aria-hidden="true">
+              <svg class="consultas-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            </span>
+            <span class="consultas-tab-label">Consultas futuras</span>
+            <span class="count-badge tab-badge" *ngIf="consultasFuturas.length > 0 && consultasTab === 'futuras'">{{ consultasFuturas.length }}</span>
+          </button>
+        </div>
+
+        <div class="consultas-tab-panel" *ngIf="consultasTab === 'hoy'" role="tabpanel">
+          <div class="section-header">
+            <h3 class="section-title">📅 Consultas del día</h3>
+            <button class="btn-refresh" (click)="refreshConsultas()" [disabled]="loadingConsultas">
+              <span [class.spinner]="loadingConsultas"></span>
+              {{ loadingConsultas ? 'Cargando...' : '↻ Actualizar' }}
+            </button>
+          </div>
+          <div class="consultas-grid" *ngIf="!loadingConsultas">
+            <div *ngIf="consultasDelDia.length === 0" class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-title">No hay consultas programadas para hoy</div>
+              <div class="empty-state-description">No se encontraron consultas médicas para el día de hoy.</div>
+            </div>
+            <div *ngFor="let consulta of consultasDelDia" class="consulta-card" [class]="getConsultaCardClass(consulta)">
+              <div class="consulta-header">
+                <div class="hora">{{ formatTime(consulta.hora_pautada) }}</div>
+                <div class="estado" [class]="'estado-' + consulta.estado_consulta">{{ getEstadoText(consulta.estado_consulta) }}</div>
+              </div>
+              <div class="consulta-body">
+                <div class="paciente-info">
+                  <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
+                  <div class="paciente-cedula" *ngIf="consulta.paciente_cedula">Cédula: {{ consulta.paciente_cedula }}</div>
+                </div>
+                <div class="medico-info">
+                  <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
+                  <div class="medico-especialidad" *ngIf="consulta.especialidad_nombre">{{ consulta.especialidad_nombre }}</div>
+                </div>
+                <div class="motivo" *ngIf="consulta.motivo_consulta">{{ consulta.motivo_consulta }}</div>
+                <div class="tipo-consulta" *ngIf="consulta.tipo_consulta">
+                  <span class="tipo-badge">{{ getTipoConsultaText(consulta.tipo_consulta) }}</span>
+                </div>
+              </div>
+              <div class="consulta-actions">
+                <button class="btn btn-view" (click)="verConsulta(consulta)">👁️ Ver</button>
+                <button class="btn btn-history" (click)="addHistoria(consulta)"
+                        *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && currentUser?.rol === 'medico'">📝 Historia Paciente</button>
+                <button class="btn btn-success" (click)="finalizarConsulta(consulta)"
+                        *ngIf="isEstadoCompletada(consulta) && canFinalizarConsulta()">✅ Finalizar</button>
+                <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"
+                        *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()">📅 Reagendar</button>
+                <button class="btn btn-danger" (click)="cancelarConsulta(consulta)"
+                        *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar'">❌ Cancelar</button>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="loadingConsultas" class="loading-consultas">
+            <div class="spinner"></div>
+            <p>Cargando consultas del día...</p>
+          </div>
+        </div>
+
+        <div class="consultas-tab-panel" *ngIf="consultasTab === 'atrasadas'" role="tabpanel">
+          <div class="section-header">
+            <h3 class="section-title">⏰ Consultas anteriores sin atender</h3>
+            <button class="btn-refresh" (click)="refreshConsultasPendientes()" [disabled]="loadingConsultasPendientes">
+              <span [class.spinner]="loadingConsultasPendientes"></span>
+              {{ loadingConsultasPendientes ? 'Cargando...' : '↻ Actualizar' }}
+            </button>
+          </div>
+          <div class="consultas-grid" *ngIf="!loadingConsultasPendientes">
+            <div *ngIf="consultasPendientes.length === 0" class="empty-state">
+              <div class="empty-state-icon">✅</div>
+              <div class="empty-state-title">No hay consultas anteriores sin atender</div>
+              <div class="empty-state-description">No hay citas con fecha anterior a hoy que sigan sin completar o finalizar.</div>
+            </div>
+            <div *ngFor="let consulta of consultasPendientes" class="consulta-card consulta-pendiente" [class]="getConsultaCardClass(consulta)">
+              <div class="consulta-header">
+                <div class="hora">{{ formatTime(consulta.hora_pautada) }}</div>
+                <div class="estado estado-pendiente">Pendiente</div>
+              </div>
+              <div class="consulta-body">
+                <div class="fecha-pasada">📅 {{ formatDate(consulta.fecha_pautada) }}</div>
+                <div class="paciente-info">
+                  <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
+                  <div class="paciente-cedula" *ngIf="consulta.paciente_cedula">Cédula: {{ consulta.paciente_cedula }}</div>
+                </div>
+                <div class="medico-info">
+                  <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
+                  <div class="medico-especialidad" *ngIf="consulta.especialidad_nombre">{{ consulta.especialidad_nombre }}</div>
+                </div>
+                <div class="motivo" *ngIf="consulta.motivo_consulta">{{ consulta.motivo_consulta }}</div>
+                <div class="tipo-consulta" *ngIf="consulta.tipo_consulta">
+                  <span class="tipo-badge">{{ getTipoConsultaText(consulta.tipo_consulta) }}</span>
+                </div>
+              </div>
+              <div class="consulta-actions">
+                <button class="btn btn-view" (click)="verConsulta(consulta)">👁️ Ver</button>
+                <button class="btn btn-history" (click)="addHistoria(consulta)" *ngIf="currentUser?.rol === 'medico'">📝 Registrar Historia</button>
+                <button class="btn btn-danger" (click)="cancelarConsulta(consulta)"
+                        *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar'">❌ Cancelar</button>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="loadingConsultasPendientes" class="loading-consultas">
+            <div class="spinner"></div>
+            <p>Cargando consultas anteriores...</p>
+          </div>
+        </div>
+
+        <div class="consultas-tab-panel" *ngIf="consultasTab === 'futuras'" role="tabpanel">
+          <div class="section-header section-header-futuras">
+            <h3 class="section-title">📆 Consultas futuras</h3>
+            <div class="futuras-date-controls">
+              <label class="futuras-date-label" for="dash-futura-fecha">Elegir día</label>
+              <input id="dash-futura-fecha" type="date" class="futuras-date-input" name="dashFuturaFecha" [min]="minFuturaDate" [(ngModel)]="fechaFuturaConsulta" (ngModelChange)="onFuturaFechaChanged()" />
+              <button type="button" class="btn-refresh" (click)="loadConsultasFuturas()" [disabled]="loadingConsultasFuturas || !fechaFuturaConsulta">
+                <span [class.spinner]="loadingConsultasFuturas"></span>
+                {{ loadingConsultasFuturas ? 'Cargando...' : '↻ Actualizar' }}
+              </button>
+            </div>
+          </div>
+          <p class="futuras-sub" *ngIf="fechaFuturaConsulta">Mostrando citas del <strong>{{ formatDate(fechaFuturaConsulta) }}</strong> (solo fechas posteriores a hoy).</p>
+          <div class="consultas-grid" *ngIf="!loadingConsultasFuturas">
+            <div *ngIf="consultasFuturas.length === 0" class="empty-state">
+              <div class="empty-state-icon">📆</div>
+              <div class="empty-state-title">No hay consultas para este día</div>
+              <div class="empty-state-description">Prueba con otra fecha futura o agenda nuevas citas.</div>
+            </div>
+            <div *ngFor="let consulta of consultasFuturas" class="consulta-card" [class]="getConsultaCardClass(consulta)">
+              <div class="consulta-header">
+                <div class="hora">{{ formatTime(consulta.hora_pautada) }}</div>
+                <div class="estado" [class]="'estado-' + consulta.estado_consulta">{{ getEstadoText(consulta.estado_consulta) }}</div>
+              </div>
+              <div class="consulta-body">
+                <div class="paciente-info">
+                  <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
+                  <div class="paciente-cedula" *ngIf="consulta.paciente_cedula">Cédula: {{ consulta.paciente_cedula }}</div>
+                </div>
+                <div class="medico-info">
+                  <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
+                  <div class="medico-especialidad" *ngIf="consulta.especialidad_nombre">{{ consulta.especialidad_nombre }}</div>
+                </div>
+                <div class="motivo" *ngIf="consulta.motivo_consulta">{{ consulta.motivo_consulta }}</div>
+                <div class="tipo-consulta" *ngIf="consulta.tipo_consulta">
+                  <span class="tipo-badge">{{ getTipoConsultaText(consulta.tipo_consulta) }}</span>
+                </div>
+              </div>
+              <div class="consulta-actions">
+                <button class="btn btn-view" (click)="verConsulta(consulta)">👁️ Ver</button>
+                <button class="btn btn-history" (click)="addHistoria(consulta)"
+                        *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && currentUser?.rol === 'medico'">📝 Historia Paciente</button>
+                <button class="btn btn-success" (click)="finalizarConsulta(consulta)"
+                        *ngIf="isEstadoCompletada(consulta) && canFinalizarConsulta()">✅ Finalizar</button>
+                <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"
+                        *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()">📅 Reagendar</button>
+                <button class="btn btn-danger" (click)="cancelarConsulta(consulta)"
+                        *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar'">❌ Cancelar</button>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="loadingConsultasFuturas" class="loading-consultas">
+            <div class="spinner"></div>
+            <p>Cargando consultas futuras...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consultas del día sin pestañas (secretaría y demás roles) -->
+      <div class="consultas-section" *ngIf="!showConsultasTabs()">
         <div class="section-header">
           <h3 class="section-title">
             📅 Consultas del Día
@@ -146,7 +319,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 📝 Historia Paciente
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
-                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()">
+                      *ngIf="isEstadoCompletada(consulta) && canFinalizarConsulta()">
                 ✅ Finalizar
               </button>
               <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"
@@ -167,79 +340,28 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         </div>
       </div>
 
-      <!-- Sección de Consultas Pendientes -->
-      <div class="consultas-section" *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'administrador'">
-        <div class="section-header">
-          <h3 class="section-title">
-            ⏰ Consultas Pendientes
-            <span class="count-badge" *ngIf="consultasPendientes.length > 0">{{ consultasPendientes.length }}</span>
-          </h3>
-          <button class="btn-refresh" (click)="refreshConsultasPendientes()" [disabled]="loadingConsultasPendientes">
-            <span [class.spinner]="loadingConsultasPendientes"></span>
-            {{ loadingConsultasPendientes ? 'Cargando...' : '↻ Actualizar' }}
-          </button>
-        </div>
-
-        <div class="consultas-grid" *ngIf="!loadingConsultasPendientes">
-          <div *ngIf="consultasPendientes.length === 0" class="empty-state">
-            <div class="empty-state-icon">✅</div>
-            <div class="empty-state-title">No hay consultas pendientes</div>
-            <div class="empty-state-description">Todas las consultas pasadas tienen historia médica registrada.</div>
-          </div>
-
-          <div *ngFor="let consulta of consultasPendientes" class="consulta-card consulta-pendiente" [class]="getConsultaCardClass(consulta)">
-            <div class="consulta-header">
-              <div class="hora">{{ formatTime(consulta.hora_pautada) }}</div>
-              <div class="estado estado-pendiente">
-                Pendiente
-              </div>
-            </div>
-            
-            <div class="consulta-body">
-              <div class="fecha-pasada">
-                📅 {{ formatDate(consulta.fecha_pautada) }}
-              </div>
-              <div class="paciente-info">
-                <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
-                <div class="paciente-cedula" *ngIf="consulta.paciente_cedula">Cédula: {{ consulta.paciente_cedula }}</div>
-              </div>
-              
-              <div class="medico-info">
-                <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
-                <div class="medico-especialidad" *ngIf="consulta.especialidad_nombre">{{ consulta.especialidad_nombre }}</div>
-              </div>
-              
-              <div class="motivo" *ngIf="consulta.motivo_consulta">
-                {{ consulta.motivo_consulta }}
-              </div>
-              
-              <div class="tipo-consulta" *ngIf="consulta.tipo_consulta">
-                <span class="tipo-badge">{{ getTipoConsultaText(consulta.tipo_consulta) }}</span>
-              </div>
-            </div>
-            
-            <div class="consulta-actions">
-              <button class="btn btn-view" (click)="verConsulta(consulta)">
-                👁️ Ver
-              </button>
-              <button class="btn btn-history" (click)="addHistoria(consulta)"
-                      *ngIf="currentUser?.rol === 'medico'">
-                📝 Registrar Historia
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="loadingConsultasPendientes" class="loading-consultas">
-          <div class="spinner"></div>
-          <p>Cargando consultas pendientes...</p>
-        </div>
-      </div>
-
       <!-- Accesos Directos - Solo para administradores -->
       <div class="quick-actions" *ngIf="currentUser?.rol === 'administrador'">
         <h3>Accesos Directos</h3>
         <div class="actions-grid">
+          <a routerLink="/admin/consultas/nueva" class="action-card action-card-quick">
+            <div class="action-icon consultas">
+              <span class="action-plus">➕</span>
+            </div>
+            <div class="action-content">
+              <div class="action-title">Nueva Consulta</div>
+              <div class="action-description">Agendar una nueva cita</div>
+            </div>
+          </a>
+          <a routerLink="/patients/new" class="action-card action-card-quick">
+            <div class="action-icon pacientes">
+              <span class="action-plus">➕</span>
+            </div>
+            <div class="action-content">
+              <div class="action-title">Nuevo Paciente</div>
+              <div class="action-description">Registrar un nuevo paciente</div>
+            </div>
+          </a>
           <a routerLink="/patients" class="action-card">
             <div class="action-icon pacientes">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -553,7 +675,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
       border-radius: 50%;
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
@@ -611,7 +733,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .btn-primary {
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
     }
@@ -624,18 +746,18 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid var(--color-primary);
+      border: 1px solid #f5576c;
     }
 
     .btn-secondary:hover {
-      background: var(--color-primary);
+      background: #f5576c;
       color: white;
       transform: translateY(-2px);
     }
 
     .section-divider {
       height: 3px;
-      background: linear-gradient(90deg, var(--color-primary), #F5F5F5, var(--color-primary));
+      background: linear-gradient(90deg, #f5576c, #F5F5F5, #f5576c);
       margin: 2rem 0 1.5rem 0;
       border-radius: 2px;
       box-shadow: 0 2px 4px rgba(233, 30, 99, 0.2);
@@ -681,7 +803,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .patient-email {
-      color: var(--color-primary) !important;
+      color: #f5576c !important;
     }
 
     .patient-actions .btn {
@@ -744,7 +866,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .consultas-count {
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
       color: white;
       padding: 0.25rem 0.75rem;
       border-radius: 9999px;
@@ -753,63 +875,6 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       font-family: 'Montserrat', sans-serif;
     }
 
-    .consultas-section .section-header .btn-refresh,
-    .section-header button.btn-refresh {
-      background: #ffffff !important;
-      color: #f5576c !important;
-      border: 2px solid #f5576c !important;
-      padding: 0.375rem 0.75rem !important;
-      border-radius: 0.5rem !important;
-      font-size: 0.75rem !important;
-      font-weight: 600 !important;
-      cursor: pointer !important;
-      transition: all 0.2s ease !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 0.375rem !important;
-      font-family: 'Montserrat', sans-serif !important;
-      margin: 0 !important;
-      box-sizing: border-box !important;
-    }
-
-    .consultas-section .section-header .btn-refresh:hover:not([disabled]),
-    .section-header button.btn-refresh:hover:not([disabled]) {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
-      color: white !important;
-      border-color: transparent !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3) !important;
-    }
-
-    .consultas-section .section-header .btn-refresh:active:not([disabled]),
-    .section-header button.btn-refresh:active:not([disabled]) {
-      transform: translateY(0) !important;
-      box-shadow: 0 1px 4px rgba(245, 87, 108, 0.2) !important;
-    }
-
-    .consultas-section .section-header .btn-refresh[disabled],
-    .section-header button.btn-refresh[disabled] {
-      background: #f3f4f6 !important;
-      color: #9ca3af !important;
-      border-color: #e5e7eb !important;
-      cursor: not-allowed !important;
-      opacity: 0.6 !important;
-    }
-
-    .consultas-section .section-header .btn-refresh .spinner,
-    .section-header button.btn-refresh .spinner {
-      display: inline-block !important;
-      width: 12px !important;
-      height: 12px !important;
-      border: 2px solid currentColor !important;
-      border-top-color: transparent !important;
-      border-radius: 50% !important;
-      animation: spin 0.8s linear infinite !important;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
 
     .consultas-grid {
       display: grid;
@@ -819,7 +884,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       max-height: 600px;
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: var(--color-primary) #f1f5f9;
+      scrollbar-color: #f5576c #f1f5f9;
     }
 
     .consultas-grid::-webkit-scrollbar {
@@ -832,12 +897,12 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .consultas-grid::-webkit-scrollbar-thumb {
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
       border-radius: 3px;
     }
 
     .consultas-grid::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(135deg, var(--color-primary-dark), #AD1457);
+      background: linear-gradient(135deg, #e64f62, #AD1457);
     }
 
     .consulta-card {
@@ -863,14 +928,14 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark), #3B82F6);
+      background: linear-gradient(90deg, #f093fb, #e64f62, #f5576c);
       border-radius: 1rem 1rem 0 0;
     }
 
     .consulta-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-      border-color: var(--color-primary);
+      border-color: #f5576c;
     }
 
     .consulta-header {
@@ -890,7 +955,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       left: 0;
       width: 40px;
       height: 2px;
-      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+      background: linear-gradient(90deg, #f093fb, #e64f62);
       border-radius: 1px;
     }
 
@@ -899,7 +964,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       color: #1e293b;
       font-size: 1rem;
       font-family: 'Montserrat', sans-serif;
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -916,8 +981,8 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .estado-agendada {
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(245, 87, 108, 0.12);
+      color: var(--color-primary-dark);
     }
 
     .estado-por_agendar {
@@ -979,7 +1044,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       padding: 0.5rem 0.6rem;
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       border-radius: 0.4rem;
-      border-left: 3px solid #3B82F6;
+      border-left: 3px solid #f5576c;
       margin-bottom: 0.5rem;
     }
 
@@ -1005,7 +1070,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       content: '';
       width: 14px;
       height: 14px;
-      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      background: linear-gradient(135deg, #f5576c, #e64f62);
       border-radius: 50%;
       display: inline-block;
       margin-right: 0.4rem;
@@ -1033,7 +1098,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       padding: 0.5rem 0.6rem;
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       border-radius: 0.4rem;
-      border-left: 3px solid var(--color-primary);
+      border-left: 3px solid #f5576c;
       margin-bottom: 0.5rem;
     }
 
@@ -1060,7 +1125,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       content: '';
       width: 14px;
       height: 14px;
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
       border-radius: 50%;
       display: inline-block;
       margin-right: 0.4rem;
@@ -1177,7 +1242,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .consulta-actions .btn-view {
-      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+      background: linear-gradient(135deg, #f5576c, var(--color-primary-dark));
       color: white;
       box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
     }
@@ -1358,7 +1423,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       padding: 1rem;
       border-radius: 0.5rem;
       margin-bottom: 1.5rem;
-      border-left: 3px solid var(--color-primary);
+      border-left: 3px solid #f5576c;
     }
 
     .consulta-details {
@@ -1373,7 +1438,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       font-weight: 600;
       margin: 0 0 0.75rem 0;
       padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--color-primary);
+      border-bottom: 2px solid #f5576c;
     }
 
     .detail-grid {
@@ -1424,7 +1489,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .form-control:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: #f5576c;
       box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
     }
 
@@ -1454,7 +1519,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .radio-option input[type="radio"] {
       margin-right: 0.75rem;
-      accent-color: var(--color-primary);
+      accent-color: #f5576c;
     }
 
     .radio-label {
@@ -1612,11 +1677,11 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     }
 
     .action-icon.pacientes {
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb, #f5576c);
     }
 
     .action-icon.medicos {
-      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+      background: linear-gradient(135deg, #f5576c, var(--color-primary-dark));
     }
 
     .action-icon.consultas {
@@ -1752,17 +1817,16 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .consultas-section .section-header .btn-refresh:hover:not([disabled]),
     .section-header button.btn-refresh:hover:not([disabled]) {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+      background: #f5576c !important;
       color: white !important;
-      border-color: transparent !important;
       transform: translateY(-1px) !important;
-      box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3) !important;
+      box-shadow: 0 2px 8px rgba(122, 156, 198, 0.3) !important;
     }
 
     .consultas-section .section-header .btn-refresh:active:not([disabled]),
     .section-header button.btn-refresh:active:not([disabled]) {
       transform: translateY(0) !important;
-      box-shadow: 0 1px 4px rgba(245, 87, 108, 0.2) !important;
+      box-shadow: 0 1px 4px rgba(122, 156, 198, 0.2) !important;
     }
 
     .consultas-section .section-header .btn-refresh[disabled],
@@ -1785,6 +1849,159 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       animation: spin 0.8s linear infinite !important;
     }
 
+    .consultas-tabs-wrapper {
+      padding-top: 0.25rem;
+    }
+
+    .consultas-tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.5rem;
+    }
+
+    .consultas-tab {
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      color: #475569;
+      padding: 0.55rem 0.9rem 0.55rem 0.6rem;
+      border-radius: 10px 10px 0 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+
+    .consultas-tab-icon-wrap {
+      flex-shrink: 0;
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .consultas-tab-svg {
+      width: 1.3rem;
+      height: 1.3rem;
+    }
+
+    .tab-hoy .consultas-tab-icon-wrap {
+      background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1d4ed8;
+    }
+
+    .tab-atrasadas .consultas-tab-icon-wrap {
+      background: linear-gradient(145deg, #ffedd5 0%, #fdba74 100%);
+      color: #c2410c;
+    }
+
+    .tab-futuras .consultas-tab-icon-wrap {
+      background: linear-gradient(145deg, #ede9fe 0%, #c4b5fd 100%);
+      color: #5b21b6;
+    }
+
+    .consultas-tab-label {
+      flex: 1 1 auto;
+      min-width: 0;
+      text-align: left;
+      line-height: 1.3;
+    }
+
+    .consultas-tab:hover {
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    .consultas-tab:hover .consultas-tab-icon-wrap {
+      transform: scale(1.06);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+    }
+
+    .consultas-tab.active {
+      background: #fff;
+      color: #0f172a;
+      border-bottom-color: #fff;
+      margin-bottom: -2px;
+      padding-bottom: calc(0.55rem + 2px);
+      box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.08);
+    }
+
+    .consultas-tab.active.tab-hoy {
+      border-top: 3px solid #3b82f6;
+      border-color: #bfdbfe;
+      border-bottom-color: #fff;
+    }
+
+    .consultas-tab.active.tab-atrasadas {
+      border-top: 3px solid #ea580c;
+      border-color: #fed7aa;
+      border-bottom-color: #fff;
+    }
+
+    .consultas-tab.active.tab-futuras {
+      border-top: 3px solid #7c3aed;
+      border-color: #ddd6fe;
+      border-bottom-color: #fff;
+    }
+
+    .consultas-tab.active .consultas-tab-icon-wrap {
+      transform: scale(1.02);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15);
+    }
+
+    .consultas-tab .tab-badge {
+      font-size: 0.7rem;
+      padding: 0.12rem 0.45rem;
+      font-weight: 700;
+    }
+
+    .consultas-tab-panel .section-header {
+      margin-top: 0;
+    }
+
+    .section-header-futuras {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .futuras-date-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 0.75rem;
+    }
+
+    .futuras-date-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .futuras-date-input {
+      padding: 0.4rem 0.5rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #0f172a;
+      background: #fff;
+    }
+
+    .futuras-sub {
+      margin: 0 0 1rem 0;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -1798,7 +2015,9 @@ export class DashboardComponent implements OnInit {
   recentPatientsList: Patient[] = [];
   loading = true;
   currentUser: User | null = null;
-  
+  /** Permiso para finalizar consultas (según Gestión de Perfiles) */
+  puedeFinalizarConsulta = false;
+
   // Propiedades para consultas del día
   consultasDelDia: ConsultaWithDetails[] = [];
   loadingConsultas = false;
@@ -1806,6 +2025,12 @@ export class DashboardComponent implements OnInit {
   // Propiedades para consultas pendientes
   consultasPendientes: ConsultaWithDetails[] = [];
   loadingConsultasPendientes = false;
+
+  /** Pestañas de consultas (médico / administrador) */
+  consultasTab: 'hoy' | 'atrasadas' | 'futuras' = 'hoy';
+  consultasFuturas: ConsultaWithDetails[] = [];
+  loadingConsultasFuturas = false;
+  fechaFuturaConsulta = '';
   
   // Propiedades para modales
   showVerModal = false;
@@ -1836,7 +2061,108 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-      this.loadDashboardData();
+    if (this.showConsultasTabs()) {
+      this.fechaFuturaConsulta = this.getTomorrowYyyyMmDd();
+    }
+    this.loadPermisoFinalizar();
+    this.loadDashboardData();
+  }
+
+  showConsultasTabs(): boolean {
+    const r = this.currentUser?.rol;
+    return r === 'medico' || r === 'administrador';
+  }
+
+  get minFuturaDate(): string {
+    return this.getTomorrowYyyyMmDd();
+  }
+
+  private getTomorrowYyyyMmDd(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return this.toYyyyMmDdLocal(d);
+  }
+
+  private toYyyyMmDdLocal(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  setConsultasTab(tab: 'hoy' | 'atrasadas' | 'futuras'): void {
+    this.consultasTab = tab;
+    if (tab === 'futuras') {
+      if (!this.fechaFuturaConsulta) {
+        this.fechaFuturaConsulta = this.getTomorrowYyyyMmDd();
+      }
+      this.loadConsultasFuturas();
+    }
+  }
+
+  onFuturaFechaChanged(): void {
+    if (this.consultasTab !== 'futuras' || !this.fechaFuturaConsulta) return;
+    if (this.fechaFuturaConsulta < this.minFuturaDate) {
+      this.fechaFuturaConsulta = this.minFuturaDate;
+    }
+    this.loadConsultasFuturas();
+  }
+
+  loadConsultasFuturas(): void {
+    if (!this.fechaFuturaConsulta) return;
+    this.loadingConsultasFuturas = true;
+    this.consultaService
+      .getConsultas({
+        fecha_desde: this.fechaFuturaConsulta,
+        fecha_hasta: this.fechaFuturaConsulta,
+        page: 1,
+        limit: 300
+      })
+      .subscribe({
+        next: (response) => {
+          const raw = (response.data || []) as ConsultaWithDetails[];
+          this.consultasFuturas = raw.filter((c) => this.matchesFuturaSelectedDay(c.fecha_pautada));
+          this.loadingConsultasFuturas = false;
+        },
+        error: (error) => {
+          this.errorHandler.logError(error, 'cargar consultas futuras');
+          this.consultasFuturas = [];
+          this.loadingConsultasFuturas = false;
+        }
+      });
+  }
+
+  /** Mismo día que el calendario y estrictamente posterior a hoy (mañana como mínimo). */
+  private matchesFuturaSelectedDay(fechaPautada: string | undefined): boolean {
+    if (!fechaPautada || !this.fechaFuturaConsulta) return false;
+    const part = String(fechaPautada).slice(0, 10);
+    return part === this.fechaFuturaConsulta && part >= this.minFuturaDate;
+  }
+
+  private refreshConsultasAfterMutation(): void {
+    this.loadConsultasDelDia();
+    if (this.showConsultasTabs()) {
+      this.loadConsultasPendientes();
+      if (this.consultasTab === 'futuras' && this.fechaFuturaConsulta) {
+        this.loadConsultasFuturas();
+      }
+    }
+  }
+
+  /** Carga el permiso para finalizar consultas (según Gestión de Perfiles). Si el API falla, se permite a administrador, secretaria y médico. */
+  loadPermisoFinalizar(): void {
+    this.consultaService.getPermisoFinalizar().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.puedeFinalizarConsulta = res.data.puedeFinalizar;
+        } else {
+          this.puedeFinalizarConsulta = this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'medico';
+        }
+      },
+      error: () => {
+        this.puedeFinalizarConsulta = this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'medico';
+      }
+    });
   }
 
   loadDashboardData(): void {
@@ -1948,6 +2274,23 @@ export class DashboardComponent implements OnInit {
     return fullName || ''; // Retorna string vacío si ambos son undefined/null
   }
 
+  /** Nombre para la bienvenida: "Dr. Anderson Cepeda" / "Dra. ..." / "Secretaría" según rol */
+  getWelcomeDisplayName(): string {
+    if (!this.currentUser) return '';
+    const fullName = this.getDoctorFullName();
+    const rol = this.currentUser.rol || '';
+    if (rol === 'secretaria') {
+      return fullName || 'Secretaría';
+    }
+    if (rol === 'medico' || rol === 'administrador') {
+      if (!fullName) return rol === 'medico' ? 'Médico' : 'Administrador';
+      const sexo = this.currentUser.sexo?.toString().toLowerCase() || '';
+      const titulo = sexo === 'femenino' ? 'Dra.' : 'Dr.';
+      return `${titulo} ${fullName}`;
+    }
+    return fullName || this.currentUser.username || 'Usuario';
+  }
+
   formatTime(timeString: string): string {
     if (!timeString) return '';
     return timeString.substring(0, 5); // HH:MM
@@ -2013,8 +2356,13 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/admin/consultas', consulta.id, 'finalizar']);
   }
 
+  /** True si la consulta está en estado Completada (solo entonces se muestra el botón Finalizar). */
+  isEstadoCompletada(consulta: ConsultaWithDetails): boolean {
+    return (consulta?.estado_consulta || '').toLowerCase() === 'completada';
+  }
+
   canFinalizarConsulta(): boolean {
-    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+    return this.puedeFinalizarConsulta;
   }
 
   canReagendarConsulta(): boolean {
@@ -2067,8 +2415,7 @@ export class DashboardComponent implements OnInit {
         this.isSubmitting = false;
         this.showFinalizarConServiciosModal = false;
         this.selectedConsulta = null;
-        this.loadConsultasDelDia();
-        this.loadConsultasPendientes();
+        this.refreshConsultasAfterMutation();
         alert('Consulta finalizada exitosamente');
       },
       error: (error: any) => {
@@ -2161,8 +2508,7 @@ export class DashboardComponent implements OnInit {
       next: (response) => {
         alert('⚠️ Consulta cancelada exitosamente\n\nLa consulta ha sido cancelada y el paciente será notificado. Puede reagendar la cita si es necesario.');
         this.closeCancelarModal();
-        this.loadConsultasDelDia();
-        this.loadConsultasPendientes();
+        this.refreshConsultasAfterMutation();
         this.isSubmitting = false;
       },
       error: (error) => {

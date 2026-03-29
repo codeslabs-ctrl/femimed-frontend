@@ -140,10 +140,54 @@ export class FinalizarConsultaModalComponent implements OnInit {
     (servicio as any)[field] = value;
   }
 
+  /** Símbolo de moneda para mostrar en resumen y totales */
+  getCurrencySymbol(moneda: string): string {
+    return moneda === 'VES' ? 'Bs. ' : '$';
+  }
+
+  /** Formatea un número como monto con separador de miles (.) y decimal (,). */
+  private formatMontoDisplay(value: number | string): string {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (value == null || isNaN(n) || n === 0) return '';
+    const fixed = n.toFixed(2);
+    const [intPart, decPart] = fixed.split('.');
+    const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${withThousands},${decPart}`;
+  }
+
+  getMontoFormateado(servicioId: number): string {
+    const servicio = this.getServicioSeleccionado(servicioId);
+    if (!servicio) return '';
+    const val = servicio.monto_pagado;
+    if (val == null || Number(val) === 0) return '';
+    return this.formatMontoDisplay(val);
+  }
+
+  /** Parsea el input: solo dígitos, interpretados como centavos (ej. 4553025 → 45530,25). El valor mostrado se formatea como 45.530,25 */
+  private parseMontoInput(value: string): number {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits === '') return 0;
+    const n = parseInt(digits, 10) / 100;
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+
+  onMontoChange(servicioId: number, value: string): void {
+    const numericValue = this.parseMontoInput(value);
+    this.updateServicioSeleccionado(servicioId, 'monto_pagado', numericValue);
+    this.calcularTotales();
+  }
+
+  onMontoBlur(servicioId: number): void {
+    const servicio = this.getServicioSeleccionado(servicioId);
+    if (isNaN(servicio.monto_pagado) || servicio.monto_pagado < 0) {
+      servicio.monto_pagado = servicio.monto_base || 0;
+      this.calcularTotales();
+    }
+  }
+
   onMontoInput(servicioId: number, event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.updateServicioSeleccionado(servicioId, 'monto_pagado', parseFloat(target.value) || 0);
-    this.calcularTotales();
+    this.onMontoChange(servicioId, target.value);
   }
 
   onMonedaChange(servicioId: number, event: Event): void {
@@ -179,11 +223,10 @@ export class FinalizarConsultaModalComponent implements OnInit {
   }
 
   validarMontos(): boolean {
-    return this.serviciosSeleccionados.every(servicio => 
-      servicio.monto_pagado > 0 && 
-      servicio.monto_pagado !== null && 
-      !isNaN(servicio.monto_pagado)
-    );
+    return this.serviciosSeleccionados.every(servicio => {
+      const m = servicio.monto_pagado;
+      return m != null && !isNaN(m) && m >= 0;
+    });
   }
 
   getTotalVES(): number {

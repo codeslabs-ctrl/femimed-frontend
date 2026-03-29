@@ -24,10 +24,16 @@ export interface HistoricoData {
 }
 
 export interface HistoricoWithDetails extends HistoricoData {
+  consulta_id?: number;
+  titulo?: string | null;
+  tratamiento_cumplido?: string | null;
+  evaluacion_subjetiva?: string | null;
+  evaluacion_complementaria?: string | null;
   paciente_nombre?: string;
   paciente_apellidos?: string;
   medico_nombre?: string;
   medico_apellidos?: string;
+  medico_sexo?: string | null;
   nombre_medico?: string; // Field that actually comes from the backend
   especialidad_nombre?: string;
 }

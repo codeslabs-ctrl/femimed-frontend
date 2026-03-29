@@ -14,7 +14,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       <div class="modal-container" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2>Cambiar Contraseña</h2>
-          <button class="close-btn" (click)="closeModal()" type="button" [disabled]="isMandatory">
+          <button class="close-btn" (click)="closeModal()" type="button">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
@@ -25,8 +25,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
           <div class="welcome-message" *ngIf="isFirstLogin">
             <div class="welcome-icon">🔐</div>
             <h3>¡Bienvenido!</h3>
-            <p>Por seguridad, <strong>debes</strong> cambiar tu contraseña temporal por una más segura y fácil de recordar.</p>
-            <p class="mandatory-note" *ngIf="isMandatory">Este paso es obligatorio para continuar.</p>
+            <p>Por seguridad, debes cambiar tu contraseña temporal por una más segura y fácil de recordar.</p>
           </div>
           
           <form #passwordForm="ngForm" (ngSubmit)="onSubmit()" class="password-form">
@@ -131,7 +130,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
                 type="button" 
                 class="btn btn-secondary" 
                 (click)="closeModal()"
-                [disabled]="isLoading || isMandatory">
+                [disabled]="isLoading">
                 Cancelar
               </button>
               <button 
@@ -216,9 +215,9 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       text-align: center;
       margin-bottom: 32px;
       padding: 24px;
-      background: linear-gradient(135deg, rgba(240, 147, 251, 0.18) 0%, rgba(245, 87, 108, 0.12) 100%);
+      background: linear-gradient(135deg, #E8F0F8 0%, #D4E4F0 100%);
       border-radius: 12px;
-      border: 1px solid rgba(245, 87, 108, 0.25);
+      border: 1px solid #B8D4E8;
     }
 
     .welcome-icon {
@@ -228,7 +227,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 
     .welcome-message h3 {
       margin: 0 0 12px;
-      color: var(--color-primary-dark);
+      color: #e64f62;
       font-size: 1.25rem;
       font-weight: 600;
     }
@@ -237,12 +236,6 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       margin: 0;
       color: #4A6A8A;
       line-height: 1.5;
-    }
-
-    .mandatory-note {
-      margin-top: 10px;
-      color: var(--color-primary-dark);
-      font-weight: 600;
     }
 
     .password-form {
@@ -279,8 +272,8 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 
     .form-input:focus {
       outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.12);
+      border-color: #f5576c;
+      box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.1);
     }
 
     .form-input.error {
@@ -350,14 +343,14 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
     }
 
     .btn-primary {
-      background: var(--gradient-primary-solid);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #f3a4fc 0%, #ff6f80 100%);
+      background: linear-gradient(135deg, #8BA8D1 0%, #6A8AAA 100%);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(245, 87, 108, 0.28);
+      box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
     }
 
     .loading-spinner {
@@ -393,7 +386,6 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 export class ChangePasswordModalComponent {
   @Input() isVisible = false;
   @Input() isFirstLogin = false;
-  @Input() isMandatory = false;
   @Output() close = new EventEmitter<void>();
   @Output() passwordChanged = new EventEmitter<void>();
 
@@ -433,15 +425,11 @@ export class ChangePasswordModalComponent {
 
   onOverlayClick(event: Event): void {
     if (event.target === event.currentTarget) {
-      // En primer login obligatorio, no permitir cerrar el modal haciendo clic fuera.
-      if (this.isMandatory) return;
       this.closeModal();
     }
   }
 
   closeModal(): void {
-    // En primer login obligatorio, no permitir cerrar el modal.
-    if (this.isMandatory) return;
     this.close.emit();
     this.resetForm();
   }
@@ -472,7 +460,7 @@ export class ChangePasswordModalComponent {
     };
 
     // Obtener token del localStorage
-    const token = localStorage.getItem('femimed_token');
+    const token = localStorage.getItem('demomed_token');
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

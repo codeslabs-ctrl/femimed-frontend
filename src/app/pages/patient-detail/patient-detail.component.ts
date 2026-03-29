@@ -7,6 +7,7 @@ import { ArchivoService } from '../../services/archivo.service';
 import { Patient } from '../../models/patient.model';
 import { ArchivoAnexo } from '../../models/archivo.model';
 import { RemitirPacienteModalComponent } from '../../components/remitir-paciente-modal/remitir-paciente-modal.component';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-patient-detail',
@@ -20,6 +21,9 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
           <div class="header-actions">
             <a routerLink="/patients" class="btn btn-secondary">
               ← Volver a Pacientes
+            </a>
+            <a [routerLink]="['/patients', patient?.id, 'antecedentes']" class="btn btn-outline">
+              📋 Antecedentes
             </a>
             <a [routerLink]="['/patients', patient?.id, 'edit']" class="btn btn-primary">
               ✏️ Editar Paciente
@@ -85,6 +89,10 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
               <div class="info-item" *ngIf="patient.cedula">
                 <label>Cédula</label>
                 <span class="cedula-badge">{{ patient.cedula }}</span>
+              </div>
+              <div class="info-item" *ngIf="patient.remitido_por">
+                <label>Remitido por</label>
+                <span class="remitido-por-info">{{ patient.remitido_por }}</span>
               </div>
             </div>
           </div>
@@ -491,7 +499,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
     }
 
     .btn-download {
-      background: #3b82f6;
+      background: #f5576c;
       color: white;
       border: none;
       border-radius: 0.375rem;
@@ -504,7 +512,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
     }
 
     .btn-download:hover {
-      background: #2563eb;
+      background: #e64f62;
       transform: translateY(-1px);
     }
 
@@ -525,7 +533,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
 
     .sex-badge.female {
       background-color: #E8F0F8;
-      color: #5A7A9A;
+      color: #e64f62;
     }
 
     .cedula-badge {
@@ -535,7 +543,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       font-size: 0.875rem;
       font-weight: 500;
       background-color: #E8F0F8;
-      color: #5A7A9A;
+      color: #e64f62;
       font-family: 'Courier New', monospace;
     }
 
@@ -550,6 +558,16 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       background-color: #f0f9ff;
       color: #0369a1;
       white-space: nowrap;
+    }
+
+    .remitido-por-info {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      background-color: #f0fdf4;
+      color: #166534;
+      border-left: 3px solid #22c55e;
     }
 
     .patient-actions {
@@ -634,7 +652,8 @@ export class PatientDetailComponent implements OnInit {
     private historicoService: HistoricoService,
     private archivoService: ArchivoService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -748,7 +767,9 @@ export class PatientDetailComponent implements OnInit {
 
   onRemisionCreated(remision: any) {
     console.log('Remisión creada:', remision);
-    alert(`✅ Paciente remitido exitosamente\n\n${this.patient?.nombres} ${this.patient?.apellidos} ha sido remitido correctamente. Se ha enviado una notificación al médico especialista.`);
+    this.alertService.showSuccess(
+      `${this.patient?.nombres} ${this.patient?.apellidos} ha sido remitido correctamente. Se ha enviado una notificación al médico especialista.`
+    );
     this.showRemitirModal = false;
   }
 
@@ -922,7 +943,7 @@ export class PatientDetailComponent implements OnInit {
         },
         error: (error) => {
         console.error('Error downloading file:', error);
-        alert('❌ Error al descargar el archivo\n\nNo se pudo descargar el archivo. Por favor, verifique su conexión e intente nuevamente.');
+        this.alertService.showError('No se pudo descargar el archivo. Por favor, verifique su conexión e intente nuevamente.');
         }
       });
   }

@@ -178,7 +178,7 @@
 
 .form-control:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -391,13 +391,13 @@
 
 .total-general {
   border-bottom: none;
-  border-top: 2px solid #3b82f6;
+  border-top: 2px solid var(--color-primary);
   font-size: 1.1rem;
   color: #1e293b;
 }
 
 .total-general strong {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 /* Indicadores de validación */

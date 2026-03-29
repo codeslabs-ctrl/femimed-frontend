@@ -34,6 +34,7 @@ export interface ConsultaWithDetails extends Consulta {
   paciente_email?: string;
   medico_nombre?: string;
   medico_apellidos?: string;
+  medico_sexo?: string | null;
   medico_especialidad_id?: number;
   especialidad_nombre?: string;
   medico_remitente_nombre?: string;
@@ -51,6 +52,7 @@ export interface ConsultaFormData {
   paciente_id: number;
   medico_id: number;
   medico_remitente_id?: number;
+  clinica_atencion_id?: number | null;
   motivo_consulta: string;
   tipo_consulta: 'primera_vez' | 'control' | 'seguimiento' | 'urgencia';
   fecha_pautada: string;

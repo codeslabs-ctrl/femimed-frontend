@@ -1,88 +1,92 @@
-<div class="login-container">
-  <div class="login-card">
-    <div class="login-header">
-      <div class="logo">
-        <img src="assets/logos/clinica/logo.svg" alt="FemiMed Logo" class="logo-image">
-        <p>Centro Médico Especializado</p>
+<div class="login-page">
+  <div class="login-split">
+    <!-- Panel izquierdo: imagen del médico + bloque azul -->
+    <div class="login-left">
+      <div class="login-left-image">
+        <img src="/assets/images/medico_demomed.png" alt="Médico" class="login-medico-img">
+      </div>
+      <div class="login-left-brand">
+        <h2 class="login-left-title">Bienvenido a FemiMed</h2>
+        <p class="login-left-desc">Plataforma centralizada para la gestión de consultas médicas, pacientes y historias clínicas.</p>
       </div>
     </div>
-    
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      <div class="form-group">
-        <label for="username">Usuario</label>
-        <input 
-          type="text" 
-          id="username" 
-          formControlName="username" 
-          placeholder="Ingresa tu usuario"
-          [disabled]="isLoading || isRateLimited"
-          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
-        >
-        <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
-          El usuario es requerido
-        </div>
-      </div>
 
-      <div class="form-group">
-        <label for="password">Contraseña</label>
-        <div class="password-input-container">
-          <input 
-            [type]="showPassword ? 'text' : 'password'" 
-            id="password" 
-            formControlName="password" 
-            placeholder="Ingresa tu contraseña"
-            [disabled]="isLoading || isRateLimited"
-            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-            class="password-input"
+    <!-- Panel derecho: formulario -->
+    <div class="login-right">
+      <div class="login-card">
+        <div class="login-header">
+          <img src="assets/logos/clinica/logo.png" alt="FemiMed" class="logo-image">
+          <h1 class="login-heading">Iniciar sesión</h1>
+          <p class="login-subheading">Ingresa tus credenciales para acceder a tu cuenta</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <div class="form-group">
+            <label for="username">Usuario</label>
+            <input
+              type="text"
+              id="username"
+              formControlName="username"
+              placeholder="Ingresa tu usuario"
+              [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+            >
+            <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
+              El usuario es requerido
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <div class="password-input-container">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                id="password"
+                formControlName="password"
+                placeholder="Ingresa tu contraseña"
+                [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                class="password-input"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="togglePasswordVisibility()"
+                [title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <span class="password-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
+              </button>
+            </div>
+            <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
+              La contraseña es requerida
+            </div>
+          </div>
+
+          <div class="forgot-password-container">
+            <a routerLink="/forgot-password" class="forgot-password-link">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
+          <button
+            type="submit"
+            class="login-btn"
+            [disabled]="loginForm.invalid || isLoading || isRateLimited"
+            [class.loading]="isLoading"
+            [class.rate-limited]="isRateLimited"
           >
-          <button 
-            type="button" 
-            class="password-toggle" 
-            (click)="togglePasswordVisibility()"
-            [disabled]="isLoading || isRateLimited"
-            [title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          >
-            <span class="password-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
+            <span *ngIf="!isLoading && !isRateLimited">Iniciar Sesión</span>
+            <span *ngIf="isLoading">Iniciando...</span>
+            <span *ngIf="isRateLimited">Bloqueado ({{ getFormattedTimeRemaining() }})</span>
           </button>
+
+          <div *ngIf="errorMessage" class="error-message">
+            {{ errorMessage }}
+          </div>
+        </form>
+
+        <div class="copyright">
+          <p>&copy; {{ currentYear }} <a href="https://codes-labs.com" target="_blank" rel="noopener noreferrer" class="copyright-link">Codes-Labs</a>. Todos los derechos reservados.</p>
         </div>
-        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
-          La contraseña es requerida
-        </div>
       </div>
-
-      <button 
-        type="submit" 
-        class="login-btn" 
-        [disabled]="loginForm.invalid || isLoading || isRateLimited"
-        [class.loading]="isLoading"
-        [class.rate-limited]="isRateLimited"
-        [attr.aria-busy]="isLoading ? 'true' : 'false'"
-      >
-        <span class="btn-content" *ngIf="!isRateLimited">
-          <span class="spinner" *ngIf="isLoading" aria-hidden="true"></span>
-          <span *ngIf="!isLoading">Iniciar Sesión</span>
-          <span *ngIf="isLoading">Validando credenciales...</span>
-        </span>
-        <span *ngIf="isRateLimited">Bloqueado ({{ getFormattedTimeRemaining() }})</span>
-      </button>
-
-      <div *ngIf="isLoading" class="loading-hint">
-        Esto puede tardar unos segundos.
-      </div>
-
-      <div class="forgot-password-container">
-        <a routerLink="/forgot-password" class="forgot-password-link">
-          ¿Olvidaste tu contraseña?
-        </a>
-      </div>
-
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
-    </form>
-
-    <div class="copyright">
-      <p>&copy; {{ currentYear }} CODES-LABS. Todos los derechos reservados.</p>
     </div>
   </div>
 </div>

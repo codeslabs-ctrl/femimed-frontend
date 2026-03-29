@@ -69,6 +69,22 @@ export class PatientService {
     });
   }
 
+  searchPatientsByTelefono(telefono: string): Observable<ApiResponse<Patient[]>> {
+    return this.http.get<ApiResponse<Patient[]>>(`${this.baseUrl}/search-telefono`, {
+      params: { telefono }
+    });
+  }
+
+  /**
+   * Busca pacientes por patología/dolencia (texto en diagnostico, motivo_consulta, antecedentes en historico_pacientes).
+   * Para médico: opcional medico_id para restringir a sus pacientes.
+   */
+  searchPatientsByPatologia(q: string, medicoId?: number): Observable<ApiResponse<Patient[]>> {
+    let params = new HttpParams().set('q', q);
+    if (medicoId != null) params = params.set('medico_id', medicoId.toString());
+    return this.http.get<ApiResponse<Patient[]>>(`${this.baseUrl}/search-by-patologia`, { params });
+  }
+
   getPatientsByAgeRange(minAge: number, maxAge: number): Observable<ApiResponse<Patient[]>> {
     return this.http.get<ApiResponse<Patient[]>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_AGE_RANGE}`, {
       params: { minAge: minAge.toString(), maxAge: maxAge.toString() }

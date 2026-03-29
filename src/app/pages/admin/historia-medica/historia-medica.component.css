@@ -105,12 +105,12 @@
 }
 
 .btn-download {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .btn-download:hover {
-  background: #dbeafe;
-  color: #2563eb;
+  background: rgba(245, 87, 108, 0.12);
+  color: var(--color-primary-dark);
   transform: translateY(-1px);
 }
 
@@ -217,9 +217,9 @@
   gap: 0.75rem;
   padding: 1rem;
   background: #f0f9ff;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(240, 147, 251, 0.18);
   border-radius: 0.5rem;
-  color: #1e40af;
+  color: var(--color-primary-dark);
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -306,5 +306,159 @@
     flex-direction: column;
     gap: 0.25rem;
   }
+}
+
+/* Antecedentes estandarizados */
+.antecedentes-block {
+  margin-top: 0.75rem;
+}
+.antecedentes-collapsable {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fafafa;
+}
+.antecedentes-section-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  padding: 0.25rem 0;
+}
+.antecedentes-section-header:hover {
+  color: var(--color-primary, var(--color-primary));
+}
+.antecedentes-section-header .section-label {
+  margin-bottom: 0;
+}
+.antecedentes-chevron {
+  font-size: 0.75rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+.antecedentes-chevron-open {
+  transform: rotate(-180deg);
+}
+.antecedentes-section-body {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+.section-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+.antecedente-item {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.antecedente-item:last-child {
+  border-bottom: none;
+}
+.antecedente-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.antecedente-name {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+.antecedente-si-no {
+  display: flex;
+  gap: 1rem;
+}
+.antecedente-si-no label {
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.antecedente-detalle {
+  margin-top: 0.35rem;
+  margin-left: 0;
+}
+.antecedente-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  min-height: unset;
+}
+.antecedente-input-compact {
+  max-width: 400px;
+  padding: 0.3rem 0.5rem;
+  min-height: unset;
+}
+.form-group-compact {
+  margin-bottom: 0.75rem;
+}
+.form-group-compact label {
+  margin-bottom: 0.35rem;
+}
+
+/* Antecedentes Quirúrgicos: lista Tipo de cirugía + Año */
+.antecedente-cirugia-list {
+  margin-top: 0.5rem;
+}
+.cirugia-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.cirugia-row .cirugia-label {
+  font-size: 0.8rem;
+  color: #374151;
+  margin: 0;
+}
+.cirugia-row .antecedente-input {
+  max-width: 220px;
+}
+.cirugia-row .antecedente-ano {
+  max-width: 80px;
+}
+.btn-cirugia-remove {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.btn-cirugia-remove:hover {
+  background: #fee2e2;
+}
+.btn-cirugia-add {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px dashed #7dd3fc;
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+.btn-cirugia-add:hover {
+  background: #e0f2fe;
+}
+.antecedente-cirugia-list.readonly .cirugia-readonly-row {
+  margin-bottom: 0.25rem;
+}
+.antecedente-cirugia-list.readonly .cirugia-readonly {
+  font-size: 0.875rem;
+  color: #4b5563;
 }
 

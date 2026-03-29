@@ -22,8 +22,8 @@ export class FinanzasGuard implements CanActivate {
       return false;
     }
 
-    // Solo usuarios con rol de finanzas o administrador pueden acceder
-    if (currentUser.rol !== 'finanzas' && currentUser.rol !== 'administrador') {
+    // Usuarios con rol finanzas, administrador o médico pueden acceder
+    if (currentUser.rol !== 'finanzas' && currentUser.rol !== 'administrador' && currentUser.rol !== 'medico') {
       this.router.navigate(['/dashboard']);
       return false;
     }

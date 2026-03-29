@@ -23,7 +23,7 @@
 }
 
 .page-header h1 i {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .perfiles-container {
@@ -70,9 +70,9 @@
 }
 
 .perfil-item.active {
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
-  border-color: #667eea;
+  border-color: var(--color-primary);
 }
 
 .perfil-name {
@@ -111,7 +111,7 @@
 }
 
 .btn-save {
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -170,7 +170,7 @@
 }
 
 .menu-header-content i {
-  color: #667eea;
+  color: var(--color-primary);
   width: 16px;
   transition: transform 0.2s;
 }
@@ -231,7 +231,7 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #667eea;
+  accent-color: var(--color-primary);
 }
 
 .permiso-checkbox input[type="checkbox"]:disabled {

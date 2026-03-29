@@ -15,26 +15,14 @@ export class ErrorHandlerService {
    * @returns Mensaje seguro para el usuario
    */
   getSafeErrorMessage(error: any, context: string = 'operación'): string {
-    // Intentar usar un mensaje "seguro" del backend (sanitizado) si existe.
-    // Esto mejora UX para errores comunes (validación, informe firmado, etc.).
-    const candidates: Array<unknown> = [
-      error?.error?.message,
-      error?.error?.error,
-      error?.error?.details,
-      error?.message
-    ];
-
-    for (const c of candidates) {
-      if (typeof c === 'string' && c.trim().length > 0) {
-        const msg = this.sanitizeMessage(c.trim());
-        // Evitar mostrar mensajes excesivamente largos
-        if (msg.length <= 280) {
-          return `⚠️ ${msg}`;
-        }
-      }
+    // Error de red o "Unknown Error" (sin detalles técnicos para el usuario)
+    const status = error?.status;
+    const rawMessage = (error?.message || error?.error?.message || '') as string;
+    const isUnknownOrNetwork = status === 0 || (typeof rawMessage === 'string' && /unknown\s*error|failure\s*response\s*for/i.test(rawMessage));
+    if (isUnknownOrNetwork) {
+      return 'Ha ocurrido un error. Por favor, intente de nuevo más tarde.';
     }
-
-    // Fallback genérico y seguro
+    // Resto: mensaje genérico y seguro
     return `❌ Error en ${context}. Por favor, verifica los datos e intenta de nuevo.`;
   }
 

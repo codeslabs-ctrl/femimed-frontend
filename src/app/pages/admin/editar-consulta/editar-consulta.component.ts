@@ -7,6 +7,7 @@ import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 import { ConsultaFormData, ConsultaWithDetails } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
@@ -81,7 +82,7 @@ import { Medico } from '../../../services/medico.service';
                   required>
                   <option value="0">Seleccionar médico</option>
                   <option *ngFor="let medico of medicos" [value]="medico.id">
-                    Dr./Dra. {{medico.nombres}} {{medico.apellidos}} - {{medico.especialidad_nombre}}
+                    {{ medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{medico.nombres}} {{medico.apellidos}} - {{medico.especialidad_nombre}}
                   </option>
                 </select>
               </div>
@@ -90,7 +91,7 @@ import { Medico } from '../../../services/medico.service';
               <div class="form-group" *ngIf="currentUser?.rol === 'medico'">
                 <label>Médico asignado</label>
                 <div class="medico-info">
-                  <span class="medico-nombre">Dr./Dra. {{getMedicoNombre()}}</span>
+                  <span class="medico-nombre">{{ getMedicoTitulo() }} {{ getMedicoNombre() }}</span>
                   <span class="medico-especialidad">{{getMedicoEspecialidad()}}</span>
                 </div>
               </div>
@@ -117,6 +118,19 @@ import { Medico } from '../../../services/medico.service';
                   class="form-control" 
                   [(ngModel)]="consultaForm.hora_pautada" 
                   name="hora_pautada"
+                  required>
+              </div>
+
+              <div class="form-group">
+                <label for="duracion_estimada">Duración (minutos) *</label>
+                <input 
+                  type="number" 
+                  id="duracion_estimada" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.duracion_estimada" 
+                  name="duracion_estimada"
+                  min="15"
+                  max="120"
                   required>
               </div>
             </div>
@@ -246,7 +260,7 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .page-header h1 i {
-      color: var(--color-primary, #7A9CC6);
+      color: var(--color-primary);
     }
 
     .page-description {
@@ -276,7 +290,7 @@ import { Medico } from '../../../services/medico.service';
     .loading-spinner i {
       font-size: 2rem;
       margin-bottom: 1rem;
-      color: var(--color-primary, #7A9CC6);
+      color: var(--color-primary);
     }
 
     .error-container {
@@ -332,7 +346,7 @@ import { Medico } from '../../../services/medico.service';
       color: #2c3e50;
       font-size: 1.25rem;
       font-weight: 600;
-      border-bottom: 2px solid #007bff;
+      border-bottom: 2px solid #f5576c;
       padding-bottom: 0.5rem;
     }
 
@@ -367,7 +381,7 @@ import { Medico } from '../../../services/medico.service';
 
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
+      border-color: #f5576c;
       box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 
@@ -420,14 +434,14 @@ import { Medico } from '../../../services/medico.service';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #7A9CC6;
+      border: 1px solid #f5576c;
       font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #7A9CC6;
+      background: #f5576c;
       color: white;
-      border-color: #7A9CC6;
+      border-color: #f5576c;
       transform: translateY(-1px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
@@ -568,7 +582,8 @@ export class EditarConsultaComponent implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -683,28 +698,28 @@ export class EditarConsultaComponent implements OnInit {
 
     // Validaciones básicas
     if (!this.consultaForm.paciente_id || this.consultaForm.paciente_id === 0) {
-      alert('⚠️ Paciente requerido\n\nPor favor, seleccione un paciente de la lista antes de continuar.');
+      this.alertService.showWarning('Paciente requerido. Por favor, seleccione un paciente de la lista antes de continuar.');
       return;
     }
     
     // Solo validar selección de médico si es administrador
     if (this.currentUser?.rol === 'administrador' && (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0)) {
-      alert('⚠️ Médico requerido\n\nPor favor, seleccione un médico de la lista antes de continuar.');
+      this.alertService.showWarning('Médico requerido. Por favor, seleccione un médico de la lista antes de continuar.');
       return;
     }
     
     if (!this.consultaForm.motivo_consulta.trim()) {
-      alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta para continuar.');
+      this.alertService.showWarning('Motivo de consulta requerido. Por favor, ingrese el motivo de la consulta para continuar.');
       return;
     }
     
     if (!this.consultaForm.fecha_pautada) {
-      alert('⚠️ Fecha requerida\n\nPor favor, seleccione una fecha para la consulta.');
+      this.alertService.showWarning('Fecha requerida. Por favor, seleccione una fecha para la consulta.');
       return;
     }
     
     if (!this.consultaForm.hora_pautada) {
-      alert('⚠️ Hora requerida\n\nPor favor, seleccione una hora para la consulta.');
+      this.alertService.showWarning('Hora requerida. Por favor, seleccione una hora para la consulta.');
       return;
     }
 
@@ -713,18 +728,15 @@ export class EditarConsultaComponent implements OnInit {
     this.consultaService.updateConsulta(this.consultaId, this.consultaForm).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('✅ Consulta actualizada exitosamente\n\nLos cambios han sido guardados correctamente.');
-          this.router.navigate(['/admin/consultas']);
+          this.alertService.show('Los cambios han sido guardados correctamente.', 'success', { navigateTo: '/admin/consultas' });
         } else {
-          const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'actualizar consulta');
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(response, 'actualizar consulta'));
         }
         this.isSubmitting = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'actualizar consulta');
-        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta');
-        alert(errorMessage);
+        this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta'));
         this.isSubmitting = false;
       }
     });
@@ -760,6 +772,10 @@ export class EditarConsultaComponent implements OnInit {
       return 'Sin cédula';
     }
     return '';
+  }
+
+  getMedicoTitulo(): string {
+    return this.consultaData?.medico_sexo === 'Femenino' ? 'Dra.' : 'Dr.';
   }
 
   getMedicoNombre(): string {
