@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../config/app.config';
 import { ApiResponse } from '../models/patient.model';
-import { AntecedenteMedicoTipo, AntecedenteTipoEnum } from '../models/antecedente-tipo.model';
+import { AntecedenteMedicoTipo, AntecedenteTipoEnum, AntecedenteTipoLabel } from '../models/antecedente-tipo.model';
 
 @Injectable({
   providedIn: 'root'
@@ -13,11 +13,16 @@ export class AntecedenteTipoService {
 
   constructor(private http: HttpClient) {}
 
+  getCategoriaLabels(): Observable<ApiResponse<AntecedenteTipoLabel[]>> {
+    return this.http.get<ApiResponse<AntecedenteTipoLabel[]>>(`${this.baseUrl}/categoria-labels`);
+  }
+
   getAll(): Observable<ApiResponse<AntecedenteMedicoTipo[]>> {
     return this.http.get<ApiResponse<AntecedenteMedicoTipo[]>>(this.baseUrl);
   }
 
-  getByTipo(tipo: AntecedenteTipoEnum, soloActivos = true): Observable<ApiResponse<AntecedenteMedicoTipo[]>> {
+  /** `codigo` alineado con `antecedentes_tipo_label.codigo` y `antecedente_medico_tipo.tipo`. */
+  getByTipo(tipo: AntecedenteTipoEnum | string, soloActivos = true): Observable<ApiResponse<AntecedenteMedicoTipo[]>> {
     let params = new HttpParams().set('tipo', tipo);
     if (soloActivos) params = params.set('activo', 'true');
     return this.http.get<ApiResponse<AntecedenteMedicoTipo[]>>(`${this.baseUrl}/por-tipo`, { params });

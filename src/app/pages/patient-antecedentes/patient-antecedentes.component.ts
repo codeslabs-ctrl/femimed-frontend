@@ -2,15 +2,24 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { PatientService } from '../../services/patient.service';
 import { AntecedenteTipoService } from '../../services/antecedente-tipo.service';
 import { HistoricoAntecedenteService } from '../../services/historico-antecedente.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
 import { AlertService } from '../../services/alert.service';
-import { AntecedenteMedicoTipo } from '../../models/antecedente-tipo.model';
+import { AntecedenteMedicoTipo, ANTECEDENTE_TIPO_LABELS } from '../../models/antecedente-tipo.model';
 import { HistoricoAntecedente } from '../../models/historico-antecedente.model';
 import { Patient } from '../../models/patient.model';
 import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
+
+/** Una fila del catálogo antecedentes_tipo_label + ítems de antecedente_medico_tipo con ese tipo. */
+export interface AntecedenteSeccionPaciente {
+  codigo: string;
+  etiqueta: string;
+  tipos: AntecedenteMedicoTipo[];
+}
 
 @Component({
   selector: 'app-patient-antecedentes',
@@ -31,58 +40,27 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       <div *ngIf="loading" class="loading"><div class="spinner"></div><p>Cargando...</p></div>
 
       <div *ngIf="!loading && pacienteId" class="antecedentes-form">
-        <!-- Antecedentes Médicos -->
-        <div class="form-section" *ngIf="antecedentesTiposMedicos.length > 0">
-          <h3>Antecedentes Médicos</h3>
-          <div class="antecedente-item" *ngFor="let t of antecedentesTiposMedicos">
+        <!-- Secciones = filas de antecedentes_tipo_label; ítems = antecedente_medico_tipo por codigo/tipo -->
+        <div class="form-section" *ngFor="let sec of secciones" [hidden]="sec.tipos.length === 0">
+          <h3>{{ sec.etiqueta }}</h3>
+          <div class="antecedente-item" *ngFor="let t of sec.tipos">
             <div class="antecedente-row">
               <span class="antecedente-name">{{ t.nombre }}</span>
               <span class="antecedente-si-no">
-                <label><input type="radio" [name]="'med_' + t.id" [checked]="getForm(t.id!).presente === true" (change)="getForm(t.id!).presente = true"> Sí</label>
-                <label><input type="radio" [name]="'med_' + t.id" [checked]="getForm(t.id!).presente === false" (change)="getForm(t.id!).presente = false; getForm(t.id!).detalle = ''"> No</label>
-              </span>
-            </div>
-            <div class="antecedente-detalle" *ngIf="getForm(t.id!).presente && (t.requiere_detalle === 'tratamiento' || t.requiere_detalle === 'especifique')">
-              <textarea class="form-control form-control-detail" rows="3" [placeholder]="t.requiere_detalle === 'tratamiento' ? 'Tratamiento' : 'Especifique'" [(ngModel)]="form[t.id!].detalle" [name]="'det_med_' + t.id"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Antecedentes Quirúrgicos -->
-        <div class="form-section" *ngIf="antecedentesTiposQuirurgicos.length > 0">
-          <h3>Antecedentes Quirúrgicos</h3>
-          <div class="antecedente-item" *ngFor="let t of antecedentesTiposQuirurgicos">
-            <div class="antecedente-row">
-              <span class="antecedente-name">{{ t.nombre }}</span>
-              <span class="antecedente-si-no">
-                <label><input type="radio" [name]="'quir_' + t.id" [checked]="getForm(t.id!).presente === true" (change)="getForm(t.id!).presente = true; onCirugiaChange(t.id!, true)"> Sí</label>
-                <label><input type="radio" [name]="'quir_' + t.id" [checked]="getForm(t.id!).presente === false" (change)="getForm(t.id!).presente = false; onCirugiaChange(t.id!, false)"> No</label>
+                <label><input type="radio" [name]="sec.codigo + '_' + t.id" [checked]="getForm(t.id!).presente === true" (change)="getForm(t.id!).presente = true; onSiAntecedente(t)"> Sí</label>
+                <label><input type="radio" [name]="sec.codigo + '_' + t.id" [checked]="getForm(t.id!).presente === false" (change)="getForm(t.id!).presente = false; onNoAntecedente(t)"> No</label>
               </span>
             </div>
             <div class="antecedente-detalle cirugia-list" *ngIf="getForm(t.id!).presente && t.requiere_detalle === 'cirugia'">
               <div class="cirugia-row" *ngFor="let item of getCirugiaList(t.id!); let i = index">
-                <input type="text" class="form-control" placeholder="Tipo de cirugía" [ngModel]="item.tipo_cirugia" (ngModelChange)="setCirugiaItem(t.id!, i, 'tipo_cirugia', $event)" [name]="'quir_t_' + t.id + '_' + i">
-                <input type="text" class="form-control ano" placeholder="Año" maxlength="4" [ngModel]="item.ano" (ngModelChange)="setCirugiaItem(t.id!, i, 'ano', $event)" [name]="'quir_a_' + t.id + '_' + i">
+                <input type="text" class="form-control" placeholder="Tipo de cirugía" [ngModel]="item.tipo_cirugia" (ngModelChange)="setCirugiaItem(t.id!, i, 'tipo_cirugia', $event)" [name]="'c_t_' + sec.codigo + '_' + t.id + '_' + i">
+                <input type="text" class="form-control ano" placeholder="Año" maxlength="4" [ngModel]="item.ano" (ngModelChange)="setCirugiaItem(t.id!, i, 'ano', $event)" [name]="'c_a_' + sec.codigo + '_' + t.id + '_' + i">
                 <button type="button" class="btn-remove" (click)="removeCirugia(t.id!, i)">✕</button>
               </div>
               <button type="button" class="btn-add" (click)="addCirugia(t.id!)">+ Agregar otra cirugía</button>
             </div>
-          </div>
-        </div>
-
-        <!-- Hábitos Psicobiológicos -->
-        <div class="form-section" *ngIf="antecedentesTiposHabitos.length > 0">
-          <h3>Hábitos Psicobiológicos</h3>
-          <div class="antecedente-item" *ngFor="let t of antecedentesTiposHabitos">
-            <div class="antecedente-row">
-              <span class="antecedente-name">{{ t.nombre }}</span>
-              <span class="antecedente-si-no">
-                <label><input type="radio" [name]="'hab_' + t.id" [checked]="getForm(t.id!).presente === true" (change)="getForm(t.id!).presente = true"> Sí</label>
-                <label><input type="radio" [name]="'hab_' + t.id" [checked]="getForm(t.id!).presente === false" (change)="getForm(t.id!).presente = false; getForm(t.id!).detalle = ''"> No</label>
-              </span>
-            </div>
             <div class="antecedente-detalle" *ngIf="getForm(t.id!).presente && (t.requiere_detalle === 'tratamiento' || t.requiere_detalle === 'especifique')">
-              <textarea class="form-control form-control-detail" rows="3" placeholder="Detalle (ej. cig/día, tipo de bebida)" [(ngModel)]="form[t.id!].detalle" [name]="'det_hab_' + t.id"></textarea>
+              <textarea class="form-control form-control-detail" rows="3" [placeholder]="detallePlaceholder(t)" [(ngModel)]="form[t.id!].detalle" [name]="'det_' + sec.codigo + '_' + t.id"></textarea>
             </div>
           </div>
         </div>
@@ -146,9 +124,7 @@ export class PatientAntecedentesComponent implements OnInit {
   patient: Patient | null = null;
   loading = true;
   saving = false;
-  antecedentesTiposMedicos: AntecedenteMedicoTipo[] = [];
-  antecedentesTiposQuirurgicos: AntecedenteMedicoTipo[] = [];
-  antecedentesTiposHabitos: AntecedenteMedicoTipo[] = [];
+  secciones: AntecedenteSeccionPaciente[] = [];
   form: Record<number, { presente: boolean; detalle: string }> = {};
   antecedentesOtros = '';
   private cirugiaCache: Record<number, { key: string; list: { tipo_cirugia: string; ano: string }[] }> = {};
@@ -185,26 +161,80 @@ export class PatientAntecedentesComponent implements OnInit {
     });
   }
 
+  private static readonly fallbackCategoriaLabels: { codigo: string; etiqueta: string }[] = (
+    Object.entries(ANTECEDENTE_TIPO_LABELS) as [string, string][]
+  ).map(([codigo, etiqueta]) => ({ codigo, etiqueta }));
+
+  /**
+   * Orden y títulos desde antecedentes_tipo_label (API); por cada codigo carga ítems de antecedente_medico_tipo.
+   */
   private loadTipos(onAllLoaded?: () => void): void {
-    let completed = 0;
-    const total = 3;
-    const maybeDone = () => {
-      completed++;
-      if (completed === total) {
-        const all = [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos];
-        all.forEach(t => { if (t.id != null) this.form[t.id] = { presente: false, detalle: '' }; });
+    const fallback = PatientAntecedentesComponent.fallbackCategoriaLabels;
+    this.antecedenteTipoService.getCategoriaLabels().subscribe({
+      next: (res) => {
+        const labels =
+          res.success && Array.isArray(res.data) && res.data.length > 0
+            ? [...res.data]
+                .filter((l) => l.activo !== false)
+                .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
+                .map((l) => ({ codigo: l.codigo, etiqueta: l.etiqueta }))
+            : fallback;
+        this.fetchTiposPorSecciones(labels, onAllLoaded);
+      },
+      error: () => this.fetchTiposPorSecciones(fallback, onAllLoaded)
+    });
+  }
+
+  private fetchTiposPorSecciones(labels: { codigo: string; etiqueta: string }[], onAllLoaded?: () => void): void {
+    if (labels.length === 0) {
+      this.secciones = [];
+      onAllLoaded?.();
+      return;
+    }
+    const requests = labels.map((l) =>
+      this.antecedenteTipoService.getByTipo(l.codigo).pipe(
+        catchError(() => of({ success: true as const, data: [] as AntecedenteMedicoTipo[] }))
+      )
+    );
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        this.secciones = labels.map((l, i) => ({
+          codigo: l.codigo,
+          etiqueta: l.etiqueta,
+          tipos: results[i].success && Array.isArray(results[i].data) ? results[i].data! : []
+        }));
+        this.todosLosTipos().forEach((t) => {
+          if (t.id != null) this.form[t.id] = { presente: false, detalle: '' };
+        });
+        onAllLoaded?.();
+      },
+      error: () => {
+        this.secciones = [];
         onAllLoaded?.();
       }
-    };
-    this.antecedenteTipoService.getByTipo('antecedentes_medicos').subscribe({
-      next: (r) => { if (r.success && r.data) this.antecedentesTiposMedicos = r.data; maybeDone(); }
     });
-    this.antecedenteTipoService.getByTipo('antecedentes_quirurgicos').subscribe({
-      next: (r) => { if (r.success && r.data) this.antecedentesTiposQuirurgicos = r.data; maybeDone(); }
-    });
-    this.antecedenteTipoService.getByTipo('habitos_psicobiologicos').subscribe({
-      next: (r) => { if (r.success && r.data) this.antecedentesTiposHabitos = r.data; maybeDone(); }
-    });
+  }
+
+  private todosLosTipos(): AntecedenteMedicoTipo[] {
+    return this.secciones.flatMap((s) => s.tipos);
+  }
+
+  detallePlaceholder(t: AntecedenteMedicoTipo): string {
+    if (t.requiere_detalle === 'tratamiento') return 'Tratamiento';
+    if (t.requiere_detalle === 'especifique') return 'Especifique';
+    return 'Detalle';
+  }
+
+  onSiAntecedente(t: AntecedenteMedicoTipo): void {
+    if (t.requiere_detalle !== 'cirugia' || !t.id) return;
+    if (!this.getForm(t.id).detalle?.trim()) this.addCirugia(t.id);
+  }
+
+  onNoAntecedente(t: AntecedenteMedicoTipo): void {
+    if (t.id != null) {
+      this.getForm(t.id).detalle = '';
+      if (t.requiere_detalle === 'cirugia') this.onCirugiaChange(t.id, false);
+    }
   }
 
   private loadAntecedentes(): void {
@@ -215,7 +245,7 @@ export class PatientAntecedentesComponent implements OnInit {
           const data = r.data as { antecedentes: HistoricoAntecedente[]; antecedentes_otros: string | null };
           const list = data.antecedentes || [];
           this.antecedentesOtros = data.antecedentes_otros ?? '';
-          const all = [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos];
+          const all = this.todosLosTipos();
           all.forEach(t => {
             if (t.id == null) return;
             const item = list.find(a => a.antecedente_tipo_id === t.id);
@@ -278,7 +308,7 @@ export class PatientAntecedentesComponent implements OnInit {
 
   guardar(): void {
     if (!this.pacienteId || this.saving) return;
-    const all = [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos];
+    const all = this.todosLosTipos();
     const items = all
       .filter(t => t.id != null)
       .map(t => ({

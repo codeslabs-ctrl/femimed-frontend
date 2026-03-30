@@ -15,6 +15,7 @@ import { AlertService } from '../../../../services/alert.service';
 import { HistoricoService } from '../../../../services/historico.service';
 import { HistoricoAntecedenteService } from '../../../../services/historico-antecedente.service';
 import { AntecedenteTipoService } from '../../../../services/antecedente-tipo.service';
+import { AntecedenteMedicoTipo, ANTECEDENTE_TIPO_LABELS } from '../../../../models/antecedente-tipo.model';
 import { ClinicaAtencionService, ClinicaAtencion } from '../../../../services/clinica-atencion.service';
 import { 
   InformeMedico, 
@@ -827,6 +828,16 @@ export class InformeMedicoFormComponent implements OnInit {
   /** Valor considerado "no especificado" para no mostrarlo en la firma. */
   private static readonly NO_ESPECIFICADA = 'No especificada';
 
+  /** `antecedente_tipo_id` sin fila en catálogo cargado (informe estandarizado). */
+  private static readonly SIN_CATEGORIA_CODIGO = '__sin_categoria__';
+  private static readonly SIN_CATEGORIA_ETIQUETA = 'Otros antecedentes';
+
+  private static readonly CODIGOS_ANTECEDENTES_LEGACY = new Set([
+    'antecedentes_medicos',
+    'antecedentes_quirurgicos',
+    'habitos_psicobiologicos'
+  ]);
+
   /**
    * Genera firma con imagen personalizada. Siempre incluye nombre del médico; solo incluye Cédula/Especialidad si existen y no son "No especificada".
    */
@@ -867,66 +878,132 @@ export class InformeMedicoFormComponent implements OnInit {
   }
 
   /**
+   * Catálogo alineado con `antecedentes_tipo_label` + `antecedente_medico_tipo` (misma idea que la ficha del paciente).
+   */
+  private async fetchAntecedentesCatalogo(): Promise<{
+    secciones: { codigo: string; etiqueta: string; tipos: AntecedenteMedicoTipo[] }[];
+    mapaNombres: Record<number, string>;
+    idToCodigo: Record<number, string>;
+  }> {
+    const tipoIdNum = (x: number | string | undefined) => (x != null ? Number(x) : NaN);
+    const labelsRes = await firstValueFrom(this.antecedenteTipoService.getCategoriaLabels()).catch(() => null);
+    let labels: { codigo: string; etiqueta: string; orden: number }[];
+
+    if (labelsRes?.success && Array.isArray(labelsRes.data) && labelsRes.data.length > 0) {
+      labels = [...labelsRes.data]
+        .filter((l) => l.activo !== false)
+        .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
+        .map((l) => ({ codigo: l.codigo, etiqueta: l.etiqueta, orden: l.orden ?? 0 }));
+    } else {
+      labels = (Object.entries(ANTECEDENTE_TIPO_LABELS) as [string, string][]).map(([codigo, etiqueta], i) => ({
+        codigo,
+        etiqueta,
+        orden: i
+      }));
+    }
+
+    const results = await Promise.all(
+      labels.map((l) =>
+        firstValueFrom(this.antecedenteTipoService.getByTipo(l.codigo)).then(
+          (r) => r,
+          () => ({ success: true as const, data: [] as AntecedenteMedicoTipo[] })
+        )
+      )
+    );
+
+    const mapaNombres: Record<number, string> = {};
+    const idToCodigo: Record<number, string> = {};
+    const secciones: { codigo: string; etiqueta: string; tipos: AntecedenteMedicoTipo[] }[] = [];
+
+    labels.forEach((l, i) => {
+      const tipos = results[i]?.success && results[i]?.data ? results[i].data! : [];
+      secciones.push({ codigo: l.codigo, etiqueta: l.etiqueta, tipos });
+      tipos.forEach((t) => {
+        const id = tipoIdNum(t.id);
+        if (!isNaN(id)) {
+          mapaNombres[id] = t.nombre;
+          idToCodigo[id] = l.codigo;
+        }
+      });
+    });
+
+    return { secciones, mapaNombres, idToCodigo };
+  }
+
+  /** Detalle legible para informe (JSON cirugías → texto). */
+  private normalizarDetalleAntecedenteParaInforme(detalleRaw: string | null | undefined): string {
+    let detalleTexto = (detalleRaw || '').trim();
+    if (!detalleTexto) return '';
+    try {
+      const parsed = JSON.parse(detalleTexto);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const partes = (parsed as { tipo_cirugia?: string; ano?: string }[])
+          .map((x) => `${(x.tipo_cirugia || '').trim()}${x.ano ? ` (${x.ano})` : ''}`)
+          .filter(Boolean);
+        if (partes.length) return partes.join('; ');
+      }
+    } catch {
+      /* mantener texto */
+    }
+    return detalleTexto;
+  }
+
+  /**
    * Construye HTML de antecedentes estandarizados (antecedente_paciente) e incluye antecedentes_otros del paciente.
    */
   private async buildAntecedentesEstandarizadosHTML(historicoId: number): Promise<{ html: string; antecedentes_otros: string | null }> {
+    const SIN = InformeMedicoFormComponent.SIN_CATEGORIA_CODIGO;
+    const SIN_ETI = InformeMedicoFormComponent.SIN_CATEGORIA_ETIQUETA;
     try {
-      const [antRes, tiposMedRes, tiposQuirurRes, tiposHabRes] = await Promise.all([
+      const [antRes, catalogo] = await Promise.all([
         firstValueFrom(this.historicoAntecedenteService.getByHistoricoId(historicoId)),
-        firstValueFrom(this.antecedenteTipoService.getByTipo('antecedentes_medicos')),
-        firstValueFrom(this.antecedenteTipoService.getByTipo('antecedentes_quirurgicos')),
-        firstValueFrom(this.antecedenteTipoService.getByTipo('habitos_psicobiologicos'))
+        this.fetchAntecedentesCatalogo()
       ]);
-      const data = (antRes?.success && antRes?.data) ? antRes.data : null;
-      const lista = data && typeof data === 'object' && (data as any).antecedentes
-        ? (data as any).antecedentes
-        : (Array.isArray(data) ? data : []);
-      const antecedentes_otros = data && typeof data === 'object' && (data as any).antecedentes_otros !== undefined
-        ? (data as any).antecedentes_otros
-        : null;
-      const tiposMed = (tiposMedRes?.success && tiposMedRes?.data) ? tiposMedRes.data : [];
-      const tiposQuirur = (tiposQuirurRes?.success && tiposQuirurRes?.data) ? tiposQuirurRes.data : [];
-      const tiposHab = (tiposHabRes?.success && tiposHabRes?.data) ? tiposHabRes.data : [];
-      const tipoId = (x: number | string | undefined) => (x != null ? Number(x) : NaN);
-      const mapaNombres: Record<number, string> = {};
-      [...tiposMed, ...tiposQuirur, ...tiposHab].forEach(t => { const id = tipoId(t.id); if (!isNaN(id)) mapaNombres[id] = t.nombre; });
+      const data = antRes?.success && antRes?.data ? antRes.data : null;
+      const lista =
+        data && typeof data === 'object' && (data as any).antecedentes
+          ? (data as any).antecedentes
+          : Array.isArray(data)
+            ? data
+            : [];
+      const antecedentes_otros =
+        data && typeof data === 'object' && (data as any).antecedentes_otros !== undefined
+          ? (data as any).antecedentes_otros
+          : null;
 
-      const lineasMed: string[] = [];
-      const lineasQuirur: string[] = [];
-      const lineasHab: string[] = [];
+      const { secciones, mapaNombres, idToCodigo } = catalogo;
+      const tipoId = (x: number | string | undefined) => (x != null ? Number(x) : NaN);
+
+      const lineasPorCodigo: Record<string, string[]> = {};
+      secciones.forEach((s) => {
+        lineasPorCodigo[s.codigo] = [];
+      });
+      lineasPorCodigo[SIN] = [];
+
       lista.forEach((a: { antecedente_tipo_id: number; presente: boolean; detalle?: string | null }) => {
         const aTipoId = tipoId((a as any).antecedente_tipo_id);
         const nombre = mapaNombres[aTipoId] || `Ítem ${aTipoId}`;
-        let detalleTexto = a.detalle?.trim() ?? '';
-        if (detalleTexto) {
-          try {
-            const parsed = JSON.parse(detalleTexto);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const partes = (parsed as { tipo_cirugia?: string; ano?: string }[]).map(
-                x => `${(x.tipo_cirugia || '').trim()}${x.ano ? ` (${x.ano})` : ''}`
-              ).filter(Boolean);
-              if (partes.length) detalleTexto = partes.join('; ');
-            }
-          } catch { /* mantener detalleTexto original */ }
-        }
+        const detalleTexto = this.normalizarDetalleAntecedenteParaInforme(a.detalle);
         const texto = a.presente
-          ? (detalleTexto ? `${nombre}: Sí. ${detalleTexto}` : `${nombre}: Sí`)
+          ? detalleTexto
+            ? `${nombre}: Sí. ${detalleTexto}`
+            : `${nombre}: Sí`
           : `${nombre}: No`;
         const linea = `<p>• ${this.escapeHtml(texto)}</p>`;
-        if (tiposMed.some(t => tipoId(t.id) === aTipoId)) lineasMed.push(linea);
-        else if (tiposQuirur.some(t => tipoId(t.id) === aTipoId)) lineasQuirur.push(linea);
-        else lineasHab.push(linea);
+        const cod = idToCodigo[aTipoId] ?? SIN;
+        if (!lineasPorCodigo[cod]) lineasPorCodigo[cod] = [];
+        lineasPorCodigo[cod].push(linea);
       });
 
       let html = '';
-      if (lineasMed.length > 0) {
-        html += `<p><strong>Antecedentes Médicos:</strong></p>${lineasMed.join('')}`;
+      for (const s of secciones) {
+        const lines = lineasPorCodigo[s.codigo];
+        if (lines?.length) {
+          html += `<p><strong>${this.escapeHtml(s.etiqueta)}:</strong></p>${lines.join('')}`;
+        }
       }
-      if (lineasQuirur.length > 0) {
-        html += `<p><strong>Antecedentes Quirúrgicos:</strong></p>${lineasQuirur.join('')}`;
-      }
-      if (lineasHab.length > 0) {
-        html += `<p><strong>Hábitos Psicobiológicos:</strong></p>${lineasHab.join('')}`;
+      if (lineasPorCodigo[SIN]?.length) {
+        html += `<p><strong>${this.escapeHtml(SIN_ETI)}:</strong></p>${lineasPorCodigo[SIN].join('')}`;
       }
       return { html, antecedentes_otros };
     } catch {
@@ -948,81 +1025,126 @@ export class InformeMedicoFormComponent implements OnInit {
    */
   private async buildAntecedentesNarrativo(historicoId: number, sexoPaciente?: string | null): Promise<string> {
     try {
-      const [antRes, tiposMedRes, tiposQuirurRes, tiposHabRes] = await Promise.all([
+      const [antRes, catalogo] = await Promise.all([
         firstValueFrom(this.historicoAntecedenteService.getByHistoricoId(historicoId)),
-        firstValueFrom(this.antecedenteTipoService.getByTipo('antecedentes_medicos')),
-        firstValueFrom(this.antecedenteTipoService.getByTipo('antecedentes_quirurgicos')),
-        firstValueFrom(this.antecedenteTipoService.getByTipo('habitos_psicobiologicos'))
+        this.fetchAntecedentesCatalogo()
       ]);
-      const data = (antRes?.success && antRes?.data) ? antRes.data : null;
-      const lista = data && typeof data === 'object' && (data as any).antecedentes
-        ? (data as any).antecedentes
-        : (Array.isArray(data) ? data : []);
-      const tiposMed = (tiposMedRes?.success && tiposMedRes?.data) ? tiposMedRes.data : [];
-      const tiposQuirur = (tiposQuirurRes?.success && tiposQuirurRes?.data) ? tiposQuirurRes.data : [];
-      const tiposHab = (tiposHabRes?.success && tiposHabRes?.data) ? tiposHabRes.data : [];
+      const data = antRes?.success && antRes?.data ? antRes.data : null;
+      const lista =
+        data && typeof data === 'object' && (data as any).antecedentes
+          ? (data as any).antecedentes
+          : Array.isArray(data)
+            ? data
+            : [];
+      const { secciones, mapaNombres, idToCodigo } = catalogo;
       const tipoId = (x: number | string | undefined) => (x != null ? Number(x) : NaN);
-      const mapaNombres: Record<number, string> = {};
-      [...tiposMed, ...tiposQuirur, ...tiposHab].forEach(t => { const id = tipoId(t.id); if (!isNaN(id)) mapaNombres[id] = t.nombre; });
 
       const esFemenino = (sexoPaciente || '').toString().toLowerCase().includes('femenino');
       const articulo = esFemenino ? 'la' : 'el';
       const pacienteSujeto = `${articulo} paciente`;
-      const identificado = esFemenino ? 'identificada' : 'identificado';
 
-      const medNombresNeg: string[] = [];
-      const medNombresPos: string[] = [];
-      let quirurAlgunoPos = false;
-      let quirurDetalle: string[] = [];
-      const habNombresNeg: string[] = [];
-      const habNombresPos: string[] = [];
+      const codigosCatalogo = new Set(secciones.map((s) => s.codigo));
+      const hasMedicos = codigosCatalogo.has('antecedentes_medicos');
+      const hasQuirur = codigosCatalogo.has('antecedentes_quirurgicos');
+      const hasHabitos = codigosCatalogo.has('habitos_psicobiologicos');
 
-      lista.forEach((a: { antecedente_tipo_id: number; presente: boolean; detalle?: string | null }) => {
-        const aTipoId = tipoId((a as any).antecedente_tipo_id);
-        const nombre = mapaNombres[aTipoId] || `Ítem ${aTipoId}`;
-        let detalleTexto = (a.detalle || '').trim();
-        if (detalleTexto) {
-          try {
-            const parsed = JSON.parse(detalleTexto);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const partes = (parsed as { tipo_cirugia?: string; ano?: string }[]).map(
-                x => `${(x.tipo_cirugia || '').trim()}${x.ano ? ` (${x.ano})` : ''}`
-              ).filter(Boolean);
-              if (partes.length) detalleTexto = partes.join('; ');
-            }
-          } catch { /* mantener */ }
-        }
-        if (tiposMed.some(t => tipoId(t.id) === aTipoId)) {
-          if (a.presente) medNombresPos.push(nombre); else medNombresNeg.push(nombre);
-        } else if (tiposQuirur.some(t => tipoId(t.id) === aTipoId)) {
-          if (a.presente) { quirurAlgunoPos = true; quirurDetalle.push(detalleTexto ? `${nombre}: ${detalleTexto}` : nombre); } else { /* no quirúrgico */ }
-        } else {
-          if (a.presente) habNombresPos.push(nombre); else habNombresNeg.push(nombre);
-        }
-      });
+      const subsPorCodigo = (cod: string) =>
+        lista.filter((a: { antecedente_tipo_id: number }) => idToCodigo[tipoId((a as any).antecedente_tipo_id)] === cod);
 
       const frases: string[] = [];
-      if (medNombresNeg.length > 0 || medNombresPos.length > 0) {
-        if (medNombresNeg.length > 0) {
-          const listaNeg = medNombresNeg.join(', ').replace(/, ([^,]*)$/, ' o $1');
-          frases.push(`${pacienteSujeto} niega antecedentes patológicos de relevancia, tales como ${listaNeg}`);
-        }
-        if (medNombresPos.length > 0) {
-          const listaPos = medNombresPos.join(', ');
-          frases.push(`refiere ${listaPos}`);
+
+      if (hasMedicos) {
+        const subs = subsPorCodigo('antecedentes_medicos');
+        const medNombresNeg: string[] = [];
+        const medNombresPos: string[] = [];
+        subs.forEach((a: { antecedente_tipo_id: number; presente: boolean }) => {
+          const id = tipoId((a as any).antecedente_tipo_id);
+          const nombre = mapaNombres[id] || `Ítem ${id}`;
+          if (a.presente) medNombresPos.push(nombre);
+          else medNombresNeg.push(nombre);
+        });
+        if (medNombresNeg.length > 0 || medNombresPos.length > 0) {
+          if (medNombresNeg.length > 0) {
+            const listaNeg = medNombresNeg.join(', ').replace(/, ([^,]*)$/, ' o $1');
+            frases.push(`${pacienteSujeto} niega antecedentes patológicos de relevancia, tales como ${listaNeg}`);
+          }
+          if (medNombresPos.length > 0) {
+            frases.push(`refiere ${medNombresPos.join(', ')}`);
+          }
         }
       }
-      if (quirurAlgunoPos && quirurDetalle.length > 0) {
-        frases.push(`refiere antecedentes quirúrgicos previos: ${quirurDetalle.join('; ')}`);
-      } else {
-        frases.push('no reporta antecedentes quirúrgicos previos');
+
+      if (hasQuirur) {
+        const subs = subsPorCodigo('antecedentes_quirurgicos');
+        let quirurAlgunoPos = false;
+        const quirurDetalle: string[] = [];
+        subs.forEach((a: { antecedente_tipo_id: number; presente: boolean; detalle?: string | null }) => {
+          const id = tipoId((a as any).antecedente_tipo_id);
+          const nombre = mapaNombres[id] || `Ítem ${id}`;
+          const detalleTexto = this.normalizarDetalleAntecedenteParaInforme(a.detalle);
+          if (a.presente) {
+            quirurAlgunoPos = true;
+            quirurDetalle.push(detalleTexto ? `${nombre}: ${detalleTexto}` : nombre);
+          }
+        });
+        if (quirurAlgunoPos && quirurDetalle.length > 0) {
+          frases.push(`refiere antecedentes quirúrgicos previos: ${quirurDetalle.join('; ')}`);
+        } else {
+          frases.push('no reporta antecedentes quirúrgicos previos');
+        }
       }
-      if (habNombresPos.length > 0) {
-        frases.push(`refiere hábitos: ${habNombresPos.join(', ')}`);
-      } else if (habNombresNeg.length > 0) {
-        frases.push('no refiere hábitos psicobiológicos tabáquicos, alcohólicos ni de consumo de sustancias ilícitas');
-      } else {
-        frases.push('no refiere hábitos psicobiológicos tabáquicos, alcohólicos ni de consumo de sustancias ilícitas');
+
+      if (hasHabitos) {
+        const subs = subsPorCodigo('habitos_psicobiologicos');
+        const habNombresNeg: string[] = [];
+        const habNombresPos: string[] = [];
+        subs.forEach((a: { antecedente_tipo_id: number; presente: boolean }) => {
+          const id = tipoId((a as any).antecedente_tipo_id);
+          const nombre = mapaNombres[id] || `Ítem ${id}`;
+          if (a.presente) habNombresPos.push(nombre);
+          else habNombresNeg.push(nombre);
+        });
+        if (habNombresPos.length > 0) {
+          frases.push(`refiere hábitos: ${habNombresPos.join(', ')}`);
+        } else if (habNombresNeg.length > 0) {
+          frases.push('no refiere hábitos psicobiológicos tabáquicos, alcohólicos ni de consumo de sustancias ilícitas');
+        } else {
+          frases.push('no refiere hábitos psicobiológicos tabáquicos, alcohólicos ni de consumo de sustancias ilícitas');
+        }
+      }
+
+      for (const s of secciones) {
+        if (InformeMedicoFormComponent.CODIGOS_ANTECEDENTES_LEGACY.has(s.codigo)) continue;
+        const subs = subsPorCodigo(s.codigo);
+        if (subs.length === 0) continue;
+        const refParts: string[] = [];
+        const negParts: string[] = [];
+        subs.forEach((a: { antecedente_tipo_id: number; presente: boolean; detalle?: string | null }) => {
+          const id = tipoId((a as any).antecedente_tipo_id);
+          const nom = mapaNombres[id] || `Ítem ${id}`;
+          const det = this.normalizarDetalleAntecedenteParaInforme(a.detalle);
+          if (a.presente) refParts.push(det ? `${nom} (${det})` : nom);
+          else negParts.push(nom);
+        });
+        let frag = '';
+        if (refParts.length) frag += `respecto a ${s.etiqueta}, refiere ${refParts.join(', ')}`;
+        if (negParts.length) frag += (frag ? '; asimismo, ' : '') + `sin hallazgos o niega: ${negParts.join(', ')}`;
+        if (frag) frases.push(frag);
+      }
+
+      const orphans = lista.filter(
+        (a: { antecedente_tipo_id: number }) => idToCodigo[tipoId((a as any).antecedente_tipo_id)] == null
+      );
+      if (orphans.length > 0) {
+        const partes: string[] = [];
+        orphans.forEach((a: { antecedente_tipo_id: number; presente: boolean; detalle?: string | null }) => {
+          const id = tipoId((a as any).antecedente_tipo_id);
+          const nom = mapaNombres[id] || `antecedente (id ${id})`;
+          const det = this.normalizarDetalleAntecedenteParaInforme(a.detalle);
+          if (a.presente) partes.push(det ? `${nom}: ${det}` : nom);
+          else partes.push(`niega o no aplica ${nom}`);
+        });
+        frases.push(`antecedentes no clasificados en el catálogo actual: ${partes.join('; ')}`);
       }
 
       if (frases.length === 0) return '';

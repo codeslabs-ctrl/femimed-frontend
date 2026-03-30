@@ -1,3 +1,12 @@
+/** Fila de antecedentes_tipo_label (categorías para el campo tipo de antecedente_medico_tipo). */
+export interface AntecedenteTipoLabel {
+  id: number;
+  codigo: string;
+  etiqueta: string;
+  orden: number;
+  activo: boolean;
+}
+
 /**
  * Tipos de antecedente para agrupar en el formulario de historia clínica.
  * antecedentes_medicos | antecedentes_quirurgicos | habitos_psicobiologicos

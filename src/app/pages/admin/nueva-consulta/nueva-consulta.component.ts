@@ -837,9 +837,9 @@ export class NuevaConsultaComponent implements OnInit {
     console.log('🧹 Formulario limpiado completamente');
   }
 
+  /** Mínimo del input date: “hoy” en Caracas (no UTC; evita bloquear el día local tras ~20:00 VET). */
   getTodayDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
   }
 
   volver() {

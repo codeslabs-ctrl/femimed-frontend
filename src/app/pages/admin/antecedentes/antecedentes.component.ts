@@ -28,15 +28,15 @@ export class AntecedentesComponent implements OnInit {
   showModal = false;
   isEditing = false;
   saving = false;
-  filterTipo: AntecedenteTipoEnum | '' = '';
+  filterTipo = '';
   searchName = '';
   errorMessage = '';
   showConfirmModal = false;
   itemToDelete: AntecedenteMedicoTipo | null = null;
 
-  readonly tipoOptions: { value: AntecedenteTipoEnum; label: string }[] = (
-    Object.entries(ANTECEDENTE_TIPO_LABELS) as [AntecedenteTipoEnum, string][]
-  ).map(([value, label]) => ({ value, label }));
+  /** Opciones del desplegable Tipo: etiquetas desde antecedentes_tipo_label (API), con respaldo local. */
+  tipoOptions: { value: string; label: string }[] = [];
+  private tipoLabelByCodigo: Record<string, string> = { ...ANTECEDENTE_TIPO_LABELS };
 
   readonly detalleOptions: { value: RequiereDetalleEnum; label: string }[] = (
     Object.entries(REQUIERE_DETALLE_LABELS) as [RequiereDetalleEnum, string][]
@@ -56,7 +56,29 @@ export class AntecedentesComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.setTipoOptionsFallback();
+    this.loadCategoriaLabels();
     this.loadItems();
+  }
+
+  private setTipoOptionsFallback(): void {
+    this.tipoOptions = (Object.entries(ANTECEDENTE_TIPO_LABELS) as [string, string][]).map(([value, label]) => ({
+      value,
+      label
+    }));
+    this.tipoLabelByCodigo = { ...ANTECEDENTE_TIPO_LABELS };
+  }
+
+  private loadCategoriaLabels(): void {
+    this.antecedenteTipoService.getCategoriaLabels().subscribe({
+      next: (res) => {
+        if (res.success && res.data?.length) {
+          this.tipoOptions = res.data.map((r) => ({ value: r.codigo, label: r.etiqueta }));
+          this.tipoLabelByCodigo = Object.fromEntries(res.data.map((r) => [r.codigo, r.etiqueta]));
+        }
+      },
+      error: (err) => this.errorHandler.logError(err, 'cargar etiquetas de categoría antecedentes')
+    });
   }
 
   loadItems() {
@@ -103,8 +125,8 @@ export class AntecedentesComponent implements OnInit {
     this.applyFilters();
   }
 
-  getTipoLabel(tipo: AntecedenteTipoEnum): string {
-    return ANTECEDENTE_TIPO_LABELS[tipo] ?? tipo;
+  getTipoLabel(tipo: string): string {
+    return this.tipoLabelByCodigo[tipo] ?? ANTECEDENTE_TIPO_LABELS[tipo as AntecedenteTipoEnum] ?? tipo;
   }
 
   getDetalleLabel(detalle: RequiereDetalleEnum): string {
