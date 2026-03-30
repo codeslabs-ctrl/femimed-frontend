@@ -49,6 +49,14 @@ export class PatientService {
     return this.http.post<ApiResponse<Patient>>(`${this.baseUrl}`, patient);
   }
 
+  /** Tras 409 PATIENT_CEDULA_EXISTS: vincula el paciente al médico del token. */
+  linkPatientToMyHistorial(
+    patientId: number,
+    body: Partial<Pick<Patient, 'motivo_consulta' | 'diagnostico' | 'conclusiones' | 'plan'>> = {}
+  ): Observable<ApiResponse<Patient>> {
+    return this.http.post<ApiResponse<Patient>>(`${this.baseUrl}/${patientId}/link-medico`, body);
+  }
+
   updatePatient(id: number, patient: Partial<Patient>): Observable<ApiResponse<Patient>> {
     return this.http.put<ApiResponse<Patient>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_BY_ID(id)}`, patient);
   }

@@ -27,6 +27,8 @@ export interface ApiResponse<T> {
   pagination?: Pagination;
   error?: {
     message: string;
+    code?: string;
+    details?: { existingPatient?: Patient };
   };
 }
 

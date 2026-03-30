@@ -1,4 +1,31 @@
-<div class="patient-form-page">
+  <div class="cedula-conflict-backdrop" *ngIf="cedulaConflictModalOpen">
+    <div class="cedula-conflict-dialog" role="dialog" aria-modal="true" aria-labelledby="cedula-conflict-title">
+      <h3 id="cedula-conflict-title">Paciente ya registrado</h3>
+      <p class="cedula-conflict-intro">
+        Ya existe un paciente con la cédula indicada. Revise los datos registrados y confirme si desea
+        <strong>vincularlo a su historial</strong> como médico.
+      </p>
+      <div class="cedula-conflict-data" *ngIf="existingPatientConflict as ex">
+        <p><span class="lbl">Nombre:</span> {{ ex.nombres }} {{ ex.apellidos }}</p>
+        <p><span class="lbl">Cédula:</span> {{ ex.cedula || '—' }}</p>
+        <p><span class="lbl">Edad:</span> {{ ex.edad != null ? ex.edad : '—' }}</p>
+        <p><span class="lbl">Sexo:</span> {{ ex.sexo || '—' }}</p>
+        <p><span class="lbl">Email:</span> {{ ex.email || '—' }}</p>
+        <p><span class="lbl">Teléfono:</span> {{ ex.telefono || '—' }}</p>
+      </div>
+      <div class="cedula-conflict-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeCedulaConflictModal()" [disabled]="loading">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" (click)="confirmVincularPaciente()" [disabled]="loading || !existingPatientConflict?.id">
+          <span *ngIf="loading" class="spinner"></span>
+          Vincular a mi historial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="patient-form-page">
   <div class="page-header">
     <h1>{{ isEdit ? 'Editar Paciente' : 'Nuevo Paciente' }}</h1>
     <div class="mode-indicator" [class.edit-mode]="isEdit" [class.create-mode]="!isEdit">
@@ -42,12 +69,12 @@
             <span *ngIf="apellidos.errors?.['required']">Los apellidos son requeridos</span>
           </div>
         </div>
-        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
+        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked && isEdit">
           <label class="form-label">Cédula</label>
           <input 
             type="text" 
             class="form-input" 
-            [class.duplicate-error]="cedulaExists && cedulaChecked"
+            [class.duplicate-error]="cedulaExists && cedulaChecked && isEdit"
             [(ngModel)]="patient.cedula"
             name="cedula"
             pattern="^[VEJPG][0-9]{3,8}$"
@@ -58,7 +85,7 @@
             <span *ngIf="cedula.errors?.['pattern']">Formato inválido: letra V, E, J, P o G y al menos 3 dígitos (ej. V123).</span>
             <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
           </div>
-          <div class="error-message field-duplicate-error" *ngIf="cedulaExists && cedulaChecked">
+          <div class="error-message field-duplicate-error" *ngIf="isEdit && cedulaExists && cedulaChecked">
             <span>La cédula ya está siendo usada por otro paciente.</span>
           </div>
         </div>
@@ -168,7 +195,7 @@
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="loading || emailExists || cedulaExists || telefonoExists">
+        [disabled]="loading || emailExists || telefonoExists || (isEdit && cedulaExists && cedulaChecked)">
         <span *ngIf="loading" class="spinner"></span>
         {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
       </button>
