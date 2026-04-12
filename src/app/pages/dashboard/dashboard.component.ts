@@ -2008,6 +2008,37 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       font-size: 0.875rem;
       color: #0f172a;
       background: #fff;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 640px) {
+      .section-header-futuras {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .section-header-futuras .section-title {
+        width: 100%;
+      }
+
+      .futuras-date-controls {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.5rem 0.75rem;
+        align-items: center;
+        width: 100%;
+      }
+
+      .futuras-date-input {
+        width: 100%;
+      }
+
+      .futuras-date-controls .btn-refresh {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
+      }
     }
 
     .futuras-sub {
