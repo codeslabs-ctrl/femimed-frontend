@@ -20,9 +20,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         message: error.error?.message || error.message
       });
 
-      // Solo manejar errores HTTP
-      if (!error || !error.status) {
-        console.log('⚠️ ErrorInterceptor: Error no es HTTP, pasando sin modificar');
+      // Solo errores HttpErrorResponse. ¡No usar !error.status!: status === 0 es fallo de red/CORS/SSL y es falsy.
+      if (!error || !(error instanceof HttpErrorResponse)) {
+        console.log('⚠️ ErrorInterceptor: No es HttpErrorResponse, se propaga sin modificar');
         return throwError(() => error);
       }
 
@@ -111,9 +111,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      // Errores de red (0) - No cerrar sesión
+      // Errores de red (0): sin respuesta HTTP (CORS, SSL, firewall, offline, timeout). No cerrar sesión.
       if (status === 0) {
-        console.log('⚠️ ErrorInterceptor: Error de red (0), NO cerrando sesión');
+        console.warn(
+          '⚠️ ErrorInterceptor: Fallo de red (status 0). Posibles causas: CORS, certificado SSL, firewall, VPN, DNS o sin conexión.'
+        );
         return throwError(() => error);
       }
 

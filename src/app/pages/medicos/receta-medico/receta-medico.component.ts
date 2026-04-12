@@ -31,6 +31,9 @@ export class RecetaMedicoComponent implements OnInit {
   piesSeleccionados: number[] = [];
   loadingClinicas = true;
   generando = false;
+  /** Correo del destinatario (el médico lo confirma; se rellena desde el paciente si hay email). */
+  emailDestino = '';
+  enviandoEmail = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -79,6 +82,7 @@ export class RecetaMedicoComponent implements OnInit {
           next: (rows) => {
             this.pacientes = rows;
             this.loadingPacientes = false;
+            this.syncEmailFromPacienteSeleccionado();
           },
           error: () => {
             this.loadingPacientes = false;
@@ -102,6 +106,21 @@ export class RecetaMedicoComponent implements OnInit {
         this.alertService.showError('No se pudieron cargar las clínicas de atención.');
       }
     });
+  }
+
+  onPacienteIdChange(): void {
+    this.syncEmailFromPacienteSeleccionado();
+  }
+
+  private syncEmailFromPacienteSeleccionado(): void {
+    if (this.pacienteId == null || this.pacienteId <= 0) {
+      return;
+    }
+    const p = this.pacientes.find((x) => x.id === this.pacienteId);
+    const em = (p?.email || '').trim();
+    if (em) {
+      this.emailDestino = em;
+    }
   }
 
   etiquetaPaciente(p: Patient): string {
@@ -197,6 +216,57 @@ export class RecetaMedicoComponent implements OnInit {
       }
     } finally {
       this.generando = false;
+    }
+  }
+
+  async enviarPorEmail(): Promise<void> {
+    const texto = (this.contenido || '').trim();
+    if (!texto) {
+      this.alertService.showError('Escriba el contenido del récipe o las indicaciones.');
+      return;
+    }
+    const email = (this.emailDestino || '').trim();
+    if (!email) {
+      this.alertService.showError('Indique el correo electrónico del destinatario.');
+      return;
+    }
+    const simple = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!simple.test(email)) {
+      this.alertService.showError('El correo electrónico no tiene un formato válido.');
+      return;
+    }
+
+    const payload: RecetaPdfPayload & { email: string } = {
+      tipo: this.tipo,
+      contenido: texto,
+      fecha_emision: this.fechaEmision ? `${this.fechaEmision}T12:00:00` : null,
+      pies_clinica_ids: this.piesSeleccionados.length ? [...this.piesSeleccionados] : undefined,
+      email
+    };
+    if (this.pacienteId != null && this.pacienteId > 0) {
+      payload.paciente_id = this.pacienteId;
+    }
+
+    this.enviandoEmail = true;
+    try {
+      const res = await firstValueFrom(this.recetaPdfService.enviarPorEmail(payload));
+      if (res.success) {
+        this.alertService.showSuccess(res.message || 'Correo enviado correctamente.');
+      } else {
+        this.alertService.showError(res.message || 'No se pudo enviar el correo.');
+      }
+    } catch (e: unknown) {
+      const err = e as HttpErrorResponse;
+      const msg =
+        err.error?.message ||
+        (typeof err.error === 'object' && err.error !== null && 'message' in err.error
+          ? String((err.error as { message?: string }).message)
+          : null) ||
+        err.message ||
+        'No se pudo enviar el correo.';
+      this.alertService.showError(typeof msg === 'string' ? msg : 'No se pudo enviar el correo.');
+    } finally {
+      this.enviandoEmail = false;
     }
   }
 }

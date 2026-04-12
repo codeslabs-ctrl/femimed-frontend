@@ -11,6 +11,11 @@ export interface RecetaPdfPayload {
   pies_clinica_ids?: number[];
 }
 
+export interface EnviarRecetaEmailResponse {
+  success: boolean;
+  message?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RecetaPdfService {
   constructor(private http: HttpClient) {}
@@ -19,5 +24,15 @@ export class RecetaPdfService {
     return this.http.post(`${environment.apiUrl}/pdf/receta-medico`, payload, {
       responseType: 'blob'
     });
+  }
+
+  /** Envía el mismo récipe como PDF por correo (destinatario indicado por el médico). */
+  enviarPorEmail(
+    payload: RecetaPdfPayload & { email: string }
+  ): Observable<EnviarRecetaEmailResponse> {
+    return this.http.post<EnviarRecetaEmailResponse>(
+      `${environment.apiUrl}/pdf/receta-medico/enviar-email`,
+      payload
+    );
   }
 }

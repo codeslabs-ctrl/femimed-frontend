@@ -1,0 +1,182 @@
+/* Variante navbar: mismo rol que el antiguo bloque central (solo >768px) */
+:host.qs-host--navbar {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  align-self: stretch;
+}
+
+:host.qs-host--content {
+  display: block;
+  width: 100%;
+  flex: none;
+}
+
+.qs--navbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  container-type: inline-size;
+  container-name: qs-navbar;
+}
+
+/* Variante navbar: ancho según botones (no 100%: evita franja gris vacía tras el último botón) */
+.qs--navbar .qs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #f1f5f9;
+  border-radius: 10px 10px 0 0;
+  padding: 0.2rem 0 0;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+}
+
+.qs--navbar .qs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 8px 8px 0 0;
+  background: #e2e8f0;
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.qs--navbar .qs-btn:hover {
+  background: #fff;
+  color: #0f172a;
+  border-color: #94a3b8;
+  transform: none;
+  box-shadow: 0 -1px 0 #fff inset;
+}
+
+.qs--navbar .qs-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.qs--navbar .qs-label {
+  white-space: nowrap;
+}
+
+/* Sin espacio horizontal: icono arriba y texto abajo (no ocultar etiquetas ni dejar solo iconos) */
+@container qs-navbar (max-width: 560px) {
+  .qs-btn {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.3rem 0.4rem;
+    min-width: 0;
+  }
+  .qs-label {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.12;
+    font-size: 0.62rem;
+    max-width: 6.25rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .qs--navbar .qs-btn {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.3rem 0.4rem;
+    min-width: 0;
+  }
+  .qs--navbar .qs-label {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.12;
+    font-size: 0.62rem;
+    max-width: 6.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .qs--navbar {
+    display: none;
+  }
+}
+
+/* Variante content: bajo el navbar, ancho completo, solo móvil */
+.qs--content {
+  display: none;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.qs--content .qs-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.qs--content .qs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: #fff;
+  color: #1e293b;
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  min-height: 44px;
+}
+
+.qs--content .qs-btn:active {
+  background: #f8fafc;
+}
+
+.qs--content .qs-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.qs--content .qs-label {
+  line-height: 1.25;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .qs--content {
+    display: block;
+  }
+}
+
+@media (min-width: 769px) {
+  .qs--content {
+    display: none !important;
+  }
+}

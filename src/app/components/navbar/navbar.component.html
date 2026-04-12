@@ -5,33 +5,10 @@
     </a>
   </div>
 
-  <!-- Accesos inmediatos (pestañas: ancho según contenido, centrado en la barra) -->
-  <div class="navbar-quick-actions" *ngIf="currentUser">
-    <div class="navbar-quick-tabs">
-      <a routerLink="/admin/consultas/nueva" class="navbar-quick-btn" title="Agendar nueva consulta">
-        <span class="navbar-quick-icon">➕</span>
-        <span class="navbar-quick-label">Nueva Consulta</span>
-      </a>
-      <a routerLink="/patients/new" class="navbar-quick-btn" title="Registrar nuevo paciente">
-        <span class="navbar-quick-icon">➕</span>
-        <span class="navbar-quick-label">Nuevo Paciente</span>
-      </a>
-      <a routerLink="/admin/informes-medicos/nuevo" class="navbar-quick-btn" title="Crear nuevo informe médico">
-        <span class="navbar-quick-icon">➕</span>
-        <span class="navbar-quick-label">Nuevo Informe Médico</span>
-      </a>
-      <a
-        *ngIf="currentUser?.rol === 'medico'"
-        routerLink="/medicos/recipe"
-        class="navbar-quick-btn"
-        title="Récipe médico o indicaciones (PDF)"
-      >
-        <span class="navbar-quick-icon">📄</span>
-        <span class="navbar-quick-label">Récipe Médico</span>
-      </a>
-    </div>
+  <div class="navbar-shortcuts" *ngIf="currentUser">
+    <app-quick-shortcuts-bar variant="navbar"></app-quick-shortcuts-bar>
   </div>
-  
+
   <div class="navbar-user" *ngIf="currentUser">
     <div class="user-info">
       <span class="user-name">{{ getDoctorFullName() }}</span>

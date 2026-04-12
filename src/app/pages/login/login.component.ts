@@ -71,6 +71,11 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private getLoginErrorMessage(error: any): string {
+    // Sin respuesta del servidor (red, CORS, SSL, firewall, DNS). Angular usa status 0.
+    if (error.status === 0) {
+      return 'No se pudo conectar con el servidor. Comprueba tu conexión, VPN, firewall o antivirus. Si el problema continúa, prueba otra red o navegador.';
+    }
+
     // Error de rate limiting - manejo específico para login
     if (error.status === 401 && error.error?.message && error.error.message.includes('Demasiados intentos')) {
       this.startRateLimitCountdown();

@@ -5,6 +5,7 @@ import { AuthService } from './services/auth.service';
 import { User } from './models/user.model';
 import { filter } from 'rxjs/operators';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { QuickShortcutsBarComponent } from './components/quick-shortcuts-bar/quick-shortcuts-bar.component';
 import { ChangePasswordModalComponent } from './components/change-password-modal/change-password-modal.component';
 import { SnackbarComponent } from './components/snackbar/snackbar.component';
 import { AlertModalComponent } from './components/alert-modal/alert-modal.component';
@@ -12,10 +13,11 @@ import { AlertModalComponent } from './components/alert-modal/alert-modal.compon
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent, SnackbarComponent, AlertModalComponent],
+  imports: [RouterOutlet, CommonModule, NavbarComponent, QuickShortcutsBarComponent, ChangePasswordModalComponent, SnackbarComponent, AlertModalComponent],
   template: `
     <div class="app-container" [class.app-container--chat-view]="showNavbar && isChatRoute">
       <app-navbar *ngIf="showNavbar"></app-navbar>
+      <app-quick-shortcuts-bar *ngIf="showNavbar" variant="content"></app-quick-shortcuts-bar>
       <main
         class="app-main"
         [class.full-height]="!showNavbar"

@@ -208,20 +208,22 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           <div class="section-header section-header-futuras">
             <h3 class="section-title">📆 Consultas futuras</h3>
             <div class="futuras-date-controls">
-              <label class="futuras-date-label" for="dash-futura-fecha">Elegir día</label>
-              <input id="dash-futura-fecha" type="date" class="futuras-date-input" name="dashFuturaFecha" [min]="minFuturaDate" [(ngModel)]="fechaFuturaConsulta" (ngModelChange)="onFuturaFechaChanged()" />
-              <button type="button" class="btn-refresh" (click)="loadConsultasFuturas()" [disabled]="loadingConsultasFuturas || !fechaFuturaConsulta">
+              <label class="futuras-date-label" for="dash-futura-desde">Desde</label>
+              <input id="dash-futura-desde" type="date" class="futuras-date-input" name="dashFuturaDesde" [min]="minFuturaDate" [(ngModel)]="fechaFuturaDesde" (ngModelChange)="onFuturaRangoChanged()" />
+              <label class="futuras-date-label" for="dash-futura-hasta">Hasta</label>
+              <input id="dash-futura-hasta" type="date" class="futuras-date-input" name="dashFuturaHasta" [min]="minHastaFuturaDate" [(ngModel)]="fechaFuturaHasta" (ngModelChange)="onFuturaRangoChanged()" />
+              <button type="button" class="btn-refresh" (click)="loadConsultasFuturas()" [disabled]="loadingConsultasFuturas || !fechaFuturaDesde || !fechaFuturaHasta">
                 <span [class.spinner]="loadingConsultasFuturas"></span>
                 {{ loadingConsultasFuturas ? 'Cargando...' : '↻ Actualizar' }}
               </button>
             </div>
           </div>
-          <p class="futuras-sub" *ngIf="fechaFuturaConsulta">Mostrando citas del <strong>{{ formatDate(fechaFuturaConsulta) }}</strong> (solo fechas posteriores a hoy).</p>
+          <p class="futuras-sub" *ngIf="fechaFuturaDesde && fechaFuturaHasta">Mostrando citas del <strong>{{ formatDate(fechaFuturaDesde) }}</strong> al <strong>{{ formatDate(fechaFuturaHasta) }}</strong> (solo fechas posteriores a hoy).</p>
           <div class="consultas-grid" *ngIf="!loadingConsultasFuturas">
             <div *ngIf="consultasFuturas.length === 0" class="empty-state">
               <div class="empty-state-icon">📆</div>
-              <div class="empty-state-title">No hay consultas para este día</div>
-              <div class="empty-state-description">Prueba con otra fecha futura o agenda nuevas citas.</div>
+              <div class="empty-state-title">No hay consultas en este rango</div>
+              <div class="empty-state-description">Amplíe el rango de fechas o agenda nuevas citas.</div>
             </div>
             <div *ngFor="let consulta of consultasFuturas" class="consulta-card" [class]="getConsultaCardClass(consulta)">
               <div class="consulta-header">
@@ -229,6 +231,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 <div class="estado" [class]="'estado-' + consulta.estado_consulta">{{ getEstadoText(consulta.estado_consulta) }}</div>
               </div>
               <div class="consulta-body">
+                <div class="fecha-futura" *ngIf="consulta.fecha_pautada">📅 {{ formatDate(consulta.fecha_pautada) }}</div>
                 <div class="paciente-info">
                   <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
                   <div class="paciente-cedula" *ngIf="consulta.paciente_cedula">Cédula: {{ consulta.paciente_cedula }}</div>
@@ -1021,6 +1024,17 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       margin-bottom: 0.5rem;
       padding: 0.25rem 0.5rem;
       background: #fef3c7;
+      border-radius: 0.375rem;
+      display: inline-block;
+    }
+
+    .fecha-futura {
+      font-size: 0.75rem;
+      color: #5b21b6;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      background: #ede9fe;
       border-radius: 0.375rem;
       display: inline-block;
     }
@@ -2030,7 +2044,9 @@ export class DashboardComponent implements OnInit {
   consultasTab: 'hoy' | 'atrasadas' | 'futuras' = 'hoy';
   consultasFuturas: ConsultaWithDetails[] = [];
   loadingConsultasFuturas = false;
-  fechaFuturaConsulta = '';
+  /** Rango para listar citas futuras (≥ mañana). */
+  fechaFuturaDesde = '';
+  fechaFuturaHasta = '';
   
   // Propiedades para modales
   showVerModal = false;
@@ -2062,7 +2078,8 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     if (this.showConsultasTabs()) {
-      this.fechaFuturaConsulta = this.getTomorrowYyyyMmDd();
+      this.fechaFuturaDesde = this.getTomorrowYyyyMmDd();
+      this.fechaFuturaHasta = this.getDatePlusDaysFromString(this.fechaFuturaDesde, 14);
     }
     this.loadPermisoFinalizar();
     this.loadDashboardData();
@@ -2075,6 +2092,15 @@ export class DashboardComponent implements OnInit {
 
   get minFuturaDate(): string {
     return this.getTomorrowYyyyMmDd();
+  }
+
+  /** Mínimo de "Hasta": no anterior a "Desde" ni a mañana. */
+  get minHastaFuturaDate(): string {
+    const min = this.minFuturaDate;
+    if (this.fechaFuturaDesde && this.fechaFuturaDesde >= min) {
+      return this.fechaFuturaDesde;
+    }
+    return min;
   }
 
   private getTomorrowYyyyMmDd(): string {
@@ -2090,38 +2116,66 @@ export class DashboardComponent implements OnInit {
     return `${y}-${m}-${day}`;
   }
 
+  private getDatePlusDaysFromString(yyyyMmDd: string, days: number): string {
+    const parts = yyyyMmDd.split('-').map(Number);
+    const y = parts[0] ?? 0;
+    const mo = parts[1] ?? 1;
+    const da = parts[2] ?? 1;
+    const dt = new Date(y, mo - 1, da);
+    dt.setDate(dt.getDate() + days);
+    return this.toYyyyMmDdLocal(dt);
+  }
+
   setConsultasTab(tab: 'hoy' | 'atrasadas' | 'futuras'): void {
     this.consultasTab = tab;
     if (tab === 'futuras') {
-      if (!this.fechaFuturaConsulta) {
-        this.fechaFuturaConsulta = this.getTomorrowYyyyMmDd();
+      if (!this.fechaFuturaDesde) {
+        this.fechaFuturaDesde = this.getTomorrowYyyyMmDd();
+      }
+      if (!this.fechaFuturaHasta || this.fechaFuturaHasta < this.fechaFuturaDesde) {
+        this.fechaFuturaHasta = this.getDatePlusDaysFromString(this.fechaFuturaDesde, 14);
       }
       this.loadConsultasFuturas();
     }
   }
 
-  onFuturaFechaChanged(): void {
-    if (this.consultasTab !== 'futuras' || !this.fechaFuturaConsulta) return;
-    if (this.fechaFuturaConsulta < this.minFuturaDate) {
-      this.fechaFuturaConsulta = this.minFuturaDate;
+  onFuturaRangoChanged(): void {
+    if (this.consultasTab !== 'futuras') return;
+    if (this.fechaFuturaDesde && this.fechaFuturaDesde < this.minFuturaDate) {
+      this.fechaFuturaDesde = this.minFuturaDate;
     }
+    if (this.fechaFuturaDesde && this.fechaFuturaHasta && this.fechaFuturaHasta < this.fechaFuturaDesde) {
+      this.fechaFuturaHasta = this.fechaFuturaDesde;
+    }
+    if (!this.fechaFuturaDesde || !this.fechaFuturaHasta) return;
     this.loadConsultasFuturas();
   }
 
   loadConsultasFuturas(): void {
-    if (!this.fechaFuturaConsulta) return;
+    if (!this.fechaFuturaDesde || !this.fechaFuturaHasta) return;
+    let desde = this.fechaFuturaDesde;
+    let hasta = this.fechaFuturaHasta;
+    if (desde < this.minFuturaDate) desde = this.minFuturaDate;
+    if (hasta < desde) hasta = desde;
     this.loadingConsultasFuturas = true;
     this.consultaService
       .getConsultas({
-        fecha_desde: this.fechaFuturaConsulta,
-        fecha_hasta: this.fechaFuturaConsulta,
+        fecha_desde: desde,
+        fecha_hasta: hasta,
         page: 1,
-        limit: 300
+        limit: 500
       })
       .subscribe({
         next: (response) => {
           const raw = (response.data || []) as ConsultaWithDetails[];
-          this.consultasFuturas = raw.filter((c) => this.matchesFuturaSelectedDay(c.fecha_pautada));
+          this.consultasFuturas = raw
+            .filter((c) => this.matchesFuturaRango(c.fecha_pautada, desde, hasta))
+            .sort((a, b) => {
+              const fa = String(a.fecha_pautada || '').slice(0, 10);
+              const fb = String(b.fecha_pautada || '').slice(0, 10);
+              if (fa !== fb) return fa.localeCompare(fb);
+              return String(a.hora_pautada || '').localeCompare(String(b.hora_pautada || ''));
+            });
           this.loadingConsultasFuturas = false;
         },
         error: (error) => {
@@ -2132,18 +2186,19 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  /** Mismo día que el calendario y estrictamente posterior a hoy (mañana como mínimo). */
-  private matchesFuturaSelectedDay(fechaPautada: string | undefined): boolean {
-    if (!fechaPautada || !this.fechaFuturaConsulta) return false;
+  /** Dentro del rango [desde, hasta] y estrictamente posterior a hoy (mañana como mínimo). */
+  private matchesFuturaRango(fechaPautada: string | undefined, desde: string, hasta: string): boolean {
+    if (!fechaPautada) return false;
     const part = String(fechaPautada).slice(0, 10);
-    return part === this.fechaFuturaConsulta && part >= this.minFuturaDate;
+    if (part < this.minFuturaDate) return false;
+    return part >= desde && part <= hasta;
   }
 
   private refreshConsultasAfterMutation(): void {
     this.loadConsultasDelDia();
     if (this.showConsultasTabs()) {
       this.loadConsultasPendientes();
-      if (this.consultasTab === 'futuras' && this.fechaFuturaConsulta) {
+      if (this.consultasTab === 'futuras' && this.fechaFuturaDesde && this.fechaFuturaHasta) {
         this.loadConsultasFuturas();
       }
     }

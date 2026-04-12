@@ -102,12 +102,17 @@ export class AuthService {
         }
       }),
       catchError((error: HttpErrorResponse) => {
-        console.error('🚨 Login error details:', error);
-        console.error('🚨 Error status:', error.status);
-        console.error('🚨 Error message:', error.message);
-        console.error('🚨 Error body:', error.error);
-        console.error('🚨 Error body message:', error.error?.error?.message || error.error?.message || 'No message available');
-        console.error('🚨 Full error object:', error);
+        if (error.status === 0) {
+          console.error(
+            'Inicio de sesión: sin respuesta del servidor (red, CORS, certificado SSL o bloqueo). Detalle técnico:',
+            error.message
+          );
+        } else {
+          console.error('Error al iniciar sesión:', {
+            status: error.status,
+            message: error.error?.message || error.message
+          });
+        }
         
         // Si el error viene del rate limiting, asegurar que el mensaje esté disponible
         if (error.status === 429 || (error.status === 401 && error.error?.message?.includes('Demasiados intentos'))) {

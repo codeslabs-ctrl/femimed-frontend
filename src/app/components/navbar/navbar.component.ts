@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { QuickShortcutsBarComponent } from '../quick-shortcuts-bar/quick-shortcuts-bar.component';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { MenuService, MenuItem as DynamicMenuItem } from '../../services/menu.service';
@@ -24,7 +25,7 @@ interface MenuItem {
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, QuickShortcutsBarComponent],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
 })

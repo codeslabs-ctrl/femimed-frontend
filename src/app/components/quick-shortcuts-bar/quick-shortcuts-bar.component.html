@@ -1,0 +1,30 @@
+<div
+  class="qs"
+  *ngIf="currentUser"
+  [class.qs--navbar]="variant === 'navbar'"
+  [class.qs--content]="variant === 'content'"
+>
+  <div class="qs-tabs">
+    <a routerLink="/admin/consultas/nueva" class="qs-btn" title="Agendar nueva consulta">
+      <span class="qs-icon">➕</span>
+      <span class="qs-label">Nueva Consulta</span>
+    </a>
+    <a routerLink="/patients/new" class="qs-btn" title="Registrar nuevo paciente">
+      <span class="qs-icon">➕</span>
+      <span class="qs-label">Nuevo Paciente</span>
+    </a>
+    <a routerLink="/admin/informes-medicos/nuevo" class="qs-btn" title="Crear nuevo informe médico">
+      <span class="qs-icon">➕</span>
+      <span class="qs-label">Nuevo Informe Médico</span>
+    </a>
+    <a
+      *ngIf="currentUser?.rol === 'medico'"
+      routerLink="/medicos/recipe"
+      class="qs-btn"
+      title="Récipe médico o indicaciones (PDF)"
+    >
+      <span class="qs-icon">📄</span>
+      <span class="qs-label">Récipe Médico</span>
+    </a>
+  </div>
+</div>

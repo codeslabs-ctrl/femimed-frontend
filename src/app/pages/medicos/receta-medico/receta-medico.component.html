@@ -37,12 +37,29 @@
         class="input-control select-paciente"
         [(ngModel)]="pacienteId"
         name="pacienteReceta"
+        (ngModelChange)="onPacienteIdChange()"
       >
         <option [ngValue]="null">— Sin paciente —</option>
         <option *ngFor="let p of pacientes" [ngValue]="p.id">{{ etiquetaPaciente(p) }}</option>
       </select>
       <p class="paciente-ayuda" *ngIf="!loadingPacientes && pacientes.length === 0">
         No hay pacientes asociados a su usuario. Puede generar el récipe sin paciente o revise más tarde.
+      </p>
+    </div>
+
+    <div class="field-row">
+      <label class="field-label" for="emailReceta">Enviar por correo a</label>
+      <input
+        id="emailReceta"
+        type="email"
+        class="input-control"
+        name="emailDestinoReceta"
+        [(ngModel)]="emailDestino"
+        autocomplete="email"
+        placeholder="correo@ejemplo.com"
+      />
+      <p class="paciente-ayuda">
+        El médico confirma el destinatario. Si el paciente tiene email en el sistema, se rellena al elegirlo; puede corregirlo antes de enviar.
       </p>
     </div>
 
@@ -72,9 +89,19 @@
     </div>
 
     <div class="actions">
-      <button type="button" class="btn-primary" (click)="descargarPdf()" [disabled]="generando">
-        {{ generando ? 'Generando…' : 'Descargar PDF' }}
-      </button>
+      <div class="actions-row">
+        <button type="button" class="btn-primary" (click)="descargarPdf()" [disabled]="generando || enviandoEmail">
+          {{ generando ? 'Generando…' : 'Descargar PDF' }}
+        </button>
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="enviarPorEmail()"
+          [disabled]="generando || enviandoEmail"
+        >
+          {{ enviandoEmail ? 'Enviando…' : 'Enviar por correo' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

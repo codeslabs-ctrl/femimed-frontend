@@ -20,7 +20,7 @@ export class ErrorHandlerService {
     const rawMessage = (error?.message || error?.error?.message || '') as string;
     const isUnknownOrNetwork = status === 0 || (typeof rawMessage === 'string' && /unknown\s*error|failure\s*response\s*for/i.test(rawMessage));
     if (isUnknownOrNetwork) {
-      return 'Ha ocurrido un error. Por favor, intente de nuevo más tarde.';
+      return 'No se pudo conectar con el servidor. Comprueba tu conexión a internet, VPN, firewall o antivirus. Si usas otra red o navegador, prueba de nuevo.';
     }
     // Resto: mensaje genérico y seguro
     return `❌ Error en ${context}. Por favor, verifica los datos e intenta de nuevo.`;
@@ -100,7 +100,8 @@ export class ErrorHandlerService {
    * @returns true si es error HTTP
    */
   isHttpError(error: any): boolean {
-    return error && (error.status || error.error?.status);
+    // status === 0 es válido (fallo de red); no usar error.status || … porque 0 es falsy.
+    return !!error && typeof error.status === 'number';
   }
 
   /**
@@ -109,10 +110,10 @@ export class ErrorHandlerService {
    * @returns Código de estado o null
    */
   getHttpStatus(error: any): number | null {
-    if (this.isHttpError(error)) {
-      return error.status || error.error?.status || null;
+    if (!error || typeof error.status !== 'number') {
+      return null;
     }
-    return null;
+    return error.status;
   }
 
   /**
