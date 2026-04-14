@@ -8,6 +8,9 @@ export interface ClinicaAtencion {
   id: number;
   nombre_clinica: string;
   direccion_clinica: string | null;
+  /** WGS84; opcional. Con longitud se envía enlace a mapas en correos de consulta. */
+  latitud?: number | null;
+  longitud?: number | null;
   logo_path: string | null;
   logo_path_recipe: string | null;
   activo: boolean;

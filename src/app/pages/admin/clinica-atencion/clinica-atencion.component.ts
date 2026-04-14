@@ -20,7 +20,14 @@ export class ClinicaAtencionComponent implements OnInit {
   saving = false;
   errorMessage = '';
   confirmDelete: ClinicaAtencion | null = null;
-  item: Partial<ClinicaAtencion> = { nombre_clinica: '', direccion_clinica: '', logo_path: '', activo: true };
+  item: Partial<ClinicaAtencion> = {
+    nombre_clinica: '',
+    direccion_clinica: '',
+    latitud: null,
+    longitud: null,
+    logo_path: '',
+    activo: true
+  };
 
   constructor(
     private service: ClinicaAtencionService,
@@ -48,7 +55,7 @@ export class ClinicaAtencionComponent implements OnInit {
 
   openAdd(): void {
     this.isEditing = false;
-    this.item = { nombre_clinica: '', direccion_clinica: null, logo_path: null, activo: true };
+    this.item = { nombre_clinica: '', direccion_clinica: null, latitud: null, longitud: null, logo_path: null, activo: true };
     this.errorMessage = '';
     this.showModal = true;
   }
@@ -74,9 +81,31 @@ export class ClinicaAtencionComponent implements OnInit {
     }
     this.saving = true;
     this.errorMessage = '';
+    const latRaw = this.item['latitud'];
+    const lngRaw = this.item['longitud'];
+    const latStr =
+      latRaw === null || latRaw === undefined ? '' : String(latRaw).trim();
+    const lngStr =
+      lngRaw === null || lngRaw === undefined ? '' : String(lngRaw).trim();
+    let latitud: number | null = null;
+    let longitud: number | null = null;
+    if (latStr || lngStr) {
+      const la = latStr === '' ? NaN : Number(latStr.replace(',', '.'));
+      const lo = lngStr === '' ? NaN : Number(lngStr.replace(',', '.'));
+      if (!Number.isFinite(la) || !Number.isFinite(lo)) {
+        this.errorMessage =
+          'Latitud y longitud deben ser números válidos (o deje ambos vacíos).';
+        this.saving = false;
+        return;
+      }
+      latitud = la;
+      longitud = lo;
+    }
     const payload = {
       nombre_clinica: name,
       direccion_clinica: (this.item['direccion_clinica'] as string) || null,
+      latitud,
+      longitud,
       logo_path: (this.item['logo_path'] as string) || null,
       activo: this.item['activo'] !== false
     };
