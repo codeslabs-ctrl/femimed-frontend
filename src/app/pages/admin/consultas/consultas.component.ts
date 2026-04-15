@@ -155,9 +155,6 @@ import { Medico } from '../../../services/medico.service';
                     <span class="estado-badge estado-{{ consulta.estado_consulta }}">
                       {{ getEstadoText(consulta.estado_consulta) }}
                     </span>
-                    <span *ngIf="isConsultaExpirada(consulta)" class="expirada-badge" title="Consulta expirada">
-                      ⏰ Expirada
-                    </span>
                   </div>
                 </td>
                 <td>
@@ -180,17 +177,15 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Ver</span>
                     </button>
                     <button 
-                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'"
+                      *ngIf="puedeEditarConsulta(consulta)"
                       class="action-btn edit-btn" 
-                      [class.disabled]="isConsultaExpirada(consulta)"
-                      [disabled]="isConsultaExpirada(consulta)"
                       (click)="editarConsulta(consulta)" 
-                      [title]="isConsultaExpirada(consulta) ? 'No se puede editar consultas expiradas' : 'Editar'">
+                      title="Editar">
                       <span class="btn-icon">✏️</span>
                       <span class="btn-text">Editar</span>
                     </button>
                     <button 
-                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()"
+                      *ngIf="puedeMostrarReagendar(consulta)"
                       class="action-btn btn-reschedule" 
                       (click)="reagendarConsulta(consulta)" 
                       title="Reagendar">
@@ -283,12 +278,16 @@ import { Medico } from '../../../services/medico.service';
                 <i class="fas fa-eye"></i>
                 Ver
               </button>
-              <button class="action-btn edit-btn" (click)="editarConsulta(consulta)" title="Editar consulta">
+              <button 
+                *ngIf="puedeEditarConsulta(consulta)"
+                class="action-btn edit-btn" 
+                (click)="editarConsulta(consulta)" 
+                title="Editar consulta (solo vigentes o futuras)">
                 <i class="fas fa-edit"></i>
                 Editar
               </button>
               <button 
-                *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()"
+                *ngIf="puedeMostrarReagendar(consulta)"
                 class="action-btn warning-btn" 
                 (click)="reagendarConsulta(consulta)" 
                 title="Reagendar consulta">
@@ -918,17 +917,6 @@ import { Medico } from '../../../services/medico.service';
       gap: 0.25rem;
       align-items: flex-start;
     }
-
-    .expirada-badge {
-      background: #fef3c7;
-      color: #92400e;
-      padding: 0.125rem 0.375rem;
-      border-radius: 0.25rem;
-      font-size: 0.625rem;
-      font-weight: 500;
-      border: 1px solid #f59e0b;
-    }
-
 
     .prioridad-badge {
       display: inline-flex;
@@ -1632,10 +1620,10 @@ export class ConsultasComponent implements OnInit {
   // Lista de médicos para filtros (ya declarado arriba)
 
   ngOnInit(): void {
-    // Cargar usuario actual
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.loadPermisoFinalizar();
+      this.cdr.markForCheck();
     });
     this.loadPermisoFinalizar();
     this.loadConsultas();
@@ -1827,28 +1815,53 @@ export class ConsultasComponent implements OnInit {
   }
 
   editarConsulta(consulta: ConsultaWithDetails): void {
-    // Verificar si la consulta está expirada
-    if (this.isConsultaExpirada(consulta)) {
-      this.alertService.showWarning('No se puede editar una consulta que ya pasó. Use la opción "Reagendar" para cambiar la fecha y hora.');
+    if (!this.esCitaVigenteOFutura(consulta)) {
+      this.alertService.showWarning(
+        'Solo se pueden editar consultas con fecha y hora vigentes o futuras. Use «Reagendar» para cambiar una cita vencida.'
+      );
       return;
     }
-    
-    // Navegar al componente de edición
+
     this.router.navigate(['/admin/consultas', consulta.id, 'editar']);
   }
 
+  /** True si la fecha/hora programada aún no ha pasado (cita vigente o futura). */
+  esCitaVigenteOFutura(consulta: ConsultaWithDetails): boolean {
+    return !this.isConsultaExpirada(consulta);
+  }
 
-  // Método para verificar si una consulta está expirada
   isConsultaExpirada(consulta: ConsultaWithDetails): boolean {
-    if (!consulta.fecha_pautada || !consulta.hora_pautada) {
-      return false;
-    }
+    return this.dateService.isCitaPasadaVenezuela(consulta.fecha_pautada, consulta.hora_pautada);
+  }
 
-    const fechaHoraConsulta = new Date(`${consulta.fecha_pautada}T${consulta.hora_pautada}`);
-    const ahora = new Date();
-    
-    // Una consulta está expirada si la fecha/hora ya pasó
-    return fechaHoraConsulta < ahora;
+  /**
+   * Editar: solo agendada/reagendada y cita vigente o futura (fecha/hora no vencida).
+   */
+  puedeEditarConsulta(consulta: ConsultaWithDetails): boolean {
+    const est = (consulta.estado_consulta || '').toLowerCase();
+    if (est !== 'agendada' && est !== 'reagendada') return false;
+    return this.esCitaVigenteOFutura(consulta);
+  }
+
+  /** Citas por agendar: secretaría/admin (como antes). */
+  private puedeReagendarPorAgendar(consulta: ConsultaWithDetails): boolean {
+    return (consulta.estado_consulta || '').toLowerCase() === 'por_agendar' && this.canReagendarConsulta();
+  }
+
+  /**
+   * Agendada/reagendada con fecha vencida: sustituye a Editar; médico, secretaría o administrador.
+   */
+  private puedeReagendarPorCitaVencida(consulta: ConsultaWithDetails): boolean {
+    const est = (consulta.estado_consulta || '').toLowerCase();
+    if (est !== 'agendada' && est !== 'reagendada') return false;
+    if (!this.isConsultaExpirada(consulta)) return false;
+    const rol = (this.currentUser?.rol ?? '').toString().toLowerCase();
+    return rol === 'medico' || rol === 'secretaria' || rol === 'administrador';
+  }
+
+  /** Reagendar: por_agendar (roles admin/sec.) o cita agendada/reagendada ya vencida. */
+  puedeMostrarReagendar(consulta: ConsultaWithDetails): boolean {
+    return this.puedeReagendarPorAgendar(consulta) || this.puedeReagendarPorCitaVencida(consulta);
   }
 
   reagendarConsulta(consulta: ConsultaWithDetails): void {
@@ -1873,7 +1886,8 @@ export class ConsultasComponent implements OnInit {
   }
 
   canReagendarConsulta(): boolean {
-    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+    const rol = (this.currentUser?.rol ?? '').toString().toLowerCase();
+    return rol === 'secretaria' || rol === 'administrador';
   }
 
   cancelConsulta(consulta: ConsultaWithDetails): void {

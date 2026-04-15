@@ -48,7 +48,10 @@ export class PatientFormComponent implements OnInit {
   telefonoExists = false;
   telefonoChecked = false;
   telefonoValidationTimeout: any;
-  
+
+  /** Se incrementa al enviar crear/vincular para ignorar respuestas tardías de check-email/tel/cédula. */
+  private validationEpoch = 0;
+
   // Variables para lógica de médico
   currentMedicoId: number | null = null;
   shouldCreateNewHistory = false;
@@ -113,8 +116,13 @@ export class PatientFormComponent implements OnInit {
       this.alertService.show('El email ya está registrado en el sistema.', 'error');
       return;
     }
-    if (this.isEdit && this.cedulaExists && this.cedulaChecked) {
-      this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
+    if (this.cedulaExists && this.cedulaChecked) {
+      this.alertService.show(
+        this.isEdit
+          ? 'La cédula ya está siendo usada por otro paciente.'
+          : 'La cédula ya corresponde a un paciente vinculado a su historial. Busque al paciente en su lista.',
+        'error'
+      );
       return;
     }
     if (this.telefonoExists && this.telefonoChecked) {
@@ -133,8 +141,12 @@ export class PatientFormComponent implements OnInit {
   }
 
   createPatient() {
+    this.validationEpoch++;
+    clearTimeout(this.emailValidationTimeout);
+    clearTimeout(this.telefonoValidationTimeout);
+    clearTimeout(this.cedulaValidationTimeout);
     this.loading = true;
-    
+
     // Solo enviar datos básicos del paciente
     const patientData = {
       nombres: this.patient.nombres!,
@@ -160,6 +172,12 @@ export class PatientFormComponent implements OnInit {
             if (newPatientId) {
               this.applyPostCreateSuccess(newPatientId);
             } else {
+              this.emailExists = false;
+              this.emailChecked = false;
+              this.telefonoExists = false;
+              this.telefonoChecked = false;
+              this.cedulaExists = false;
+              this.cedulaChecked = false;
               this.patientCreated = true;
               this.showSuccessActions = true;
               this.loading = false;
@@ -392,6 +410,12 @@ export class PatientFormComponent implements OnInit {
   private applyPostCreateSuccess(newPatientId: number) {
     this.patientId = newPatientId;
     this.loading = false;
+    this.emailExists = false;
+    this.emailChecked = false;
+    this.telefonoExists = false;
+    this.telefonoChecked = false;
+    this.cedulaExists = false;
+    this.cedulaChecked = false;
     this.loadingPatientData = true;
     this.patientService.getPatientById(newPatientId).subscribe({
       next: (loadRes) => {
@@ -424,6 +448,10 @@ export class PatientFormComponent implements OnInit {
       this.alertService.show('No se pudo identificar al paciente existente.', 'error');
       return;
     }
+    this.validationEpoch++;
+    clearTimeout(this.emailValidationTimeout);
+    clearTimeout(this.telefonoValidationTimeout);
+    clearTimeout(this.cedulaValidationTimeout);
     this.loading = true;
     this.patientService.linkPatientToMyHistorial(ep.id, {}).subscribe({
       next: (response) => {
@@ -461,15 +489,18 @@ export class PatientFormComponent implements OnInit {
     if (this.patient.email && this.patient.email.length > 0) {
       clearTimeout(this.emailValidationTimeout);
       this.emailValidationTimeout = setTimeout(() => {
+        const epochAtRun = this.validationEpoch;
         this.patientService.checkEmailAvailability(this.patient.email!).subscribe({
           next: (response) => {
-            // response.exists = true significa que el email ya está registrado
-            // En modo edición, debemos verificar que no sea el paciente actual
+            if (epochAtRun !== this.validationEpoch) {
+              return;
+            }
             if (this.isEdit && this.patientId && response.exists) {
-              // Si estamos editando, necesitamos verificar si el email pertenece al paciente actual
-              // Para esto, obtenemos el paciente por email para comparar IDs
               this.patientService.getPatientByEmail(this.patient.email!).subscribe({
                 next: (patientResponse) => {
+                  if (epochAtRun !== this.validationEpoch) {
+                    return;
+                  }
                   if (patientResponse.success && patientResponse.data) {
                     this.emailExists = patientResponse.data.id !== this.patientId;
                   } else {
@@ -478,21 +509,23 @@ export class PatientFormComponent implements OnInit {
                   this.emailChecked = true;
                 },
                 error: () => {
-                  // Si hay error, asumimos que el email está disponible
+                  if (epochAtRun !== this.validationEpoch) {
+                    return;
+                  }
                   this.emailExists = false;
                   this.emailChecked = true;
                 }
               });
             } else {
-              // En modo creación, si exists es true, el email está duplicado
               this.emailExists = response.exists;
               this.emailChecked = true;
             }
           },
           error: (error) => {
-            // Solo loguear errores reales (500, problemas de red, etc.)
+            if (epochAtRun !== this.validationEpoch) {
+              return;
+            }
             this.errorHandler.logError(error, 'validar email');
-            // En caso de error, asumimos que el email está disponible
             this.emailExists = false;
             this.emailChecked = true;
           }
@@ -504,32 +537,43 @@ export class PatientFormComponent implements OnInit {
     }
   }
 
-  // Validación de cédula
+  // Validación de cédula (alta: check-cedula; edición: búsqueda excluyendo paciente actual)
   validateCedula() {
     if (this.patient.cedula && this.patient.cedula.length > 0) {
-      // Validar formato de cédula venezolana
       const cedulaPattern = /^[VEJPG][0-9]{3,8}$/;
       if (!cedulaPattern.test(this.patient.cedula)) {
-        // Marcar como inválida si no cumple el formato
-        console.log('Formato de cédula inválido');
         this.cedulaExists = false;
         this.cedulaChecked = false;
         return;
       }
 
-      // En alta nueva no buscamos duplicados al salir del campo: el servidor responde 409/400 al crear
-      if (!this.isEdit) {
-        this.cedulaExists = false;
-        this.cedulaChecked = false;
-        return;
-      }
-
-      // Modo edición: verificar duplicados contra otros pacientes
       clearTimeout(this.cedulaValidationTimeout);
       this.cedulaValidationTimeout = setTimeout(() => {
+        const epochAtRun = this.validationEpoch;
+        if (!this.isEdit) {
+          this.patientService.checkCedulaAvailability(this.patient.cedula!).subscribe({
+            next: (response) => {
+              if (epochAtRun !== this.validationEpoch) {
+                return;
+              }
+              this.cedulaExists = response.exists;
+              this.cedulaChecked = true;
+            },
+            error: () => {
+              if (epochAtRun !== this.validationEpoch) {
+                return;
+              }
+              this.cedulaExists = false;
+              this.cedulaChecked = true;
+            }
+          });
+          return;
+        }
         this.patientService.searchPatientsByCedula(this.patient.cedula!).subscribe({
           next: (response) => {
-            // Si es modo edición, excluir el paciente actual
+            if (epochAtRun !== this.validationEpoch) {
+              return;
+            }
             if (this.isEdit && this.patientId) {
               const otherPatients = response.data.filter(p => p.id !== this.patientId);
               this.cedulaExists = otherPatients.length > 0;
@@ -539,11 +583,12 @@ export class PatientFormComponent implements OnInit {
             this.cedulaChecked = true;
           },
           error: (error) => {
-            // Solo loguear errores reales (no 404, que es esperado cuando no hay resultados)
+            if (epochAtRun !== this.validationEpoch) {
+              return;
+            }
             if (error.status !== 404 && error.status !== 0) {
               this.errorHandler.logError(error, 'validar cédula');
             }
-            // Si hay error o no hay resultados, la cédula está disponible
             this.cedulaExists = false;
             this.cedulaChecked = true;
           }
@@ -555,14 +600,37 @@ export class PatientFormComponent implements OnInit {
     }
   }
 
-  // Validación de teléfono (duplicado)
+  // Validación de teléfono (duplicado global en edición; en alta respeta vínculo médico vía API)
   validateTelefono() {
     const telefono = this.patient.telefono ? String(this.patient.telefono).replace(/\D/g, '').trim() : '';
     if (telefono.length >= 10) {
       clearTimeout(this.telefonoValidationTimeout);
       this.telefonoValidationTimeout = setTimeout(() => {
+        const epochAtRun = this.validationEpoch;
+        if (!this.isEdit) {
+          this.patientService.checkTelefonoAvailability(this.patient.telefono!).subscribe({
+            next: (response) => {
+              if (epochAtRun !== this.validationEpoch) {
+                return;
+              }
+              this.telefonoExists = response.exists;
+              this.telefonoChecked = true;
+            },
+            error: () => {
+              if (epochAtRun !== this.validationEpoch) {
+                return;
+              }
+              this.telefonoExists = false;
+              this.telefonoChecked = true;
+            }
+          });
+          return;
+        }
         this.patientService.searchPatientsByTelefono(this.patient.telefono!).subscribe({
           next: (response) => {
+            if (epochAtRun !== this.validationEpoch) {
+              return;
+            }
             if (this.isEdit && this.patientId) {
               const otherPatients = response.data.filter(p => p.id !== this.patientId);
               this.telefonoExists = otherPatients.length > 0;
@@ -572,6 +640,9 @@ export class PatientFormComponent implements OnInit {
             this.telefonoChecked = true;
           },
           error: () => {
+            if (epochAtRun !== this.validationEpoch) {
+              return;
+            }
             this.telefonoExists = false;
             this.telefonoChecked = true;
           }

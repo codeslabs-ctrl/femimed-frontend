@@ -45,6 +45,20 @@ export class PatientService {
     });
   }
 
+  /** Misma semántica que check-email: exists solo si ya está vinculado a este médico (JWT). */
+  checkTelefonoAvailability(telefono: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(`${this.baseUrl}/check-telefono`, {
+      params: { telefono }
+    });
+  }
+
+  /** Misma semántica que check-email: exists solo si la cédula ya está vinculada a este médico (JWT). */
+  checkCedulaAvailability(cedula: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(`${this.baseUrl}/check-cedula`, {
+      params: { cedula }
+    });
+  }
+
   createPatient(patient: Omit<Patient, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>): Observable<ApiResponse<Patient>> {
     return this.http.post<ApiResponse<Patient>>(`${this.baseUrl}`, patient);
   }

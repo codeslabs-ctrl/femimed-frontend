@@ -206,4 +206,36 @@ export class DateService {
     const code = currencyCode || this.currency;
     return currencySymbols[code] || code;
   }
+
+  /**
+   * Ms UTC de la cita interpretada como reloj en Venezuela (UTC−4 fijo; sin DST).
+   * Usado para saber si Editar debe ocultarse (cita vencida).
+   */
+  getMsCitaVenezuela(
+    fechaPautada: string | undefined | null,
+    horaPautada: string | undefined | null
+  ): number | null {
+    if (!fechaPautada || !horaPautada) return null;
+    const fecha = String(fechaPautada).trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return null;
+    const horaRaw = String(horaPautada).trim();
+    const m = horaRaw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) return null;
+    const hh = m[1].padStart(2, '0');
+    const mm = m[2];
+    const ss = (m[3] ?? '00').padStart(2, '0');
+    const d = new Date(`${fecha}T${hh}:${mm}:${ss}-04:00`);
+    if (isNaN(d.getTime())) return null;
+    return d.getTime();
+  }
+
+  /** True si fecha/hora de la cita ya pasaron (según reloj Venezuela). */
+  isCitaPasadaVenezuela(
+    fechaPautada: string | undefined | null,
+    horaPautada: string | undefined | null
+  ): boolean {
+    const ms = this.getMsCitaVenezuela(fechaPautada, horaPautada);
+    if (ms === null) return false;
+    return ms < Date.now();
+  }
 }
